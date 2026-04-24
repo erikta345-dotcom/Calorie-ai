@@ -1,0 +1,32 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model FoodEntry {
+  id          String   @id @default(cuid())
+  date        String   // YYYY-MM-DD
+  meal        String   // desayuno | almuerzo | cena | snack
+  name        String
+  calories    Float
+  protein     Float    @default(0)
+  carbs       Float    @default(0)
+  fat         Float    @default(0)
+  grams       Float    @default(100)
+  imageUrl    String?
+  source      String   @default("manual") // manual | scan | search
+  createdAt   DateTime @default(now())
+}
+
+model UserSettings {
+  id             String @id @default("default")
+  weight         Float  @default(75)     // kg
+  goalCalories   Float  @default(2800)
+  goalProtein    Float  @default(150)    // g
+  goalCarbs      Float  @default(300)    // g
+  goalFat        Float  @default(80)     // g
+}
