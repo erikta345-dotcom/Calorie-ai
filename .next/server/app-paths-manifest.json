@@ -1,9 +1,6 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
-  "/api/entries/route": "app/api/entries/route.js",
-  "/scan/page": "app/scan/page.js",
   "/search/page": "app/search/page.js",
   "/page": "app/page.js",
-  "/api/settings/route": "app/api/settings/route.js",
+  "/scan/page": "app/scan/page.js",
   "/history/page": "app/history/page.js"
 }
