@@ -35,12 +35,12 @@ export default function HistoryPage() {
       fetch("/api/settings").then((r) => r.json()),
     ]).then((results) => {
       const settings = results[7];
-      if (settings) {
+      if (settings && !settings.error) {
         setGoalCalories(settings.goalCalories);
         setGoalProtein(settings.goalProtein);
       }
       const summaries: DaySummary[] = last7.map((date, i) => {
-        const entries = results[i] as any[];
+        const entries = Array.isArray(results[i]) ? results[i] as any[] : [];
         return {
           date,
           label: format(new Date(date + "T12:00:00"), "EEE", { locale: es }),
@@ -51,7 +51,7 @@ export default function HistoryPage() {
         };
       });
       setData(summaries);
-    }).finally(() => setLoading(false));
+    }).catch(() => {}).finally(() => setLoading(false));
   }, []);
 
   const VIEWS = [

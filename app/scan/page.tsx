@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { format } from "date-fns";
 import BottomNav from "@/components/BottomNav";
 
 type ParsedFood = {
@@ -59,12 +60,13 @@ export default function ScanPage() {
     if (!parsed) return;
     setSaving(true);
     try {
-      const today = new Date().toISOString().split("T")[0];
-      await fetch("/api/entries", {
+      const today = format(new Date(), "yyyy-MM-dd");
+      const res = await fetch("/api/entries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...parsed, meal, date: today, source: "scan" }),
       });
+      if (!res.ok) throw new Error();
       router.push("/");
     } catch {
       setError("Error al guardar.");

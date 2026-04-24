@@ -50,7 +50,9 @@ CRITICAL RULES:
     console.log("Groq response:", JSON.stringify(data, null, 2));
     const text = data.choices?.[0]?.message?.content;
     if (!text) throw new Error(`Vacío: ${JSON.stringify(data)}`);
-    const parsed = JSON.parse(text.replace(/```json|```/g, "").trim());
+    const match = text.match(/\{[\s\S]*\}/);
+    if (!match) throw new Error("No JSON en respuesta");
+    const parsed = JSON.parse(match[0]);
     return NextResponse.json(parsed);
   } catch (e: any) {
     console.error("Groq error:", e);

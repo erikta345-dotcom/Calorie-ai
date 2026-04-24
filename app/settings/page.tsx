@@ -32,12 +32,13 @@ export default function SettingsPage() {
 
   // Auto-calcular objetivos al cambiar el peso
   function handleWeightChange(w: number) {
+    const weight = Math.max(1, w);
     setForm({
-      weight: w,
-      goalCalories: Math.round(w * 33),     // superávit para ganar músculo
-      goalProtein: Math.round(w * 2),        // 2g/kg
-      goalCarbs: Math.round((w * 33 * 0.45) / 4),  // 45% carbos
-      goalFat: Math.round((w * 33 * 0.25) / 9),    // 25% grasas
+      weight,
+      goalCalories: Math.round(weight * 33),     // superávit para ganar músculo
+      goalProtein: Math.round(weight * 2),
+      goalCarbs: Math.round((weight * 33 * 0.45) / 4),
+      goalFat: Math.round((weight * 33 * 0.25) / 9),
     });
   }
 

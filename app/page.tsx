@@ -43,22 +43,22 @@ export default function DashboardPage() {
       fetch(`/api/entries?date=${today}`).then((r) => r.json()),
       fetch("/api/settings").then((r) => r.json()),
     ]).then(([ent, sett]) => {
-      setEntries(ent);
-      if (sett) setSettings(sett);
-    }).finally(() => setLoading(false));
+      if (Array.isArray(ent)) setEntries(ent);
+      if (sett && !sett.error) setSettings(sett);
+    }).catch(() => {}).finally(() => setLoading(false));
   }, [today]);
 
   async function deleteEntry(id: string) {
-    await fetch(`/api/entries/${id}`, { method: "DELETE" });
-    setEntries((prev) => prev.filter((e) => e.id !== id));
+    const res = await fetch(`/api/entries/${id}`, { method: "DELETE" });
+    if (res.ok) setEntries((prev) => prev.filter((e) => e.id !== id));
   }
 
   const totals = entries.reduce(
     (acc, e) => ({
-      calories: acc.calories + e.calories,
-      protein: acc.protein + e.protein,
-      carbs: acc.carbs + e.carbs,
-      fat: acc.fat + e.fat,
+      calories: acc.calories + (e.calories || 0),
+      protein: acc.protein + (e.protein || 0),
+      carbs: acc.carbs + (e.carbs || 0),
+      fat: acc.fat + (e.fat || 0),
     }),
     { calories: 0, protein: 0, carbs: 0, fat: 0 }
   );

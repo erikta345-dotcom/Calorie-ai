@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { format } from "date-fns";
 import BottomNav from "@/components/BottomNav";
 
 type FoodResult = {
@@ -24,6 +25,7 @@ export default function SearchPage() {
   const [meal, setMeal] = useState("almuerzo");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
 
   async function handleSearch() {
     if (!query.trim()) return;
@@ -39,27 +41,34 @@ export default function SearchPage() {
   }
 
   async function handleSave() {
-    if (!selected) return;
+    if (!selected || grams < 1) return;
     setSaving(true);
+    setError("");
     const factor = grams / 100;
-    const today = new Date().toISOString().split("T")[0];
-    await fetch("/api/entries", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name: selected.name,
-        calories: selected.calories * factor,
-        protein: selected.protein * factor,
-        carbs: selected.carbs * factor,
-        fat: selected.fat * factor,
-        grams,
-        meal,
-        date: today,
-        source: "search",
-      }),
-    });
-    setSaving(false);
-    router.push("/");
+    const today = format(new Date(), "yyyy-MM-dd");
+    try {
+      const res = await fetch("/api/entries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: selected.name,
+          calories: selected.calories * factor,
+          protein: selected.protein * factor,
+          carbs: selected.carbs * factor,
+          fat: selected.fat * factor,
+          grams,
+          meal,
+          date: today,
+          source: "search",
+        }),
+      });
+      if (!res.ok) throw new Error();
+      router.push("/");
+    } catch {
+      setError("Error al guardar. Intenta de nuevo.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   const adjusted = selected
@@ -135,7 +144,7 @@ export default function SearchPage() {
               <input
                 type="number"
                 value={grams}
-                onChange={(e) => setGrams(parseFloat(e.target.value) || 0)}
+                onChange={(e) => setGrams(Math.max(1, parseFloat(e.target.value) || 1))}
                 className="w-full bg-zinc-800 text-white text-center text-xl font-bold rounded-xl py-3 focus:outline-none focus:ring-2 focus:ring-brand-500"
               />
             </div>
@@ -174,6 +183,7 @@ export default function SearchPage() {
             </div>
           </div>
 
+          {error && <p className="text-red-400 text-sm text-center">{error}</p>}
           <button
             onClick={handleSave}
             disabled={saving}
