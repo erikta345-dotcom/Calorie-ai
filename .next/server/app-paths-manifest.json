@@ -1,6 +1,0 @@
-{
-  "/search/page": "app/search/page.js",
-  "/page": "app/page.js",
-  "/scan/page": "app/scan/page.js",
-  "/history/page": "app/history/page.js"
-}
