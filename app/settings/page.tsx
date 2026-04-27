@@ -15,15 +15,17 @@ type Settings = {
 
 const DEFAULT_MEAL_TIMES: MealTimes = {
   desayuno: "08:00",
-  almuerzo: "13:30",
-  cena: "20:00",
+  comida: "13:30",
+  merienda: "17:00",
+  cena: "20:30",
   snack: "11:00",
 };
 
 const MEAL_LABELS: Record<keyof MealTimes, string> = {
   desayuno: "🌅 Desayuno",
-  almuerzo: "☀️ Almuerzo",
   snack: "🍎 Snack",
+  comida: "☀️ Comida",
+  merienda: "🍊 Merienda",
   cena: "🌙 Cena",
 };
 

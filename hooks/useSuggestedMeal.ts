@@ -4,15 +4,17 @@ import { useEffect, useState } from "react";
 
 export type MealTimes = {
   desayuno: string;
-  almuerzo: string;
+  comida: string;
+  merienda: string;
   cena: string;
   snack: string;
 };
 
 const DEFAULT_TIMES: MealTimes = {
   desayuno: "08:00",
-  almuerzo: "13:30",
-  cena: "20:00",
+  comida: "13:30",
+  merienda: "17:00",
+  cena: "20:30",
   snack: "11:00",
 };
 
@@ -24,7 +26,7 @@ function toMinutes(time: string): number {
 function suggestMeal(times: MealTimes): string {
   const now = new Date();
   const nowMins = now.getHours() * 60 + now.getMinutes();
-  let best = "almuerzo";
+  let best = "comida";
   let bestDiff = Infinity;
   for (const [meal, time] of Object.entries(times)) {
     const diff = Math.abs(toMinutes(time) - nowMins);

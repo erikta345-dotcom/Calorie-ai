@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit *)",
+      "Bash(npm install *)",
+      "Bash(git add *)",
+      "Bash(git push *)",
+      "WebFetch(domain:calorie-ai-jbrl.vercel.app)",
+      "Bash(npm uninstall *)",
+      "Bash(npx tsc *)"
+    ]
+  }
+}

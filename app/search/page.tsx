@@ -16,7 +16,7 @@ type FoodResult = {
 };
 
 type Tab = "search" | "manual";
-const MEALS = ["desayuno", "almuerzo", "cena", "snack"];
+const MEALS = ["desayuno", "comida", "merienda", "cena", "snack"];
 
 function NumInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
@@ -48,7 +48,7 @@ function SearchContent() {
   const [results, setResults] = useState<FoodResult[]>([]);
   const [selected, setSelected] = useState<FoodResult | null>(null);
   const [gramsStr, setGramsStr] = useState("100");
-  const [meal, setMeal] = useState("almuerzo");
+  const [meal, setMeal] = useState("comida");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -60,7 +60,7 @@ function SearchContent() {
   const [mCarbs, setMCarbs] = useState("");
   const [mFat, setMFat] = useState("");
   const [mGrams, setMGrams] = useState("100");
-  const [mMeal, setMMeal] = useState("almuerzo");
+  const [mMeal, setMMeal] = useState("comida");
   const [mSaving, setMSaving] = useState(false);
   const [mError, setMError] = useState("");
 
@@ -247,7 +247,7 @@ function SearchContent() {
                     className="w-full bg-zinc-800 text-white text-center text-xl font-bold rounded-xl py-3 focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-5 gap-1">
                   {[
                     { label: "kcal", value: adjusted.calories, color: "text-brand-400" },
                     { label: "Prot", value: adjusted.protein, color: "text-orange-400" },
@@ -263,7 +263,7 @@ function SearchContent() {
               </div>
               <div>
                 <label className="text-xs text-zinc-500 block mb-2">¿En qué comida?</label>
-                <div className="grid grid-cols-4 gap-2">
+                <div className="grid grid-cols-5 gap-1">
                   {MEALS.map((m) => (
                     <button key={m} onClick={() => setMeal(m)} className={`py-2 rounded-lg text-xs font-medium capitalize transition-colors ${meal === m ? "bg-brand-500 text-white" : "bg-zinc-800 text-zinc-400"}`}>{m}</button>
                   ))}
@@ -328,7 +328,7 @@ function SearchContent() {
 
           <div>
             <label className="text-xs text-zinc-500 block mb-2">¿En qué comida?</label>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-5 gap-1">
               {MEALS.map((m) => (
                 <button key={m} onClick={() => setMMeal(m)} className={`py-2 rounded-lg text-xs font-medium capitalize transition-colors ${mMeal === m ? "bg-brand-500 text-white" : "bg-zinc-800 text-zinc-400"}`}>{m}</button>
               ))}

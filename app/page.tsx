@@ -24,12 +24,12 @@ type Settings = {
   goalProtein: number;
   goalCarbs: number;
   goalFat: number;
-  mealTimes?: { desayuno?: string; almuerzo?: string; cena?: string; snack?: string };
+  mealTimes?: { desayuno?: string; comida?: string; merienda?: string; cena?: string; snack?: string };
 };
 
-const MEALS = ["desayuno", "almuerzo", "cena", "snack"];
+const MEALS = ["desayuno", "comida", "merienda", "cena", "snack"];
 const MEAL_ICONS: Record<string, string> = {
-  desayuno: "🌅", almuerzo: "☀️", cena: "🌙", snack: "🍎",
+  desayuno: "🌅", comida: "☀️", merienda: "🍊", cena: "🌙", snack: "🍎",
 };
 
 export default function DashboardPage() {

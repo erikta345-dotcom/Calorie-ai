@@ -31,7 +31,7 @@ type BarcodeProduct = {
   servingG: number | null;
 };
 
-const MEALS = ["desayuno", "almuerzo", "cena", "snack"];
+const MEALS = ["desayuno", "comida", "merienda", "cena", "snack"];
 const LOAD_STEPS = ["Comprimiendo imagen...", "Identificando alimentos...", "Calculando macros..."];
 const PORTIONS = [0.5, 0.75, 1, 1.5, 2] as const;
 const PORTION_LABELS = ["½×", "¾×", "1×", "1½×", "2×"];
@@ -74,7 +74,7 @@ export default function ScanPage() {
   // AI scan state
   const [preview, setPreview] = useState<string | null>(null);
   const [result, setResult] = useState<ScanResult | null>(null);
-  const [meal, setMeal] = useState("almuerzo");
+  const [meal, setMeal] = useState("comida");
   const [portion, setPortion] = useState<number>(1);
   const [loading, setLoading] = useState(false);
   const [loadStep, setLoadStep] = useState(0);
@@ -88,7 +88,7 @@ export default function ScanPage() {
   const [barcodeLoading, setBarcodeLoading] = useState(false);
   const [barcodeProduct, setBarcodeProduct] = useState<BarcodeProduct | null>(null);
   const [barcodeGramsStr, setBarcodeGramsStr] = useState("100");
-  const [barcodeMeal, setBarcodeMeal] = useState("almuerzo");
+  const [barcodeMeal, setBarcodeMeal] = useState("comida");
   const [barcodeError, setBarcodeError] = useState("");
   const [barcodeSaving, setBarcodeSaving] = useState(false);
   const [lastCode, setLastCode] = useState("");
@@ -449,7 +449,7 @@ export default function ScanPage() {
 
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
             <p className="text-xs text-zinc-500 mb-3">Total{portion !== 1 ? ` · porción ×${portion}` : ""} · {total.grams}g</p>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-5 gap-1">
               {[{ label: "kcal", value: total.calories, color: "text-white" }, { label: "Prot", value: total.protein, color: "text-orange-400" }, { label: "Carb", value: total.carbs, color: "text-blue-400" }, { label: "Gras", value: total.fat, color: "text-yellow-400" }].map((m) => (
                 <div key={m.label} className="bg-zinc-800 rounded-lg p-2 text-center">
                   <p className={`text-base font-bold ${m.color}`}>{Math.round(m.value)}</p>
@@ -461,7 +461,7 @@ export default function ScanPage() {
 
           <div>
             <label className="text-xs text-zinc-500 block mb-2">¿En qué comida?</label>
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-5 gap-1">
               {MEALS.map((m) => (
                 <button key={m} onClick={() => setMeal(m)} className={`py-2 rounded-lg text-xs font-medium capitalize transition-colors ${meal === m ? "bg-brand-500 text-white" : "bg-zinc-800 text-zinc-400"}`}>{m}</button>
               ))}
@@ -582,7 +582,7 @@ export default function ScanPage() {
 
             <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
               <p className="text-xs text-zinc-500 mb-3">Total · {barcodeGrams}g</p>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-5 gap-1">
                 {[{ label: "kcal", value: barcodeTotal.calories, color: "text-white" }, { label: "Prot", value: barcodeTotal.protein, color: "text-orange-400" }, { label: "Carb", value: barcodeTotal.carbs, color: "text-blue-400" }, { label: "Gras", value: barcodeTotal.fat, color: "text-yellow-400" }].map((m) => (
                   <div key={m.label} className="bg-zinc-800 rounded-lg p-2 text-center">
                     <p className={`text-base font-bold ${m.color}`}>{Math.round(m.value)}</p>
@@ -594,7 +594,7 @@ export default function ScanPage() {
 
             <div>
               <label className="text-xs text-zinc-500 block mb-2">¿En qué comida?</label>
-              <div className="grid grid-cols-4 gap-2">
+              <div className="grid grid-cols-5 gap-1">
                 {MEALS.map((m) => (
                   <button key={m} onClick={() => setBarcodeMeal(m)} className={`py-2 rounded-lg text-xs font-medium capitalize transition-colors ${barcodeMeal === m ? "bg-brand-500 text-white" : "bg-zinc-800 text-zinc-400"}`}>{m}</button>
                 ))}
