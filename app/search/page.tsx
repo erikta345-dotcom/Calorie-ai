@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
 import BottomNav from "@/components/BottomNav";
 import { useSuggestedMeal } from "@/hooks/useSuggestedMeal";
@@ -36,8 +36,10 @@ function NumInput({ value, onChange }: { value: string; onChange: (v: string) =>
   );
 }
 
-export default function SearchPage() {
+function SearchContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const forcedMeal = searchParams.get("meal");
   const [tab, setTab] = useState<Tab>("search");
   const { meal: suggestedMeal, loaded: mealLoaded } = useSuggestedMeal();
 
@@ -63,11 +65,14 @@ export default function SearchPage() {
   const [mError, setMError] = useState("");
 
   useEffect(() => {
-    if (mealLoaded) {
+    if (forcedMeal) {
+      setMeal(forcedMeal);
+      setMMeal(forcedMeal);
+    } else if (mealLoaded) {
       setMeal(suggestedMeal);
       setMMeal(suggestedMeal);
     }
-  }, [mealLoaded, suggestedMeal]);
+  }, [forcedMeal, mealLoaded, suggestedMeal]);
 
   async function handleSearch() {
     if (!query.trim()) return;
@@ -343,5 +348,13 @@ export default function SearchPage() {
 
       <BottomNav />
     </div>
+  );
+}
+
+export default function SearchPage() {
+  return (
+    <Suspense>
+      <SearchContent />
+    </Suspense>
   );
 }

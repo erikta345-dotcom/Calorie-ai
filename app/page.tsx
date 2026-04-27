@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
+import { useRouter } from "next/navigation";
 import BottomNav from "@/components/BottomNav";
 import CalorieRing from "@/components/CalorieRing";
 import MacroBar from "@/components/MacroBar";
@@ -23,6 +24,7 @@ type Settings = {
   goalProtein: number;
   goalCarbs: number;
   goalFat: number;
+  mealTimes?: { desayuno?: string; almuerzo?: string; cena?: string; snack?: string };
 };
 
 const MEALS = ["desayuno", "almuerzo", "cena", "snack"];
@@ -31,6 +33,7 @@ const MEAL_ICONS: Record<string, string> = {
 };
 
 export default function DashboardPage() {
+  const router = useRouter();
   const today = format(new Date(), "yyyy-MM-dd");
   const [entries, setEntries] = useState<FoodEntry[]>([]);
   const [settings, setSettings] = useState<Settings>({
@@ -44,7 +47,12 @@ export default function DashboardPage() {
       fetch("/api/settings").then((r) => r.json()),
     ]).then(([ent, sett]) => {
       if (Array.isArray(ent)) setEntries(ent);
-      if (sett && !sett.error) setSettings(sett);
+      if (sett && !sett.error) {
+        const mealTimes = sett.mealTimes
+          ? (typeof sett.mealTimes === "string" ? JSON.parse(sett.mealTimes) : sett.mealTimes)
+          : undefined;
+        setSettings({ ...sett, mealTimes });
+      }
     }).catch(() => {}).finally(() => setLoading(false));
   }, [today]);
 
@@ -104,9 +112,22 @@ export default function DashboardPage() {
                 <div className="flex items-center justify-between px-4 py-3">
                   <div className="flex items-center gap-2">
                     <span>{MEAL_ICONS[meal]}</span>
-                    <span className="font-semibold text-white capitalize">{meal}</span>
+                    <div>
+                      <span className="font-semibold text-white capitalize">{meal}</span>
+                      {settings.mealTimes?.[meal as keyof typeof settings.mealTimes] && (
+                        <span className="ml-2 text-xs text-zinc-500">{settings.mealTimes[meal as keyof typeof settings.mealTimes]}</span>
+                      )}
+                    </div>
                   </div>
-                  <span className="text-sm text-zinc-400">{Math.round(mealCals)} kcal</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm text-zinc-400">{Math.round(mealCals)} kcal</span>
+                    <button
+                      onClick={() => router.push(`/search?meal=${meal}`)}
+                      className="w-7 h-7 rounded-full bg-zinc-800 hover:bg-brand-500 text-zinc-400 hover:text-white flex items-center justify-center text-lg font-light transition-colors leading-none"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
                 {mealEntries.length > 0 && (
                   <div className="border-t border-zinc-800">
