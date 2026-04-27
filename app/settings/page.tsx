@@ -40,6 +40,11 @@ export default function SettingsPage() {
   });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [notifPerm, setNotifPerm] = useState<string>("default");
+
+  useEffect(() => {
+    if ("Notification" in window) setNotifPerm(Notification.permission);
+  }, []);
 
   useEffect(() => {
     fetch("/api/settings")
@@ -75,6 +80,7 @@ export default function SettingsPage() {
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
+    window.dispatchEvent(new CustomEvent("meal-times-updated"));
   }
 
   const numField = (label: string, key: keyof Omit<Settings, "mealTimes">, unit: string) => (
@@ -119,8 +125,28 @@ export default function SettingsPage() {
 
         {/* Meal times */}
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-4">
-          <p className="text-xs text-zinc-500 pt-3 pb-1 font-semibold uppercase tracking-wide">Horario de comidas</p>
-          <p className="text-xs text-zinc-600 pb-2">Se usa para sugerir la comida al registrar</p>
+          <div className="flex items-center justify-between pt-3 pb-1">
+            <p className="text-xs text-zinc-500 font-semibold uppercase tracking-wide">Horario de comidas</p>
+            {notifPerm !== "granted" ? (
+              <button
+                onClick={async () => {
+                  if (!("Notification" in window)) return;
+                  const perm = await Notification.requestPermission();
+                  setNotifPerm(perm);
+                  if (perm === "granted" && "serviceWorker" in navigator) {
+                    await navigator.serviceWorker.register("/sw.js");
+                    window.dispatchEvent(new CustomEvent("meal-times-updated"));
+                  }
+                }}
+                className="text-xs bg-brand-500 text-white px-3 py-1 rounded-lg font-medium"
+              >
+                🔔 Activar avisos
+              </button>
+            ) : (
+              <span className="text-xs text-green-400">🔔 Avisos activos</span>
+            )}
+          </div>
+          <p className="text-xs text-zinc-600 pb-2">Notificación cuando llegue la hora</p>
           {(Object.keys(MEAL_LABELS) as (keyof MealTimes)[]).map((meal) => (
             <div key={meal} className="flex items-center justify-between py-3 border-b border-zinc-800 last:border-0">
               <p className="text-sm text-white">{MEAL_LABELS[meal]}</p>

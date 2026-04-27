@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import HealthCheck from "@/components/HealthCheck";
+import MealNotifications from "@/components/MealNotifications";
 
 export const metadata: Metadata = {
   title: "Calorie AI",
@@ -26,6 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="bg-zinc-950 text-white antialiased">
         <HealthCheck />
+        <MealNotifications />
         {children}
       </body>
     </html>
