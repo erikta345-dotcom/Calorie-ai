@@ -34,6 +34,7 @@ const MEALS = ["desayuno", "almuerzo", "cena", "snack"];
 const LOAD_STEPS = ["Comprimiendo imagen...", "Identificando alimentos...", "Calculando macros..."];
 const PORTIONS = [0.5, 0.75, 1, 1.5, 2] as const;
 const PORTION_LABELS = ["½×", "¾×", "1×", "1½×", "2×"];
+type Tab = "ai" | "barcode";
 
 async function compressImage(dataUrl: string): Promise<string> {
   return new Promise((resolve) => {
@@ -188,6 +189,8 @@ export default function ScanPage() {
     }
   }
 
+  const [activeTab, setActiveTab] = useState<Tab>("ai");
+
   const streamRef = useRef<MediaStream | null>(null);
   const animFrameRef = useRef<number>(0);
   const [barcodeSupported, setBarcodeSupported] = useState<boolean | null>(null);
@@ -314,12 +317,28 @@ export default function ScanPage() {
 
   return (
     <div className="min-h-screen bg-zinc-950 max-w-md mx-auto pb-32 px-4">
-      <header className="pt-14 pb-6">
+      <header className="pt-14 pb-4">
         <h1 className="text-2xl font-bold text-white">📸 Escanear comida</h1>
-        <p className="text-zinc-500 text-sm mt-1">IA detecta cada componente del plato</p>
       </header>
 
-      {/* ── AI SCAN ── */}
+      {/* ── TABS ── */}
+      <div className="flex gap-1 bg-zinc-900 rounded-xl p-1 mb-4">
+        <button
+          onClick={() => { if (barcodeActive) stopBarcode(); setActiveTab("ai"); }}
+          className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors ${activeTab === "ai" ? "bg-brand-500 text-white" : "text-zinc-400 hover:text-white"}`}
+        >
+          ✨ IA
+        </button>
+        <button
+          onClick={() => { if (barcodeActive) stopBarcode(); setActiveTab("barcode"); }}
+          className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors ${activeTab === "barcode" ? "bg-brand-500 text-white" : "text-zinc-400 hover:text-white"}`}
+        >
+          🔢 Código de barras
+        </button>
+      </div>
+
+      {activeTab === "ai" && (
+      <>{/* ── AI SCAN ── */}
       <div
         onClick={() => fileRef.current?.click()}
         className="relative w-full aspect-square rounded-2xl border-2 border-dashed border-zinc-700 flex items-center justify-center cursor-pointer overflow-hidden bg-zinc-900 hover:border-brand-500 transition-colors"
@@ -427,14 +446,9 @@ export default function ScanPage() {
         </div>
       )}
 
-      {/* ── DIVIDER ── */}
-      <div className="flex items-center gap-3 my-6">
-        <div className="flex-1 h-px bg-zinc-800" />
-        <span className="text-zinc-600 text-xs">o</span>
-        <div className="flex-1 h-px bg-zinc-800" />
-      </div>
+      </>)}
 
-      {/* ── BARCODE SCANNER ── */}
+      {activeTab === "barcode" && (
       <div className="space-y-3">
         <div className="flex items-center gap-2">
           <span className="text-lg">🔢</span>
@@ -565,7 +579,7 @@ export default function ScanPage() {
             </div>
           </div>
         )}
-      </div>
+      </div>)}
 
       <BottomNav />
     </div>
