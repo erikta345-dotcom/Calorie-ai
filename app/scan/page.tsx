@@ -244,7 +244,7 @@ export default function ScanPage() {
         formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39", "qr_code"],
       });
 
-      async function scan() {
+      const scan = async () => {
         if (!videoRef.current || !streamRef.current) return;
         try {
           const barcodes = await detector.detect(videoRef.current);
