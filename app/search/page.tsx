@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import BottomNav from "@/components/BottomNav";
+import { useSuggestedMeal } from "@/hooks/useSuggestedMeal";
 
 type FoodResult = {
   id: string;
@@ -38,6 +39,7 @@ function NumInput({ value, onChange }: { value: string; onChange: (v: string) =>
 export default function SearchPage() {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("search");
+  const { meal: suggestedMeal, loaded: mealLoaded } = useSuggestedMeal();
 
   // Search tab state
   const [query, setQuery] = useState("");
@@ -59,6 +61,13 @@ export default function SearchPage() {
   const [mMeal, setMMeal] = useState("almuerzo");
   const [mSaving, setMSaving] = useState(false);
   const [mError, setMError] = useState("");
+
+  useEffect(() => {
+    if (mealLoaded) {
+      setMeal(suggestedMeal);
+      setMMeal(suggestedMeal);
+    }
+  }, [mealLoaded, suggestedMeal]);
 
   async function handleSearch() {
     if (!query.trim()) return;

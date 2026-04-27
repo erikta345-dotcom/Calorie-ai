@@ -28,8 +28,13 @@ await db.execute(`
     goalCalories REAL DEFAULT 2800,
     goalProtein REAL DEFAULT 150,
     goalCarbs REAL DEFAULT 300,
-    goalFat REAL DEFAULT 80
+    goalFat REAL DEFAULT 80,
+    mealTimes TEXT DEFAULT '{"desayuno":"08:00","almuerzo":"13:30","cena":"20:00","snack":"11:00"}'
   )
 `);
+
+try {
+  await db.execute(`ALTER TABLE UserSettings ADD COLUMN mealTimes TEXT DEFAULT '{"desayuno":"08:00","almuerzo":"13:30","cena":"20:00","snack":"11:00"}'`);
+} catch {}
 
 console.log("Tables created.");

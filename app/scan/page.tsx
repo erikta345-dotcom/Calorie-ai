@@ -4,6 +4,7 @@ import { useRef, useState, useMemo, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import BottomNav from "@/components/BottomNav";
+import { useSuggestedMeal } from "@/hooks/useSuggestedMeal";
 
 type FoodItem = {
   name: string;
@@ -68,6 +69,7 @@ export default function ScanPage() {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const { meal: suggestedMeal, loaded: mealLoaded } = useSuggestedMeal();
 
   // AI scan state
   const [preview, setPreview] = useState<string | null>(null);
@@ -193,6 +195,13 @@ export default function ScanPage() {
   }
 
   const [activeTab, setActiveTab] = useState<Tab>("ai");
+
+  useEffect(() => {
+    if (mealLoaded) {
+      setMeal(suggestedMeal);
+      setBarcodeMeal(suggestedMeal);
+    }
+  }, [mealLoaded, suggestedMeal]);
 
   const streamRef = useRef<MediaStream | null>(null);
   const animFrameRef = useRef<number>(0);

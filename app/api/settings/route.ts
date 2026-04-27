@@ -19,10 +19,10 @@ export async function GET() {
 
 export async function PUT(req: NextRequest) {
   try {
-    const { weight, goalCalories, goalProtein, goalCarbs, goalFat } = await req.json();
+    const { weight, goalCalories, goalProtein, goalCarbs, goalFat, mealTimes } = await req.json();
     await db.execute({
-      sql: "INSERT INTO UserSettings (id, weight, goalCalories, goalProtein, goalCarbs, goalFat) VALUES ('default', ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET weight=excluded.weight, goalCalories=excluded.goalCalories, goalProtein=excluded.goalProtein, goalCarbs=excluded.goalCarbs, goalFat=excluded.goalFat",
-      args: [weight, goalCalories, goalProtein, goalCarbs, goalFat],
+      sql: "INSERT INTO UserSettings (id, weight, goalCalories, goalProtein, goalCarbs, goalFat, mealTimes) VALUES ('default', ?, ?, ?, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET weight=excluded.weight, goalCalories=excluded.goalCalories, goalProtein=excluded.goalProtein, goalCarbs=excluded.goalCarbs, goalFat=excluded.goalFat, mealTimes=excluded.mealTimes",
+      args: [weight, goalCalories, goalProtein, goalCarbs, goalFat, mealTimes ? JSON.stringify(mealTimes) : null],
     });
     const result = await db.execute({ sql: "SELECT * FROM UserSettings WHERE id = 'default'", args: [] });
     return NextResponse.json(result.rows[0]);
