@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useMemo } from "react";
+import { useRef, useState, useMemo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import BottomNav from "@/components/BottomNav";
@@ -18,6 +18,16 @@ type FoodItem = {
 type ScanResult = {
   dish: string;
   items: FoodItem[];
+};
+
+type BarcodeProduct = {
+  name: string;
+  brand: string | null;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  servingG: number | null;
 };
 
 const MEALS = ["desayuno", "almuerzo", "cena", "snack"];
@@ -56,6 +66,10 @@ function macros(item: FoodItem, portionMult: number) {
 export default function ScanPage() {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const readerRef = useRef<any>(null);
+
+  // AI scan state
   const [preview, setPreview] = useState<string | null>(null);
   const [result, setResult] = useState<ScanResult | null>(null);
   const [meal, setMeal] = useState("almuerzo");
@@ -64,6 +78,16 @@ export default function ScanPage() {
   const [loadStep, setLoadStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  // Barcode state
+  const [barcodeActive, setBarcodeActive] = useState(false);
+  const [barcodeLoading, setBarcodeLoading] = useState(false);
+  const [barcodeProduct, setBarcodeProduct] = useState<BarcodeProduct | null>(null);
+  const [barcodeGrams, setBarcodeGrams] = useState(100);
+  const [barcodeMeal, setBarcodeMeal] = useState("almuerzo");
+  const [barcodeError, setBarcodeError] = useState("");
+  const [barcodeSaving, setBarcodeSaving] = useState(false);
+  const [lastCode, setLastCode] = useState("");
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -133,26 +157,17 @@ export default function ScanPage() {
 
   function updateGrams(idx: number, val: number) {
     if (!result) return;
-    setResult({
-      ...result,
-      items: result.items.map((it, i) => i === idx ? { ...it, grams: Math.max(1, val) } : it),
-    });
+    setResult({ ...result, items: result.items.map((it, i) => i === idx ? { ...it, grams: Math.max(1, val) } : it) });
   }
 
   function updateName(idx: number, val: string) {
     if (!result) return;
-    setResult({
-      ...result,
-      items: result.items.map((it, i) => i === idx ? { ...it, name: val } : it),
-    });
+    setResult({ ...result, items: result.items.map((it, i) => i === idx ? { ...it, name: val } : it) });
   }
 
   function toggleItem(idx: number) {
     if (!result) return;
-    setResult({
-      ...result,
-      items: result.items.map((it, i) => i === idx ? { ...it, enabled: !it.enabled } : it),
-    });
+    setResult({ ...result, items: result.items.map((it, i) => i === idx ? { ...it, enabled: !it.enabled } : it) });
   }
 
   async function handleSave() {
@@ -163,17 +178,7 @@ export default function ScanPage() {
       const res = await fetch("/api/entries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: result.dish,
-          calories: total.calories,
-          protein: total.protein,
-          carbs: total.carbs,
-          fat: total.fat,
-          grams: total.grams,
-          meal,
-          date: today,
-          source: "scan",
-        }),
+        body: JSON.stringify({ name: result.dish, calories: total.calories, protein: total.protein, carbs: total.carbs, fat: total.fat, grams: total.grams, meal, date: today, source: "scan" }),
       });
       if (!res.ok) throw new Error();
       router.push("/");
@@ -184,6 +189,90 @@ export default function ScanPage() {
     }
   }
 
+  const stopBarcode = useCallback(() => {
+    if (readerRef.current) {
+      readerRef.current.reset();
+      readerRef.current = null;
+    }
+    setBarcodeActive(false);
+    setLastCode("");
+  }, []);
+
+  async function startBarcodeScanner() {
+    setBarcodeProduct(null);
+    setBarcodeError("");
+    setBarcodeActive(true);
+    setBarcodeGrams(100);
+    try {
+      const { BrowserMultiFormatReader } = await import("@zxing/browser");
+      const reader = new BrowserMultiFormatReader();
+      readerRef.current = reader;
+
+      await reader.decodeFromVideoDevice(undefined, videoRef.current!, async (res, err) => {
+        if (!res) return;
+        const code = res.getText();
+        if (code === lastCode) return;
+        setLastCode(code);
+        reader.reset();
+        readerRef.current = null;
+        setBarcodeActive(false);
+        setBarcodeLoading(true);
+        try {
+          const r = await fetch(`/api/barcode?code=${encodeURIComponent(code)}`);
+          const data = await r.json();
+          if (data.error) throw new Error(data.error);
+          setBarcodeProduct(data);
+          if (data.servingG) setBarcodeGrams(data.servingG);
+        } catch (e: any) {
+          setBarcodeError(e.message || "Producto no encontrado");
+        } finally {
+          setBarcodeLoading(false);
+        }
+      });
+    } catch {
+      setBarcodeError("No se pudo acceder a la cámara.");
+      setBarcodeActive(false);
+    }
+  }
+
+  const barcodeTotal = barcodeProduct
+    ? {
+        calories: Math.round((barcodeProduct.calories * barcodeGrams) / 100),
+        protein: Math.round((barcodeProduct.protein * barcodeGrams) / 100 * 10) / 10,
+        carbs: Math.round((barcodeProduct.carbs * barcodeGrams) / 100 * 10) / 10,
+        fat: Math.round((barcodeProduct.fat * barcodeGrams) / 100 * 10) / 10,
+      }
+    : null;
+
+  async function handleBarcodeSave() {
+    if (!barcodeProduct || !barcodeTotal) return;
+    setBarcodeSaving(true);
+    try {
+      const today = format(new Date(), "yyyy-MM-dd");
+      const res = await fetch("/api/entries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: barcodeProduct.brand ? `${barcodeProduct.name} (${barcodeProduct.brand})` : barcodeProduct.name,
+          calories: barcodeTotal.calories,
+          protein: barcodeTotal.protein,
+          carbs: barcodeTotal.carbs,
+          fat: barcodeTotal.fat,
+          grams: barcodeGrams,
+          meal: barcodeMeal,
+          date: today,
+          source: "barcode",
+        }),
+      });
+      if (!res.ok) throw new Error();
+      router.push("/");
+    } catch {
+      setBarcodeError("Error al guardar.");
+    } finally {
+      setBarcodeSaving(false);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-zinc-950 max-w-md mx-auto pb-32 px-4">
       <header className="pt-14 pb-6">
@@ -191,7 +280,7 @@ export default function ScanPage() {
         <p className="text-zinc-500 text-sm mt-1">IA detecta cada componente del plato</p>
       </header>
 
-      {/* Photo zone */}
+      {/* ── AI SCAN ── */}
       <div
         onClick={() => fileRef.current?.click()}
         className="relative w-full aspect-square rounded-2xl border-2 border-dashed border-zinc-700 flex items-center justify-center cursor-pointer overflow-hidden bg-zinc-900 hover:border-brand-500 transition-colors"
@@ -218,8 +307,7 @@ export default function ScanPage() {
         >
           {loading
             ? <><span className="animate-spin inline-block">⚙️</span> {LOAD_STEPS[loadStep]}</>
-            : <>{result ? "🔄 Volver a analizar" : "✨ Analizar con IA"}</>
-          }
+            : <>{result ? "🔄 Volver a analizar" : "✨ Analizar con IA"}</>}
         </button>
       )}
 
@@ -227,14 +315,12 @@ export default function ScanPage() {
 
       {result && total && (
         <div className="mt-4 space-y-3">
-          {/* Dish name */}
           <input
             value={result.dish}
             onChange={(e) => setResult({ ...result, dish: e.target.value })}
             className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold focus:outline-none focus:border-brand-500"
           />
 
-          {/* Items breakdown */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
             {result.items.map((item, idx) => {
               const m = macros(item, portion);
@@ -243,24 +329,13 @@ export default function ScanPage() {
                   <div className="flex items-center gap-2 mb-1.5">
                     <button
                       onClick={() => toggleItem(idx)}
-                      className={`w-5 h-5 rounded flex-shrink-0 border-2 flex items-center justify-center text-xs font-bold transition-colors ${
-                        item.enabled ? "bg-brand-500 border-brand-500 text-white" : "border-zinc-600"
-                      }`}
+                      className={`w-5 h-5 rounded flex-shrink-0 border-2 flex items-center justify-center text-xs font-bold transition-colors ${item.enabled ? "bg-brand-500 border-brand-500 text-white" : "border-zinc-600"}`}
                     >
                       {item.enabled && "✓"}
                     </button>
-                    <input
-                      value={item.name}
-                      onChange={(e) => updateName(idx, e.target.value)}
-                      className="flex-1 bg-transparent text-sm text-white focus:outline-none min-w-0"
-                    />
+                    <input value={item.name} onChange={(e) => updateName(idx, e.target.value)} className="flex-1 bg-transparent text-sm text-white focus:outline-none min-w-0" />
                     <div className="flex items-center gap-1 flex-shrink-0">
-                      <input
-                        type="number"
-                        value={item.grams}
-                        onChange={(e) => updateGrams(idx, parseInt(e.target.value) || 1)}
-                        className="w-14 bg-zinc-800 text-white text-xs text-right rounded-lg px-2 py-1 focus:outline-none"
-                      />
+                      <input type="number" value={item.grams} onChange={(e) => updateGrams(idx, parseInt(e.target.value) || 1)} className="w-14 bg-zinc-800 text-white text-xs text-right rounded-lg px-2 py-1 focus:outline-none" />
                       <span className="text-zinc-500 text-xs">g</span>
                     </div>
                   </div>
@@ -275,36 +350,21 @@ export default function ScanPage() {
             })}
           </div>
 
-          {/* Portion multiplier */}
           <div>
             <p className="text-xs text-zinc-500 mb-2">Tamaño de porción</p>
             <div className="flex gap-1.5">
               {PORTIONS.map((p, i) => (
-                <button
-                  key={p}
-                  onClick={() => setPortion(p)}
-                  className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors ${
-                    portion === p ? "bg-brand-500 text-white" : "bg-zinc-800 text-zinc-400"
-                  }`}
-                >
+                <button key={p} onClick={() => setPortion(p)} className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors ${portion === p ? "bg-brand-500 text-white" : "bg-zinc-800 text-zinc-400"}`}>
                   {PORTION_LABELS[i]}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Total */}
           <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-            <p className="text-xs text-zinc-500 mb-3">
-              Total{portion !== 1 ? ` · porción ×${portion}` : ""} · {total.grams}g
-            </p>
+            <p className="text-xs text-zinc-500 mb-3">Total{portion !== 1 ? ` · porción ×${portion}` : ""} · {total.grams}g</p>
             <div className="grid grid-cols-4 gap-2">
-              {[
-                { label: "kcal", value: total.calories, color: "text-white" },
-                { label: "Prot", value: total.protein, color: "text-orange-400" },
-                { label: "Carb", value: total.carbs, color: "text-blue-400" },
-                { label: "Gras", value: total.fat, color: "text-yellow-400" },
-              ].map((m) => (
+              {[{ label: "kcal", value: total.calories, color: "text-white" }, { label: "Prot", value: total.protein, color: "text-orange-400" }, { label: "Carb", value: total.carbs, color: "text-blue-400" }, { label: "Gras", value: total.fat, color: "text-yellow-400" }].map((m) => (
                 <div key={m.label} className="bg-zinc-800 rounded-lg p-2 text-center">
                   <p className={`text-base font-bold ${m.color}`}>{Math.round(m.value)}</p>
                   <p className="text-xs text-zinc-500">{m.label}</p>
@@ -313,33 +373,139 @@ export default function ScanPage() {
             </div>
           </div>
 
-          {/* Meal selector */}
           <div>
             <label className="text-xs text-zinc-500 block mb-2">¿En qué comida?</label>
             <div className="grid grid-cols-4 gap-2">
               {MEALS.map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setMeal(m)}
-                  className={`py-2 rounded-lg text-xs font-medium capitalize transition-colors ${
-                    meal === m ? "bg-brand-500 text-white" : "bg-zinc-800 text-zinc-400"
-                  }`}
-                >
-                  {m}
-                </button>
+                <button key={m} onClick={() => setMeal(m)} className={`py-2 rounded-lg text-xs font-medium capitalize transition-colors ${meal === m ? "bg-brand-500 text-white" : "bg-zinc-800 text-zinc-400"}`}>{m}</button>
               ))}
             </div>
           </div>
 
-          <button
-            onClick={handleSave}
-            disabled={saving || total.calories === 0}
-            className="w-full py-3 rounded-xl bg-brand-500 text-white font-semibold disabled:opacity-40"
-          >
+          <button onClick={handleSave} disabled={saving || total.calories === 0} className="w-full py-3 rounded-xl bg-brand-500 text-white font-semibold disabled:opacity-40">
             {saving ? "Guardando..." : `💾 Añadir ${total.calories} kcal al diario`}
           </button>
         </div>
       )}
+
+      {/* ── DIVIDER ── */}
+      <div className="flex items-center gap-3 my-6">
+        <div className="flex-1 h-px bg-zinc-800" />
+        <span className="text-zinc-600 text-xs">o</span>
+        <div className="flex-1 h-px bg-zinc-800" />
+      </div>
+
+      {/* ── BARCODE SCANNER ── */}
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <span className="text-lg">🔢</span>
+          <div>
+            <p className="text-white text-sm font-semibold">Código de barras</p>
+            <p className="text-zinc-500 text-xs">Datos exactos del fabricante</p>
+          </div>
+        </div>
+
+        {!barcodeActive && !barcodeProduct && !barcodeLoading && (
+          <button
+            onClick={startBarcodeScanner}
+            className="w-full py-3 rounded-xl border border-zinc-700 text-zinc-300 font-semibold hover:border-brand-500 hover:text-white transition-colors flex items-center justify-center gap-2"
+          >
+            📷 Escanear código de barras
+          </button>
+        )}
+
+        {barcodeActive && (
+          <div className="relative rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-700">
+            <video ref={videoRef} className="w-full aspect-square object-cover" />
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <div className="w-48 h-48 border-2 border-brand-500 rounded-xl relative">
+                <div className="absolute inset-x-0 top-1/2 h-0.5 bg-brand-500 opacity-70 animate-pulse" />
+              </div>
+              <p className="text-white text-xs mt-3 bg-black/50 px-3 py-1 rounded-full">Apunta al código de barras</p>
+            </div>
+            <button onClick={stopBarcode} className="absolute top-3 right-3 bg-zinc-900/80 text-zinc-300 text-xs px-3 py-1.5 rounded-full">
+              Cancelar
+            </button>
+          </div>
+        )}
+
+        {barcodeLoading && (
+          <div className="flex items-center justify-center gap-2 py-6 text-zinc-400 text-sm">
+            <span className="animate-spin inline-block">⚙️</span> Buscando producto...
+          </div>
+        )}
+
+        {barcodeError && (
+          <div className="space-y-2">
+            <p className="text-red-400 text-sm text-center">{barcodeError}</p>
+            <button onClick={startBarcodeScanner} className="w-full py-2.5 rounded-xl border border-zinc-700 text-zinc-400 text-sm hover:border-brand-500 transition-colors">
+              Intentar de nuevo
+            </button>
+          </div>
+        )}
+
+        {barcodeProduct && barcodeTotal && (
+          <div className="space-y-3">
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-1">
+              <p className="text-white font-semibold text-sm">{barcodeProduct.name}</p>
+              {barcodeProduct.brand && <p className="text-zinc-500 text-xs">{barcodeProduct.brand}</p>}
+              <p className="text-zinc-600 text-xs">Por 100g: {barcodeProduct.calories} kcal · P {barcodeProduct.protein}g · C {barcodeProduct.carbs}g · G {barcodeProduct.fat}g</p>
+            </div>
+
+            <div>
+              <label className="text-xs text-zinc-500 block mb-2">Cantidad (gramos)</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="number"
+                  value={barcodeGrams}
+                  onChange={(e) => setBarcodeGrams(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="flex-1 bg-zinc-900 border border-zinc-700 text-white text-center text-xl font-bold rounded-xl py-3 focus:outline-none focus:border-brand-500"
+                />
+                <div className="flex flex-col gap-1">
+                  {barcodeProduct.servingG && (
+                    <button onClick={() => setBarcodeGrams(Math.round(barcodeProduct.servingG!))} className="text-xs text-zinc-400 bg-zinc-800 px-2 py-1 rounded-lg hover:text-white transition-colors whitespace-nowrap">
+                      1 ración ({barcodeProduct.servingG}g)
+                    </button>
+                  )}
+                  <button onClick={() => setBarcodeGrams(100)} className="text-xs text-zinc-400 bg-zinc-800 px-2 py-1 rounded-lg hover:text-white transition-colors">
+                    100g
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+              <p className="text-xs text-zinc-500 mb-3">Total · {barcodeGrams}g</p>
+              <div className="grid grid-cols-4 gap-2">
+                {[{ label: "kcal", value: barcodeTotal.calories, color: "text-white" }, { label: "Prot", value: barcodeTotal.protein, color: "text-orange-400" }, { label: "Carb", value: barcodeTotal.carbs, color: "text-blue-400" }, { label: "Gras", value: barcodeTotal.fat, color: "text-yellow-400" }].map((m) => (
+                  <div key={m.label} className="bg-zinc-800 rounded-lg p-2 text-center">
+                    <p className={`text-base font-bold ${m.color}`}>{Math.round(m.value)}</p>
+                    <p className="text-xs text-zinc-500">{m.label}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <label className="text-xs text-zinc-500 block mb-2">¿En qué comida?</label>
+              <div className="grid grid-cols-4 gap-2">
+                {MEALS.map((m) => (
+                  <button key={m} onClick={() => setBarcodeMeal(m)} className={`py-2 rounded-lg text-xs font-medium capitalize transition-colors ${barcodeMeal === m ? "bg-brand-500 text-white" : "bg-zinc-800 text-zinc-400"}`}>{m}</button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <button onClick={() => { setBarcodeProduct(null); setBarcodeError(""); startBarcodeScanner(); }} className="flex-1 py-3 rounded-xl border border-zinc-700 text-zinc-400 text-sm font-medium hover:border-brand-500 transition-colors">
+                🔄 Otro producto
+              </button>
+              <button onClick={handleBarcodeSave} disabled={barcodeSaving} className="flex-1 py-3 rounded-xl bg-brand-500 text-white font-semibold disabled:opacity-40">
+                {barcodeSaving ? "Guardando..." : `💾 Añadir ${barcodeTotal.calories} kcal`}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       <BottomNav />
     </div>
