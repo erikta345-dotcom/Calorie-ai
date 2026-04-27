@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useMemo, useCallback } from "react";
+import { useRef, useState, useMemo, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import BottomNav from "@/components/BottomNav";
@@ -67,7 +67,6 @@ export default function ScanPage() {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const readerRef = useRef<any>(null);
 
   // AI scan state
   const [preview, setPreview] = useState<string | null>(null);
@@ -189,14 +188,39 @@ export default function ScanPage() {
     }
   }
 
+  const streamRef = useRef<MediaStream | null>(null);
+  const animFrameRef = useRef<number>(0);
+  const [barcodeSupported, setBarcodeSupported] = useState<boolean | null>(null);
+  const [manualCode, setManualCode] = useState("");
+
+  useEffect(() => {
+    setBarcodeSupported("BarcodeDetector" in window);
+  }, []);
+
   const stopBarcode = useCallback(() => {
-    if (readerRef.current) {
-      readerRef.current.reset();
-      readerRef.current = null;
+    cancelAnimationFrame(animFrameRef.current);
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
     }
     setBarcodeActive(false);
     setLastCode("");
   }, []);
+
+  async function fetchBarcodeProduct(code: string) {
+    setBarcodeLoading(true);
+    try {
+      const r = await fetch(`/api/barcode?code=${encodeURIComponent(code)}`);
+      const data = await r.json();
+      if (data.error) throw new Error(data.error);
+      setBarcodeProduct(data);
+      if (data.servingG) setBarcodeGrams(data.servingG);
+    } catch (e: any) {
+      setBarcodeError(e.message || "Producto no encontrado");
+    } finally {
+      setBarcodeLoading(false);
+    }
+  }
 
   async function startBarcodeScanner() {
     setBarcodeProduct(null);
@@ -204,35 +228,50 @@ export default function ScanPage() {
     setBarcodeActive(true);
     setBarcodeGrams(100);
     try {
-      const { BrowserMultiFormatReader } = await import("@zxing/browser");
-      const reader = new BrowserMultiFormatReader();
-      readerRef.current = reader;
-
-      await reader.decodeFromVideoDevice(undefined, videoRef.current!, async (res, err) => {
-        if (!res) return;
-        const code = res.getText();
-        if (code === lastCode) return;
-        setLastCode(code);
-        reader.reset();
-        readerRef.current = null;
-        setBarcodeActive(false);
-        setBarcodeLoading(true);
-        try {
-          const r = await fetch(`/api/barcode?code=${encodeURIComponent(code)}`);
-          const data = await r.json();
-          if (data.error) throw new Error(data.error);
-          setBarcodeProduct(data);
-          if (data.servingG) setBarcodeGrams(data.servingG);
-        } catch (e: any) {
-          setBarcodeError(e.message || "Producto no encontrado");
-        } finally {
-          setBarcodeLoading(false);
-        }
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
       });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        await videoRef.current.play();
+      }
+
+      const detector = new (window as any).BarcodeDetector({
+        formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39", "qr_code"],
+      });
+
+      async function scan() {
+        if (!videoRef.current || !streamRef.current) return;
+        try {
+          const barcodes = await detector.detect(videoRef.current);
+          if (barcodes.length > 0) {
+            const code = barcodes[0].rawValue;
+            if (code && code !== lastCode) {
+              setLastCode(code);
+              stopBarcode();
+              setBarcodeActive(false);
+              await fetchBarcodeProduct(code);
+              return;
+            }
+          }
+        } catch {}
+        animFrameRef.current = requestAnimationFrame(scan);
+      }
+
+      animFrameRef.current = requestAnimationFrame(scan);
     } catch {
       setBarcodeError("No se pudo acceder a la cámara.");
       setBarcodeActive(false);
     }
+  }
+
+  async function handleManualBarcode() {
+    if (!manualCode.trim()) return;
+    setBarcodeProduct(null);
+    setBarcodeError("");
+    await fetchBarcodeProduct(manualCode.trim());
+    setManualCode("");
   }
 
   const barcodeTotal = barcodeProduct
@@ -406,12 +445,33 @@ export default function ScanPage() {
         </div>
 
         {!barcodeActive && !barcodeProduct && !barcodeLoading && (
-          <button
-            onClick={startBarcodeScanner}
-            className="w-full py-3 rounded-xl border border-zinc-700 text-zinc-300 font-semibold hover:border-brand-500 hover:text-white transition-colors flex items-center justify-center gap-2"
-          >
-            📷 Escanear código de barras
-          </button>
+          <div className="space-y-2">
+            {barcodeSupported !== false && (
+              <button
+                onClick={startBarcodeScanner}
+                className="w-full py-3 rounded-xl border border-zinc-700 text-zinc-300 font-semibold hover:border-brand-500 hover:text-white transition-colors flex items-center justify-center gap-2"
+              >
+                📷 Escanear código de barras
+              </button>
+            )}
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={manualCode}
+                onChange={(e) => setManualCode(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleManualBarcode()}
+                placeholder="Introducir código manualmente"
+                className="flex-1 bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-brand-500"
+              />
+              <button
+                onClick={handleManualBarcode}
+                disabled={!manualCode.trim()}
+                className="px-4 py-2.5 bg-zinc-800 text-zinc-300 rounded-xl text-sm font-medium disabled:opacity-40 hover:bg-zinc-700 transition-colors"
+              >
+                Buscar
+              </button>
+            </div>
+          </div>
         )}
 
         {barcodeActive && (
