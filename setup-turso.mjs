@@ -37,4 +37,16 @@ try {
   await db.execute(`ALTER TABLE UserSettings ADD COLUMN mealTimes TEXT DEFAULT '{"desayuno":"08:00","comida":"13:30","merienda":"17:00","cena":"20:30","snack":"11:00"}'`);
 } catch {}
 
+await db.execute(`
+  CREATE TABLE IF NOT EXISTS PushSubscription (
+    id TEXT PRIMARY KEY,
+    endpoint TEXT NOT NULL UNIQUE,
+    p256dh TEXT NOT NULL,
+    auth TEXT NOT NULL,
+    mealTimes TEXT NOT NULL DEFAULT '{}',
+    utcOffset INTEGER DEFAULT 0,
+    createdAt TEXT DEFAULT (datetime('now'))
+  )
+`);
+
 console.log("Tables created.");

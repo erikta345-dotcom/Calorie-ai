@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import BottomNav from "@/components/BottomNav";
 import type { MealTimes } from "@/hooks/useSuggestedMeal";
+import { subscribeAndSave } from "@/components/MealNotifications";
 
 type Settings = {
   weight: number;
@@ -133,9 +134,8 @@ export default function SettingsPage() {
                   if (!("Notification" in window)) return;
                   const perm = await Notification.requestPermission();
                   setNotifPerm(perm);
-                  if (perm === "granted" && "serviceWorker" in navigator) {
-                    await navigator.serviceWorker.register("/sw.js");
-                    window.dispatchEvent(new CustomEvent("meal-times-updated"));
+                  if (perm === "granted") {
+                    await subscribeAndSave();
                   }
                 }}
                 className="text-xs bg-brand-500 text-white px-3 py-1 rounded-lg font-medium"
