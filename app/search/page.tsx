@@ -14,18 +14,51 @@ type FoodResult = {
   fat: number;
 };
 
+type Tab = "search" | "manual";
 const MEALS = ["desayuno", "almuerzo", "cena", "snack"];
+
+function NumInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      value={value}
+      onChange={(e) => {
+        if (e.target.value === "" || /^\d*\.?\d*$/.test(e.target.value)) onChange(e.target.value);
+      }}
+      onBlur={() => {
+        const n = parseFloat(value);
+        if (isNaN(n) || n < 0) onChange("0");
+      }}
+      className="w-full bg-zinc-800 text-white text-center text-xl font-bold rounded-xl py-3 focus:outline-none focus:ring-2 focus:ring-brand-500"
+    />
+  );
+}
 
 export default function SearchPage() {
   const router = useRouter();
+  const [tab, setTab] = useState<Tab>("search");
+
+  // Search tab state
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<FoodResult[]>([]);
   const [selected, setSelected] = useState<FoodResult | null>(null);
-  const [grams, setGrams] = useState(100);
+  const [gramsStr, setGramsStr] = useState("100");
   const [meal, setMeal] = useState("almuerzo");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+
+  // Manual tab state
+  const [mName, setMName] = useState("");
+  const [mCal, setMCal] = useState("");
+  const [mProtein, setMProtein] = useState("");
+  const [mCarbs, setMCarbs] = useState("");
+  const [mFat, setMFat] = useState("");
+  const [mGrams, setMGrams] = useState("100");
+  const [mMeal, setMMeal] = useState("almuerzo");
+  const [mSaving, setMSaving] = useState(false);
+  const [mError, setMError] = useState("");
 
   async function handleSearch() {
     if (!query.trim()) return;
@@ -39,6 +72,8 @@ export default function SearchPage() {
       setLoading(false);
     }
   }
+
+  const grams = Math.max(1, parseFloat(gramsStr) || 1);
 
   async function handleSave() {
     if (!selected || grams < 1) return;
@@ -71,6 +106,41 @@ export default function SearchPage() {
     }
   }
 
+  async function handleManualSave() {
+    const cal = parseFloat(mCal);
+    if (!mName.trim() || isNaN(cal) || cal <= 0) {
+      setMError("Nombre y calorías son obligatorios.");
+      return;
+    }
+    setMSaving(true);
+    setMError("");
+    const today = format(new Date(), "yyyy-MM-dd");
+    const g = Math.max(1, parseFloat(mGrams) || 100);
+    try {
+      const res = await fetch("/api/entries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: mName.trim(),
+          calories: cal,
+          protein: parseFloat(mProtein) || 0,
+          carbs: parseFloat(mCarbs) || 0,
+          fat: parseFloat(mFat) || 0,
+          grams: g,
+          meal: mMeal,
+          date: today,
+          source: "manual",
+        }),
+      });
+      if (!res.ok) throw new Error();
+      router.push("/");
+    } catch {
+      setMError("Error al guardar. Intenta de nuevo.");
+    } finally {
+      setMSaving(false);
+    }
+  }
+
   const adjusted = selected
     ? {
         calories: (selected.calories * grams) / 100,
@@ -82,114 +152,182 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen bg-zinc-950 max-w-md mx-auto pb-32 px-4">
-      <header className="pt-14 pb-6">
-        <h1 className="text-2xl font-bold text-white">🔍 Buscar alimento</h1>
-        <p className="text-zinc-500 text-sm mt-1">Base de datos Open Food Facts</p>
+      <header className="pt-14 pb-4">
+        <h1 className="text-2xl font-bold text-white">🍴 Añadir comida</h1>
       </header>
 
-      {/* Buscador */}
-      <div className="flex gap-2">
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && handleSearch()}
-          placeholder="Ej: pollo a la plancha..."
-          className="flex-1 bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-brand-500"
-        />
+      {/* Tabs */}
+      <div className="flex gap-1 bg-zinc-900 rounded-xl p-1 mb-4">
         <button
-          onClick={handleSearch}
-          disabled={loading}
-          className="px-4 py-3 bg-brand-500 text-white rounded-xl font-semibold disabled:opacity-40"
+          onClick={() => setTab("search")}
+          className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors ${tab === "search" ? "bg-brand-500 text-white" : "text-zinc-400 hover:text-white"}`}
         >
-          {loading ? "..." : "Buscar"}
+          🔍 Buscar
+        </button>
+        <button
+          onClick={() => setTab("manual")}
+          className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors ${tab === "manual" ? "bg-brand-500 text-white" : "text-zinc-400 hover:text-white"}`}
+        >
+          ✏️ Manual
         </button>
       </div>
 
-      {/* Resultados */}
-      {results.length > 0 && !selected && (
-        <div className="mt-4 space-y-2">
-          {results.map((food) => (
+      {tab === "search" && (
+        <>
+          <div className="flex gap-2">
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              placeholder="Ej: pollo a la plancha..."
+              className="flex-1 bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-brand-500"
+            />
             <button
-              key={food.id}
-              onClick={() => setSelected(food)}
-              className="w-full text-left bg-zinc-900 border border-zinc-800 rounded-xl p-3 hover:border-brand-500 transition-colors"
+              onClick={handleSearch}
+              disabled={loading}
+              className="px-4 py-3 bg-brand-500 text-white rounded-xl font-semibold disabled:opacity-40"
             >
-              <p className="text-sm font-medium text-white">{food.name}</p>
-              <p className="text-xs text-zinc-400 mt-0.5">
-                {Math.round(food.calories)} kcal · P: {Math.round(food.protein)}g · C: {Math.round(food.carbs)}g · G: {Math.round(food.fat)}g
-                <span className="text-zinc-600"> /100g</span>
-              </p>
+              {loading ? "..." : "Buscar"}
             </button>
-          ))}
-        </div>
+          </div>
+
+          {results.length > 0 && !selected && (
+            <div className="mt-4 space-y-2">
+              {results.map((food) => (
+                <button
+                  key={food.id}
+                  onClick={() => { setSelected(food); setGramsStr("100"); }}
+                  className="w-full text-left bg-zinc-900 border border-zinc-800 rounded-xl p-3 hover:border-brand-500 transition-colors"
+                >
+                  <p className="text-sm font-medium text-white">{food.name}</p>
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    {Math.round(food.calories)} kcal · P: {Math.round(food.protein)}g · C: {Math.round(food.carbs)}g · G: {Math.round(food.fat)}g
+                    <span className="text-zinc-600"> /100g</span>
+                  </p>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {results.length === 0 && !loading && query && (
+            <p className="text-center text-zinc-600 text-sm mt-8">Sin resultados para "{query}"</p>
+          )}
+
+          {selected && adjusted && (
+            <div className="mt-4 space-y-4">
+              <button onClick={() => setSelected(null)} className="text-zinc-500 text-sm">
+                ← Volver a resultados
+              </button>
+              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-4">
+                <h2 className="font-semibold text-white">{selected.name}</h2>
+                <div>
+                  <label className="text-xs text-zinc-500 block mb-2">Cantidad (gramos)</label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={gramsStr}
+                    onChange={(e) => {
+                      if (e.target.value === "" || /^\d*\.?\d*$/.test(e.target.value)) setGramsStr(e.target.value);
+                    }}
+                    onBlur={() => setGramsStr(String(Math.max(1, parseFloat(gramsStr) || 1)))}
+                    className="w-full bg-zinc-800 text-white text-center text-xl font-bold rounded-xl py-3 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  />
+                </div>
+                <div className="grid grid-cols-4 gap-2">
+                  {[
+                    { label: "kcal", value: adjusted.calories, color: "text-brand-400" },
+                    { label: "Prot", value: adjusted.protein, color: "text-orange-400" },
+                    { label: "Carb", value: adjusted.carbs, color: "text-blue-400" },
+                    { label: "Gras", value: adjusted.fat, color: "text-yellow-400" },
+                  ].map((m) => (
+                    <div key={m.label} className="bg-zinc-800 rounded-lg p-2 text-center">
+                      <p className={`text-base font-bold ${m.color}`}>{Math.round(m.value)}</p>
+                      <p className="text-xs text-zinc-500">{m.label}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs text-zinc-500 block mb-2">¿En qué comida?</label>
+                <div className="grid grid-cols-4 gap-2">
+                  {MEALS.map((m) => (
+                    <button key={m} onClick={() => setMeal(m)} className={`py-2 rounded-lg text-xs font-medium capitalize transition-colors ${meal === m ? "bg-brand-500 text-white" : "bg-zinc-800 text-zinc-400"}`}>{m}</button>
+                  ))}
+                </div>
+              </div>
+              {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+              <button onClick={handleSave} disabled={saving} className="w-full py-3 rounded-xl bg-brand-500 text-white font-semibold disabled:opacity-40">
+                {saving ? "Guardando..." : "💾 Añadir al diario"}
+              </button>
+            </div>
+          )}
+        </>
       )}
 
-      {results.length === 0 && !loading && query && (
-        <p className="text-center text-zinc-600 text-sm mt-8">Sin resultados para "{query}"</p>
-      )}
-
-      {/* Detalle del seleccionado */}
-      {selected && adjusted && (
-        <div className="mt-4 space-y-4">
-          <button onClick={() => setSelected(null)} className="text-zinc-500 text-sm">
-            ← Volver a resultados
-          </button>
-
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-4">
-            <h2 className="font-semibold text-white">{selected.name}</h2>
-
-            {/* Gramos */}
+      {tab === "manual" && (
+        <div className="space-y-4">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
             <div>
-              <label className="text-xs text-zinc-500 block mb-2">Cantidad (gramos)</label>
+              <label className="text-xs text-zinc-500 block mb-1.5">Nombre del alimento *</label>
               <input
-                type="number"
-                value={grams}
-                onChange={(e) => setGrams(Math.max(1, parseFloat(e.target.value) || 1))}
-                className="w-full bg-zinc-800 text-white text-center text-xl font-bold rounded-xl py-3 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                value={mName}
+                onChange={(e) => setMName(e.target.value)}
+                placeholder="Ej: Tortilla de patatas"
+                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-brand-500"
               />
             </div>
 
-            {/* Macros ajustados */}
-            <div className="grid grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs text-zinc-500 block mb-1.5">Calorías (kcal) *</label>
+                <NumInput value={mCal} onChange={setMCal} />
+              </div>
+              <div>
+                <label className="text-xs text-zinc-500 block mb-1.5">Gramos</label>
+                <NumInput value={mGrams} onChange={setMGrams} />
+              </div>
+            </div>
+
+            <p className="text-xs text-zinc-600">Macros opcionales</p>
+            <div className="grid grid-cols-3 gap-2">
               {[
-                { label: "kcal", value: adjusted.calories, color: "text-brand-400" },
-                { label: "Prot", value: adjusted.protein, color: "text-orange-400" },
-                { label: "Carb", value: adjusted.carbs, color: "text-blue-400" },
-                { label: "Gras", value: adjusted.fat, color: "text-yellow-400" },
-              ].map((m) => (
-                <div key={m.label} className="bg-zinc-800 rounded-lg p-2 text-center">
-                  <p className={`text-base font-bold ${m.color}`}>{Math.round(m.value)}</p>
-                  <p className="text-xs text-zinc-500">{m.label}</p>
+                { label: "Proteína (g)", val: mProtein, set: setMProtein },
+                { label: "Carbos (g)", val: mCarbs, set: setMCarbs },
+                { label: "Grasas (g)", val: mFat, set: setMFat },
+              ].map(({ label, val, set }) => (
+                <div key={label}>
+                  <label className="text-xs text-zinc-500 block mb-1.5">{label}</label>
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    value={val}
+                    placeholder="0"
+                    onChange={(e) => {
+                      if (e.target.value === "" || /^\d*\.?\d*$/.test(e.target.value)) set(e.target.value);
+                    }}
+                    className="w-full bg-zinc-800 text-white text-center rounded-xl py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                  />
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Selector comida */}
           <div>
             <label className="text-xs text-zinc-500 block mb-2">¿En qué comida?</label>
             <div className="grid grid-cols-4 gap-2">
               {MEALS.map((m) => (
-                <button
-                  key={m}
-                  onClick={() => setMeal(m)}
-                  className={`py-2 rounded-lg text-xs font-medium capitalize transition-colors ${
-                    meal === m ? "bg-brand-500 text-white" : "bg-zinc-800 text-zinc-400"
-                  }`}
-                >
-                  {m}
-                </button>
+                <button key={m} onClick={() => setMMeal(m)} className={`py-2 rounded-lg text-xs font-medium capitalize transition-colors ${mMeal === m ? "bg-brand-500 text-white" : "bg-zinc-800 text-zinc-400"}`}>{m}</button>
               ))}
             </div>
           </div>
 
-          {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+          {mError && <p className="text-red-400 text-sm text-center">{mError}</p>}
           <button
-            onClick={handleSave}
-            disabled={saving}
+            onClick={handleManualSave}
+            disabled={mSaving || !mName.trim() || !mCal}
             className="w-full py-3 rounded-xl bg-brand-500 text-white font-semibold disabled:opacity-40"
           >
-            {saving ? "Guardando..." : "💾 Añadir al diario"}
+            {mSaving ? "Guardando..." : "💾 Añadir al diario"}
           </button>
         </div>
       )}

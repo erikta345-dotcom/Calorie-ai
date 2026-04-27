@@ -79,11 +79,13 @@ export default function ScanPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  const [itemGramsStr, setItemGramsStr] = useState<Record<number, string>>({});
+
   // Barcode state
   const [barcodeActive, setBarcodeActive] = useState(false);
   const [barcodeLoading, setBarcodeLoading] = useState(false);
   const [barcodeProduct, setBarcodeProduct] = useState<BarcodeProduct | null>(null);
-  const [barcodeGrams, setBarcodeGrams] = useState(100);
+  const [barcodeGramsStr, setBarcodeGramsStr] = useState("100");
   const [barcodeMeal, setBarcodeMeal] = useState("almuerzo");
   const [barcodeError, setBarcodeError] = useState("");
   const [barcodeSaving, setBarcodeSaving] = useState(false);
@@ -129,6 +131,7 @@ export default function ScanPage() {
 
       setResult({ dish: data.dish, items });
       setPortion(1);
+      setItemGramsStr({});
     } catch {
       setError("No pude identificar la comida. Intenta con otra foto más clara.");
     } finally {
@@ -217,7 +220,7 @@ export default function ScanPage() {
       const data = await r.json();
       if (data.error) throw new Error(data.error);
       setBarcodeProduct(data);
-      if (data.servingG) setBarcodeGrams(data.servingG);
+      if (data.servingG) setBarcodeGramsStr(String(data.servingG));
     } catch (e: any) {
       setBarcodeError(e.message || "Producto no encontrado");
     } finally {
@@ -229,7 +232,7 @@ export default function ScanPage() {
     setBarcodeProduct(null);
     setBarcodeError("");
     setBarcodeActive(true);
-    setBarcodeGrams(100);
+    setBarcodeGramsStr("100");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
@@ -276,6 +279,8 @@ export default function ScanPage() {
     await fetchBarcodeProduct(manualCode.trim());
     setManualCode("");
   }
+
+  const barcodeGrams = Math.max(1, parseFloat(barcodeGramsStr) || 1);
 
   const barcodeTotal = barcodeProduct
     ? {
@@ -393,7 +398,21 @@ export default function ScanPage() {
                     </button>
                     <input value={item.name} onChange={(e) => updateName(idx, e.target.value)} className="flex-1 bg-transparent text-sm text-white focus:outline-none min-w-0" />
                     <div className="flex items-center gap-1 flex-shrink-0">
-                      <input type="number" value={item.grams} onChange={(e) => updateGrams(idx, parseInt(e.target.value) || 1)} className="w-14 bg-zinc-800 text-white text-xs text-right rounded-lg px-2 py-1 focus:outline-none" />
+                      <input
+                        type="text"
+                        inputMode="numeric"
+                        value={itemGramsStr[idx] ?? String(item.grams)}
+                        onChange={(e) => {
+                          if (e.target.value === "" || /^\d*$/.test(e.target.value))
+                            setItemGramsStr(p => ({ ...p, [idx]: e.target.value }));
+                        }}
+                        onBlur={() => {
+                          const val = Math.max(1, parseInt(itemGramsStr[idx] ?? String(item.grams)) || 1);
+                          updateGrams(idx, val);
+                          setItemGramsStr(p => ({ ...p, [idx]: String(val) }));
+                        }}
+                        className="w-14 bg-zinc-800 text-white text-xs text-right rounded-lg px-2 py-1 focus:outline-none"
+                      />
                       <span className="text-zinc-500 text-xs">g</span>
                     </div>
                   </div>
@@ -530,18 +549,22 @@ export default function ScanPage() {
               <label className="text-xs text-zinc-500 block mb-2">Cantidad (gramos)</label>
               <div className="flex items-center gap-3">
                 <input
-                  type="number"
-                  value={barcodeGrams}
-                  onChange={(e) => setBarcodeGrams(Math.max(1, parseInt(e.target.value) || 1))}
+                  type="text"
+                  inputMode="decimal"
+                  value={barcodeGramsStr}
+                  onChange={(e) => {
+                    if (e.target.value === "" || /^\d*\.?\d*$/.test(e.target.value)) setBarcodeGramsStr(e.target.value);
+                  }}
+                  onBlur={() => setBarcodeGramsStr(String(Math.max(1, parseFloat(barcodeGramsStr) || 1)))}
                   className="flex-1 bg-zinc-900 border border-zinc-700 text-white text-center text-xl font-bold rounded-xl py-3 focus:outline-none focus:border-brand-500"
                 />
                 <div className="flex flex-col gap-1">
                   {barcodeProduct.servingG && (
-                    <button onClick={() => setBarcodeGrams(Math.round(barcodeProduct.servingG!))} className="text-xs text-zinc-400 bg-zinc-800 px-2 py-1 rounded-lg hover:text-white transition-colors whitespace-nowrap">
+                    <button onClick={() => setBarcodeGramsStr(String(Math.round(barcodeProduct.servingG!)))} className="text-xs text-zinc-400 bg-zinc-800 px-2 py-1 rounded-lg hover:text-white transition-colors whitespace-nowrap">
                       1 ración ({barcodeProduct.servingG}g)
                     </button>
                   )}
-                  <button onClick={() => setBarcodeGrams(100)} className="text-xs text-zinc-400 bg-zinc-800 px-2 py-1 rounded-lg hover:text-white transition-colors">
+                  <button onClick={() => setBarcodeGramsStr("100")} className="text-xs text-zinc-400 bg-zinc-800 px-2 py-1 rounded-lg hover:text-white transition-colors">
                     100g
                   </button>
                 </div>
