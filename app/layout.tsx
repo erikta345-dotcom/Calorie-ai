@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import HealthCheck from "@/components/HealthCheck";
