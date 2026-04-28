@@ -68,6 +68,7 @@ function macros(item: FoodItem, portionMult: number) {
 export default function ScanPage() {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { meal: suggestedMeal, loaded: mealLoaded } = useSuggestedMeal();
 
@@ -354,8 +355,8 @@ export default function ScanPage() {
       {activeTab === "ai" && (
       <>{/* ── AI SCAN ── */}
       <div
-        onClick={() => fileRef.current?.click()}
-        className="relative w-full aspect-square rounded-2xl border-2 border-dashed border-zinc-700 flex items-center justify-center cursor-pointer overflow-hidden bg-zinc-900 hover:border-brand-500 transition-colors"
+        onClick={() => preview ? fileRef.current?.click() : undefined}
+        className={`relative w-full aspect-square rounded-2xl border-2 border-dashed border-zinc-700 flex items-center justify-center overflow-hidden bg-zinc-900 transition-colors ${preview ? "cursor-pointer hover:border-brand-500" : ""}`}
       >
         {preview ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -363,13 +364,30 @@ export default function ScanPage() {
         ) : (
           <div className="text-center space-y-2">
             <p className="text-5xl">🍽️</p>
-            <p className="text-zinc-400 text-sm">Toca para abrir la cámara</p>
-            <p className="text-zinc-600 text-xs">o selecciona una foto</p>
+            <p className="text-zinc-400 text-sm">Selecciona una foto</p>
           </div>
         )}
       </div>
 
-      <input ref={fileRef} type="file" accept="image/*" capture="environment" onChange={handleFileChange} className="hidden" />
+      {!preview && (
+        <div className="flex gap-2 mt-3">
+          <button
+            onClick={() => cameraRef.current?.click()}
+            className="flex-1 py-3 rounded-xl border border-zinc-700 text-zinc-300 font-semibold hover:border-brand-500 hover:text-white transition-colors flex items-center justify-center gap-2 text-sm"
+          >
+            📷 Cámara
+          </button>
+          <button
+            onClick={() => fileRef.current?.click()}
+            className="flex-1 py-3 rounded-xl border border-zinc-700 text-zinc-300 font-semibold hover:border-brand-500 hover:text-white transition-colors flex items-center justify-center gap-2 text-sm"
+          >
+            🖼️ Galería
+          </button>
+        </div>
+      )}
+
+      <input ref={fileRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
+      <input ref={cameraRef} type="file" accept="image/*" capture="environment" onChange={handleFileChange} className="hidden" />
 
       {preview && (
         <button
