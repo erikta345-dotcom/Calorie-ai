@@ -82,6 +82,7 @@ export default function ScanPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  const [description, setDescription] = useState("");
   const [itemGramsStr, setItemGramsStr] = useState<Record<number, string>>({});
 
   // Barcode state
@@ -116,7 +117,7 @@ export default function ScanPage() {
       const res = await fetch("/api/ai-scan", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ image: compressed }),
+        body: JSON.stringify({ image: compressed, description }),
       });
       setLoadStep(2);
       const data = await res.json();
@@ -388,6 +389,14 @@ export default function ScanPage() {
 
       <input ref={fileRef} type="file" accept="image/*" onChange={handleFileChange} className="hidden" />
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" onChange={handleFileChange} className="hidden" />
+
+      <input
+        type="text"
+        value={description}
+        onChange={(e) => setDescription(e.target.value)}
+        placeholder="Describe el plato (opcional): ej. tortilla española, ración de bar"
+        className="w-full mt-3 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-brand-500"
+      />
 
       {preview && (
         <button

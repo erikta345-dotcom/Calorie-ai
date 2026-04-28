@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const PROMPT = `You are a registered dietitian with expert food recognition skills. Analyze this food image with maximum precision.
+const BASE_PROMPT = `You are a registered dietitian with expert food recognition skills. Analyze this food image with maximum precision.
 
 METHODOLOGY:
 1. SCALE: Use reference objects (standard plate ≈ 26cm diameter, fork ≈ 18cm, tablespoon ≈ 15ml) to estimate portion sizes.
@@ -18,9 +18,29 @@ METHODOLOGY:
    - Salmon: 208kcal, 20g protein, 0g carbs, 13g fat
    - Bread white: 265kcal, 9g protein, 49g carbs, 3.2g fat
    - Mixed salad leaves: 20kcal, 2g protein, 3g carbs, 0.3g fat
+   - Tortilla española: 218kcal, 11g protein, 3g carbs, 17g fat
+   - Paella (arroz con mariscos/pollo): 160kcal, 8g protein, 22g carbs, 4g fat
+   - Croquetas (fritas): 230kcal, 8g protein, 20g carbs, 13g fat
+   - Jamón ibérico/serrano: 375kcal, 43g protein, 0g carbs, 22g fat
+   - Chorizo: 455kcal, 22g protein, 2g carbs, 40g fat
+   - Lentils cooked (lentejas): 116kcal, 9g protein, 20g carbs, 0.4g fat
+   - Chickpeas cooked (garbanzos): 164kcal, 8.9g protein, 27g carbs, 2.6g fat
+   - Patatas fritas (fries): 312kcal, 3.4g protein, 41g carbs, 15g fat
+   - Patatas bravas: 150kcal, 2g protein, 18g carbs, 7g fat
+   - Pan con tomate: 190kcal, 5g protein, 30g carbs, 6g fat
+   - Gazpacho: 40kcal, 1g protein, 4g carbs, 2g fat
+   - Fabada/cocido (legumbre+embutido): 180kcal, 10g protein, 15g carbs, 8g fat
+   - Churros: 350kcal, 6g protein, 46g carbs, 16g fat
+   - Pizza (media): 266kcal, 11g protein, 33g carbs, 10g fat
+   - Hamburguesa con pan: 295kcal, 17g protein, 24g carbs, 14g fat
+   - Yogur natural: 59kcal, 3.5g protein, 4.7g carbs, 3.3g fat
+   - Fruta (manzana/naranja/pera): 52kcal, 0.3g protein, 14g carbs, 0.2g fat
+   - Plátano: 89kcal, 1.1g protein, 23g carbs, 0.3g fat
+   - Aguacate: 160kcal, 2g protein, 9g carbs, 15g fat
 5. COOKING: Adjust for method — fried adds ~8g fat per 100g food vs grilled.
-6. ACCURACY: If unsure about a component, include it with conservative estimate rather than omitting.
+6. ACCURACY: If unsure about a component, include it with conservative estimate rather than omitting.`;
 
+const JSON_RULES = `
 Return ONLY this exact JSON structure, no markdown, no explanation, nothing outside the JSON:
 {"dish":"<nombre descriptivo del plato en español>","items":[{"name":"<nombre en español>","grams":<integer>,"calories":<integer>,"protein":<number>,"carbs":<number>,"fat":<number>}],"total":{"grams":<integer>,"calories":<integer>,"protein":<number>,"carbs":<number>,"fat":<number>}}
 
@@ -31,11 +51,17 @@ RULES:
 - If image is unclear or not food, still return your best estimate`;
 
 export async function POST(req: NextRequest) {
-  const { image } = await req.json();
+  const { image, description } = await req.json();
   if (!image) return NextResponse.json({ error: "Imagen requerida" }, { status: 400 });
 
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) return NextResponse.json({ error: "GROQ_API_KEY no configurada" }, { status: 500 });
+
+  const contextLine = description?.trim()
+    ? `\nUSER CONTEXT: The user says this dish is: "${description.trim()}". Use this as a strong hint when identifying components.\n`
+    : "";
+
+  const prompt = BASE_PROMPT + contextLine + JSON_RULES;
 
   try {
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
@@ -50,7 +76,7 @@ export async function POST(req: NextRequest) {
           role: "user",
           content: [
             { type: "image_url", image_url: { url: image } },
-            { type: "text", text: PROMPT },
+            { type: "text", text: prompt },
           ],
         }],
         temperature: 0.1,
@@ -74,7 +100,6 @@ export async function POST(req: NextRequest) {
       throw new Error("Invalid: zero-calorie item detected");
     }
 
-    // Recalculate totals from items to avoid model math errors
     const total = parsed.items.reduce(
       (acc: any, item: any) => ({
         grams: acc.grams + (item.grams || 0),
