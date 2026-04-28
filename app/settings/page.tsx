@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { signOut, useSession } from "next-auth/react";
 import BottomNav from "@/components/BottomNav";
 import type { MealTimes } from "@/hooks/useSuggestedMeal";
 import { subscribeAndSave } from "@/components/MealNotifications";
@@ -105,9 +106,17 @@ export default function SettingsPage() {
 
   return (
     <div className="min-h-screen bg-zinc-950 max-w-md mx-auto pb-32 px-4">
-      <header className="pt-14 pb-6">
-        <h1 className="text-2xl font-bold text-white">⚙️ Configuración</h1>
-        <p className="text-zinc-500 text-sm mt-1">Ajusta tus objetivos y horarios</p>
+      <header className="pt-14 pb-6 flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-white">⚙️ Configuración</h1>
+          <p className="text-zinc-500 text-sm mt-1">Ajusta tus objetivos y horarios</p>
+        </div>
+        <button
+          onClick={() => signOut({ callbackUrl: "/login" })}
+          className="mt-1 text-xs text-zinc-500 hover:text-red-400 transition-colors"
+        >
+          Cerrar sesión
+        </button>
       </header>
 
       <div className="space-y-4">

@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import HealthCheck from "@/components/HealthCheck";
 import MealNotifications from "@/components/MealNotifications";
+import Providers from "@/components/Providers";
 
 export const metadata: Metadata = {
   title: "Calorie AI",
@@ -26,9 +27,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-capable" content="yes" />
       </head>
       <body className="bg-zinc-950 text-white antialiased">
-        <HealthCheck />
-        <MealNotifications />
-        {children}
+        <Providers>
+          <HealthCheck />
+          <MealNotifications />
+          {children}
+        </Providers>
       </body>
     </html>
   );
