@@ -75,7 +75,7 @@ export default function ScanPage() {
   // AI scan state
   const [preview, setPreview] = useState<string | null>(null);
   const [result, setResult] = useState<ScanResult | null>(null);
-  const [meal, setMeal] = useState("comida");
+  const [meal, setMeal] = useState(suggestedMeal);
   const [portion, setPortion] = useState<number>(1);
   const [loading, setLoading] = useState(false);
   const [loadStep, setLoadStep] = useState(0);
@@ -90,7 +90,7 @@ export default function ScanPage() {
   const [barcodeLoading, setBarcodeLoading] = useState(false);
   const [barcodeProduct, setBarcodeProduct] = useState<BarcodeProduct | null>(null);
   const [barcodeGramsStr, setBarcodeGramsStr] = useState("100");
-  const [barcodeMeal, setBarcodeMeal] = useState("comida");
+  const [barcodeMeal, setBarcodeMeal] = useState(suggestedMeal);
   const [barcodeError, setBarcodeError] = useState("");
   const [barcodeSaving, setBarcodeSaving] = useState(false);
   const [lastCode, setLastCode] = useState("");

@@ -48,7 +48,7 @@ function SearchContent() {
   const [results, setResults] = useState<FoodResult[]>([]);
   const [selected, setSelected] = useState<FoodResult | null>(null);
   const [gramsStr, setGramsStr] = useState("100");
-  const [meal, setMeal] = useState("comida");
+  const [meal, setMeal] = useState(suggestedMeal);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -60,7 +60,7 @@ function SearchContent() {
   const [mCarbs, setMCarbs] = useState("");
   const [mFat, setMFat] = useState("");
   const [mGrams, setMGrams] = useState("100");
-  const [mMeal, setMMeal] = useState("comida");
+  const [mMeal, setMMeal] = useState(suggestedMeal);
   const [mSaving, setMSaving] = useState(false);
   const [mError, setMError] = useState("");
 
