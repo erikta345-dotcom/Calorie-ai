@@ -32,13 +32,14 @@ async function subscribeAndSave() {
 
   const reg = await navigator.serviceWorker.ready;
 
-  let sub = await reg.pushManager.getSubscription();
-  if (!sub) {
-    sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(key),
-    });
-  }
+  // Always unsubscribe and resubscribe to ensure VAPID keys are current
+  const existing = await reg.pushManager.getSubscription();
+  if (existing) await existing.unsubscribe();
+
+  const sub = await reg.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(key),
+  });
 
   const mealTimes = await getMealTimes();
   const utcOffset = -new Date().getTimezoneOffset();
