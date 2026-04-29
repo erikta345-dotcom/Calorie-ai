@@ -22,11 +22,14 @@ export const authOptions: NextAuthOptions = {
         const email = credentials.email.toLowerCase().trim();
 
         // Check if Google user already exists with this email → reuse their ID
-        const existing = await db.execute({
-          sql: "SELECT id FROM UserSettings WHERE email = ?",
-          args: [email],
-        });
-        const userId = existing.rows.length > 0 ? (existing.rows[0].id as string) : email;
+        let userId = email;
+        try {
+          const existing = await db.execute({
+            sql: "SELECT id FROM UserSettings WHERE email = ?",
+            args: [email],
+          });
+          if (existing.rows.length > 0) userId = existing.rows[0].id as string;
+        } catch {}
 
         const pwResult = await db.execute({
           sql: "SELECT * FROM UserPasswords WHERE id = ?",
