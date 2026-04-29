@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSession } from "next-auth/react";
 
 function urlBase64ToUint8Array(base64: string): ArrayBuffer {
   const padding = "=".repeat((4 - (base64.length % 4)) % 4);
@@ -14,6 +15,7 @@ function urlBase64ToUint8Array(base64: string): ArrayBuffer {
 async function getMealTimes(): Promise<Record<string, string>> {
   try {
     const res = await fetch("/api/settings");
+    if (!res.ok) return {};
     const s = await res.json();
     const raw = s?.mealTimes;
     return raw ? (typeof raw === "string" ? JSON.parse(raw) : raw) : {};
@@ -47,7 +49,6 @@ async function subscribeAndSave() {
     body: JSON.stringify({ subscription: sub.toJSON(), mealTimes, utcOffset }),
   });
 
-  // Also send to SW for fallback interval check
   reg.active?.postMessage({ type: "SET_MEAL_TIMES", meals: mealTimes });
 
   return true;
@@ -71,6 +72,7 @@ async function updateSubscription() {
 }
 
 export default function MealNotifications() {
+  const { status } = useSession();
   const [perm, setPerm] = useState<NotificationPermission | null>(null);
 
   useEffect(() => {
@@ -80,7 +82,6 @@ export default function MealNotifications() {
     async function init() {
       try {
         await navigator.serviceWorker.register("/sw.js");
-        if (Notification.permission === "granted") await updateSubscription();
       } catch {}
     }
     init();
@@ -88,6 +89,25 @@ export default function MealNotifications() {
     const handler = () => updateSubscription().catch(() => {});
     window.addEventListener("meal-times-updated", handler);
     return () => window.removeEventListener("meal-times-updated", handler);
+  }, []);
+
+  // Re-sync meal times once session is confirmed authenticated
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+    updateSubscription().catch(() => {});
+  }, [status]);
+
+  // Re-sync when SW restarts and requests meal times
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+    const handleMsg = (e: MessageEvent) => {
+      if (e.data?.type === "REQUEST_MEAL_TIMES" && Notification.permission === "granted") {
+        updateSubscription().catch(() => {});
+      }
+    };
+    navigator.serviceWorker.addEventListener("message", handleMsg);
+    return () => navigator.serviceWorker.removeEventListener("message", handleMsg);
   }, []);
 
   if (perm === "denied") {

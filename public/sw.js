@@ -1,5 +1,11 @@
 self.addEventListener("install", () => self.skipWaiting());
-self.addEventListener("activate", (e) => e.waitUntil(self.clients.claim()));
+self.addEventListener("activate", (e) => e.waitUntil(
+  self.clients.claim().then(() =>
+    self.clients.matchAll({ type: "window" }).then((clients) =>
+      clients.forEach((c) => c.postMessage({ type: "REQUEST_MEAL_TIMES" }))
+    )
+  )
+));
 
 // Handle server-sent push (works even when app is closed)
 self.addEventListener("push", (event) => {
