@@ -7,17 +7,38 @@ self.addEventListener("activate", (e) => e.waitUntil(
   )
 ));
 
+// IndexedDB helpers for persisting meal times across SW restarts
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open("calorie-ai", 1);
+    req.onupgradeneeded = () => req.result.createObjectStore("kv");
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+function dbGet(db, key) {
+  return new Promise((resolve) => {
+    const req = db.transaction("kv").objectStore("kv").get(key);
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => resolve(undefined);
+  });
+}
+function dbSet(db, key, value) {
+  return new Promise((resolve) => {
+    const tx = db.transaction("kv", "readwrite");
+    tx.objectStore("kv").put(value, key);
+    tx.oncomplete = resolve;
+    tx.onerror = resolve;
+  });
+}
+
 // Handle server-sent push (works even when app is closed)
 self.addEventListener("push", (event) => {
   let data = {};
   try { data = event.data?.json() || {}; } catch {}
-
-  const title = data.title || "⏰ Calorie AI";
-  const body = data.body || "Es la hora de comer";
-
   event.waitUntil(
-    self.registration.showNotification(title, {
-      body,
+    self.registration.showNotification(data.title || "⏰ Calorie AI", {
+      body: data.body || "Es la hora de comer",
       icon: "/icons/icon-192.png",
       badge: "/icons/icon-192.png",
       tag: data.tag || "meal",
@@ -37,15 +58,21 @@ self.addEventListener("notificationclick", (event) => {
   );
 });
 
-// Fallback: interval check when app is open/backgrounded
 let mealSchedule = {};
 let notifiedKeys = {};
+
+// Load persisted meal times on SW startup
+openDB().then((db) => dbGet(db, "mealSchedule")).then((saved) => {
+  if (saved && typeof saved === "object") mealSchedule = saved;
+}).catch(() => {});
 
 self.addEventListener("message", (event) => {
   if (event.data?.type === "SET_MEAL_TIMES") {
     mealSchedule = event.data.meals || {};
     const today = new Date().toDateString();
     Object.keys(notifiedKeys).forEach((k) => { if (!k.startsWith(today)) delete notifiedKeys[k]; });
+    // Persist to IndexedDB
+    openDB().then((db) => dbSet(db, "mealSchedule", mealSchedule)).catch(() => {});
   }
 });
 

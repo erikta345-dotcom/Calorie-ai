@@ -152,7 +152,15 @@ export default function SettingsPage() {
                 🔔 Activar avisos
               </button>
             ) : (
-              <span className="text-xs text-green-400">🔔 Avisos activos</span>
+              <button
+                onClick={async () => {
+                  const reg = await navigator.serviceWorker.ready;
+                  reg.showNotification("✅ Calorie AI", { body: "Notificaciones funcionando correctamente", icon: "/icons/icon-192.png" });
+                }}
+                className="text-xs text-green-400 underline"
+              >
+                🔔 Avisos activos · probar
+              </button>
             )}
           </div>
           <p className="text-xs text-zinc-600 pb-2">Notificación cuando llegue la hora</p>
