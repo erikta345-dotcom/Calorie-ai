@@ -1,10 +1,41 @@
 "use client";
-import { signIn } from "next-auth/react";
 
-export default function LoginPage() {
+import { useState, Suspense } from "react";
+import { signIn } from "next-auth/react";
+import { useSearchParams, useRouter } from "next/navigation";
+
+function LoginForm() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get("callbackUrl") || "/";
+
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  async function handleCredentials(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email || !password) return;
+    setLoading(true);
+    setError("");
+    const res = await signIn("credentials", {
+      email,
+      password,
+      callbackUrl,
+      redirect: false,
+    });
+    setLoading(false);
+    if (res?.error) {
+      setError("Contraseña incorrecta.");
+    } else if (res?.url) {
+      router.push(res.url);
+    }
+  }
+
   return (
     <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center px-6">
-      <div className="w-full max-w-sm space-y-8 text-center">
+      <div className="w-full max-w-sm space-y-6 text-center">
         <div className="space-y-2">
           <p className="text-6xl">🥗</p>
           <h1 className="text-3xl font-bold text-white">Calorie AI</h1>
@@ -12,7 +43,7 @@ export default function LoginPage() {
         </div>
 
         <button
-          onClick={() => signIn("google", { callbackUrl: "/" }, { prompt: "select_account" })}
+          onClick={() => signIn("google", { callbackUrl }, { prompt: "select_account" })}
           className="w-full flex items-center justify-center gap-3 bg-white text-zinc-900 font-semibold py-3.5 rounded-xl hover:bg-zinc-100 transition-colors"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -24,8 +55,49 @@ export default function LoginPage() {
           Continuar con Google
         </button>
 
+        <div className="flex items-center gap-3">
+          <div className="flex-1 h-px bg-zinc-800" />
+          <span className="text-zinc-600 text-xs">o con email</span>
+          <div className="flex-1 h-px bg-zinc-800" />
+        </div>
+
+        <form onSubmit={handleCredentials} className="space-y-3 text-left">
+          <input
+            type="email"
+            placeholder="tu@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="w-full bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
+          />
+          <input
+            type="password"
+            placeholder="Contraseña"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            className="w-full bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
+          />
+          {error && <p className="text-red-400 text-xs text-center">{error}</p>}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-brand-500 text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40"
+          >
+            {loading ? "Entrando..." : "Entrar / Crear cuenta"}
+          </button>
+        </form>
+
         <p className="text-zinc-600 text-xs">Tus datos son privados y solo tú puedes verlos.</p>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }
