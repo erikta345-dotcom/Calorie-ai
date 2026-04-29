@@ -15,5 +15,8 @@ export async function GET(req: NextRequest) {
       createdAt TEXT DEFAULT (datetime('now'))
     )
   `);
+  try {
+    await db.execute(`ALTER TABLE UserSettings ADD COLUMN email TEXT`);
+  } catch {}
   return NextResponse.json({ ok: true });
 }
