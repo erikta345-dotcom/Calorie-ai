@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import BottomNav from "@/components/BottomNav";
 import CalorieRing from "@/components/CalorieRing";
 import MacroBar from "@/components/MacroBar";
+import { Plus, Trash2 } from "lucide-react";
 
 type FoodEntry = {
   id: string;
@@ -30,6 +31,13 @@ type Settings = {
 const MEALS = ["desayuno", "comida", "merienda", "cena", "snack"];
 const MEAL_ICONS: Record<string, string> = {
   desayuno: "🌅", comida: "☀️", merienda: "🍊", cena: "🌙", snack: "🍎",
+};
+const MEAL_COLORS: Record<string, string> = {
+  desayuno: "border-l-amber-400",
+  comida: "border-l-orange-400",
+  merienda: "border-l-lime-400",
+  cena: "border-l-indigo-400",
+  snack: "border-l-pink-400",
 };
 
 export default function DashboardPage() {
@@ -76,31 +84,35 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-zinc-950 max-w-md mx-auto pb-32">
       {/* Header */}
-      <header className="px-4 pt-14 pb-4">
-        <p className="text-zinc-500 text-sm capitalize">
+      <header className="px-4 pt-14 pb-5">
+        <p className="text-zinc-500 text-xs uppercase tracking-widest font-medium capitalize">
           {format(new Date(), "EEEE, d MMMM", { locale: es })}
         </p>
-        <h1 className="text-2xl font-bold text-white">Hoy</h1>
+        <h1 className="text-3xl font-bold text-white mt-0.5">Hoy</h1>
       </header>
 
       {/* Calorie Ring + Macros */}
-      <div className="mx-4 bg-zinc-900 rounded-2xl p-5 border border-zinc-800">
-        <div className="flex items-center gap-4">
+      <div className="mx-4 bg-gradient-to-br from-zinc-900 to-zinc-900/80 rounded-2xl p-5 border border-zinc-800/80 shadow-xl shadow-black/30">
+        <div className="flex items-center gap-5">
           <CalorieRing consumed={totals.calories} goal={settings.goalCalories} />
-          <div className="flex-1 space-y-3">
+          <div className="flex-1 space-y-3.5">
             <MacroBar label="Proteína" consumed={totals.protein} goal={settings.goalProtein} color="#f97316" />
             <MacroBar label="Carbos" consumed={totals.carbs} goal={settings.goalCarbs} color="#3b82f6" />
             <MacroBar label="Grasa" consumed={totals.fat} goal={settings.goalFat} color="#eab308" />
           </div>
         </div>
+        <div className="mt-4 pt-4 border-t border-zinc-800/60 flex justify-between text-xs text-zinc-500">
+          <span>{Math.round(totals.calories)} kcal consumidas</span>
+          <span>{Math.max(0, settings.goalCalories - Math.round(totals.calories))} restantes</span>
+        </div>
       </div>
 
-      {/* Comidas por bloque */}
-      <div className="px-4 mt-4 space-y-3">
+      {/* Meal blocks */}
+      <div className="px-4 mt-5 space-y-2.5">
         {loading ? (
           <div className="space-y-2">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-20 rounded-xl bg-zinc-800 animate-pulse" />
+              <div key={i} className="h-[60px] rounded-xl bg-zinc-800/50 animate-pulse" />
             ))}
           </div>
         ) : (
@@ -108,47 +120,49 @@ export default function DashboardPage() {
             const mealEntries = entriesByMeal(meal);
             const mealCals = mealEntries.reduce((s, e) => s + e.calories, 0);
             return (
-              <div key={meal} className="bg-zinc-900 rounded-xl border border-zinc-800 overflow-hidden">
+              <div key={meal} className={`bg-zinc-900 rounded-xl border border-zinc-800/60 border-l-2 ${MEAL_COLORS[meal]} overflow-hidden`}>
                 <div className="flex items-center justify-between px-4 py-3">
-                  <div className="flex items-center gap-2">
-                    <span>{MEAL_ICONS[meal]}</span>
+                  <div className="flex items-center gap-2.5">
+                    <span className="text-base">{MEAL_ICONS[meal]}</span>
                     <div>
-                      <span className="font-semibold text-white capitalize">{meal}</span>
+                      <span className="font-semibold text-sm text-white capitalize">{meal}</span>
                       {settings.mealTimes?.[meal as keyof typeof settings.mealTimes] && (
-                        <span className="ml-2 text-xs text-zinc-500">{settings.mealTimes[meal as keyof typeof settings.mealTimes]}</span>
+                        <span className="ml-2 text-[11px] text-zinc-500">{settings.mealTimes[meal as keyof typeof settings.mealTimes]}</span>
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-sm text-zinc-400">{Math.round(mealCals)} kcal</span>
+                  <div className="flex items-center gap-2.5">
+                    {mealCals > 0 && (
+                      <span className="text-xs font-medium text-zinc-400">{Math.round(mealCals)} kcal</span>
+                    )}
                     <button
                       onClick={() => router.push(`/search?meal=${meal}`)}
-                      className="w-7 h-7 rounded-full bg-zinc-800 hover:bg-brand-500 text-zinc-400 hover:text-white flex items-center justify-center text-lg font-light transition-colors leading-none"
+                      className="w-7 h-7 rounded-full bg-zinc-800 hover:bg-brand-500 text-zinc-400 hover:text-white flex items-center justify-center transition-colors"
                     >
-                      +
+                      <Plus size={14} strokeWidth={2.5} />
                     </button>
                   </div>
                 </div>
                 {mealEntries.length > 0 && (
-                  <div className="border-t border-zinc-800">
+                  <div className="border-t border-zinc-800/60">
                     {mealEntries.map((entry) => (
                       <div
                         key={entry.id}
-                        className="flex items-center justify-between px-4 py-2 border-b border-zinc-800/50 last:border-0"
+                        className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-800/40 last:border-0"
                       >
-                        <div>
-                          <p className="text-sm text-zinc-200">{entry.name}</p>
-                          <p className="text-xs text-zinc-500">
-                            {entry.grams}g · P: {Math.round(entry.protein)}g · C: {Math.round(entry.carbs)}g · G: {Math.round(entry.fat)}g
+                        <div className="min-w-0 flex-1 pr-3">
+                          <p className="text-sm text-zinc-200 truncate">{entry.name}</p>
+                          <p className="text-[11px] text-zinc-500 mt-0.5">
+                            {entry.grams}g · P {Math.round(entry.protein)}g · C {Math.round(entry.carbs)}g · G {Math.round(entry.fat)}g
                           </p>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <span className="text-sm text-zinc-300">{Math.round(entry.calories)}</span>
+                        <div className="flex items-center gap-3 shrink-0">
+                          <span className="text-sm font-medium text-zinc-300">{Math.round(entry.calories)} kcal</span>
                           <button
                             onClick={() => deleteEntry(entry.id)}
-                            className="text-zinc-600 hover:text-red-400 text-lg"
+                            className="text-zinc-600 hover:text-red-400 transition-colors"
                           >
-                            ×
+                            <Trash2 size={14} />
                           </button>
                         </div>
                       </div>
@@ -156,7 +170,7 @@ export default function DashboardPage() {
                   </div>
                 )}
                 {mealEntries.length === 0 && (
-                  <p className="px-4 pb-3 text-xs text-zinc-600">Sin alimentos</p>
+                  <p className="px-4 pb-3 text-[11px] text-zinc-600">Sin alimentos registrados</p>
                 )}
               </div>
             );

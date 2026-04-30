@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import BottomNav from "@/components/BottomNav";
 import { useSuggestedMeal } from "@/hooks/useSuggestedMeal";
+import { Button } from "@/components/ui/button";
+import { Camera, ImageIcon, Sparkles, RotateCcw, Save } from "lucide-react";
 
 type FoodItem = {
   name: string;
@@ -333,23 +335,24 @@ export default function ScanPage() {
 
   return (
     <div className="min-h-screen bg-zinc-950 max-w-md mx-auto pb-32 px-4">
-      <header className="pt-14 pb-4">
-        <h1 className="text-2xl font-bold text-white">📸 Escanear comida</h1>
+      <header className="pt-14 pb-5">
+        <p className="text-zinc-500 text-xs uppercase tracking-widest font-medium">Registro</p>
+        <h1 className="text-3xl font-bold text-white mt-0.5">Escanear</h1>
       </header>
 
       {/* ── TABS ── */}
-      <div className="flex gap-1 bg-zinc-900 rounded-xl p-1 mb-4">
+      <div className="flex gap-1 bg-zinc-900/80 rounded-xl p-1 mb-4 border border-zinc-800/60">
         <button
           onClick={() => { if (barcodeActive) stopBarcode(); setActiveTab("ai"); }}
-          className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors ${activeTab === "ai" ? "bg-brand-500 text-white" : "text-zinc-400 hover:text-white"}`}
+          className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${activeTab === "ai" ? "bg-brand-500 text-zinc-950 shadow-sm" : "text-zinc-400 hover:text-white"}`}
         >
-          ✨ IA
+          IA Vision
         </button>
         <button
           onClick={() => { if (barcodeActive) stopBarcode(); setActiveTab("barcode"); }}
-          className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors ${activeTab === "barcode" ? "bg-brand-500 text-white" : "text-zinc-400 hover:text-white"}`}
+          className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${activeTab === "barcode" ? "bg-brand-500 text-zinc-950 shadow-sm" : "text-zinc-400 hover:text-white"}`}
         >
-          🔢 Código de barras
+          Código de barras
         </button>
       </div>
 
@@ -357,33 +360,40 @@ export default function ScanPage() {
       <>{/* ── AI SCAN ── */}
       <div
         onClick={() => preview ? fileRef.current?.click() : undefined}
-        className={`relative w-full aspect-square rounded-2xl border-2 border-dashed border-zinc-700 flex items-center justify-center overflow-hidden bg-zinc-900 transition-colors ${preview ? "cursor-pointer hover:border-brand-500" : ""}`}
+        className={`relative w-full aspect-square rounded-2xl border-2 border-dashed flex items-center justify-center overflow-hidden bg-zinc-900/80 transition-all ${preview ? "cursor-pointer border-brand-500/60 hover:border-brand-500" : "border-zinc-800"}`}
       >
         {preview ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={preview} alt="preview" className="w-full h-full object-cover" />
         ) : (
-          <div className="text-center space-y-2">
-            <p className="text-5xl">🍽️</p>
-            <p className="text-zinc-400 text-sm">Selecciona una foto</p>
+          <div className="text-center space-y-3 p-8">
+            <div className="w-16 h-16 rounded-2xl bg-zinc-800 flex items-center justify-center mx-auto">
+              <Camera size={28} className="text-zinc-500" />
+            </div>
+            <div>
+              <p className="text-zinc-300 text-sm font-medium">Añade una foto</p>
+              <p className="text-zinc-600 text-xs mt-1">La IA identificará los alimentos y calculará los macros</p>
+            </div>
           </div>
         )}
       </div>
 
       {!preview && (
         <div className="flex gap-2 mt-3">
-          <button
+          <Button
+            variant="outline"
             onClick={() => cameraRef.current?.click()}
-            className="flex-1 py-3 rounded-xl border border-zinc-700 text-zinc-300 font-semibold hover:border-brand-500 hover:text-white transition-colors flex items-center justify-center gap-2 text-sm"
+            className="flex-1 border-zinc-700 bg-transparent text-zinc-300 hover:border-brand-500 hover:text-white hover:bg-transparent gap-2"
           >
-            📷 Cámara
-          </button>
-          <button
+            <Camera size={16} /> Cámara
+          </Button>
+          <Button
+            variant="outline"
             onClick={() => fileRef.current?.click()}
-            className="flex-1 py-3 rounded-xl border border-zinc-700 text-zinc-300 font-semibold hover:border-brand-500 hover:text-white transition-colors flex items-center justify-center gap-2 text-sm"
+            className="flex-1 border-zinc-700 bg-transparent text-zinc-300 hover:border-brand-500 hover:text-white hover:bg-transparent gap-2"
           >
-            🖼️ Galería
-          </button>
+            <ImageIcon size={16} /> Galería
+          </Button>
         </div>
       )}
 
@@ -399,15 +409,15 @@ export default function ScanPage() {
       />
 
       {preview && (
-        <button
+        <Button
           onClick={handleScan}
           disabled={loading}
-          className="w-full mt-4 py-3 rounded-xl bg-brand-500 text-white font-semibold disabled:opacity-40 flex items-center justify-center gap-2"
+          className="w-full mt-4 h-auto py-3 rounded-xl bg-brand-500 hover:bg-brand-600 text-zinc-950 font-semibold disabled:opacity-40 gap-2"
         >
           {loading
-            ? <><span className="animate-spin inline-block">⚙️</span> {LOAD_STEPS[loadStep]}</>
-            : <>{result ? "🔄 Volver a analizar" : "✨ Analizar con IA"}</>}
-        </button>
+            ? <><span className="animate-spin inline-block text-base">◌</span> {LOAD_STEPS[loadStep]}</>
+            : result ? <><RotateCcw size={16} /> Volver a analizar</> : <><Sparkles size={16} /> Analizar con IA</>}
+        </Button>
       )}
 
       {error && <p className="mt-3 text-red-400 text-sm text-center">{error}</p>}
@@ -495,9 +505,9 @@ export default function ScanPage() {
             </div>
           </div>
 
-          <button onClick={handleSave} disabled={saving || total.calories === 0} className="w-full py-3 rounded-xl bg-brand-500 text-white font-semibold disabled:opacity-40">
-            {saving ? "Guardando..." : `💾 Añadir ${total.calories} kcal al diario`}
-          </button>
+          <Button onClick={handleSave} disabled={saving || total.calories === 0} className="w-full h-auto py-3 rounded-xl bg-brand-500 hover:bg-brand-600 text-zinc-950 font-semibold disabled:opacity-40 gap-2">
+            <Save size={16} />{saving ? "Guardando..." : `Añadir ${total.calories} kcal al diario`}
+          </Button>
         </div>
       )}
 

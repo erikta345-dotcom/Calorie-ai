@@ -2,30 +2,32 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Home, ScanLine, Search, BarChart2, Settings } from "lucide-react";
 
 const tabs = [
-  { href: "/", icon: "🏠", label: "Hoy" },
-  { href: "/scan", icon: "📸", label: "Escanear" },
-  { href: "/search", icon: "🔍", label: "Buscar" },
-  { href: "/history", icon: "📊", label: "Historial" },
-  { href: "/settings", icon: "⚙️", label: "Ajustes" },
+  { href: "/", icon: Home, label: "Hoy" },
+  { href: "/scan", icon: ScanLine, label: "Escanear" },
+  { href: "/search", icon: Search, label: "Buscar" },
+  { href: "/history", icon: BarChart2, label: "Historial" },
+  { href: "/settings", icon: Settings, label: "Ajustes" },
 ];
 
 export default function BottomNav() {
   const pathname = usePathname();
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-zinc-950/90 backdrop-blur border-t border-zinc-800 flex safe-bottom z-50">
+    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800/60 flex safe-bottom z-50">
       {tabs.map((tab) => {
         const active = pathname === tab.href;
+        const Icon = tab.icon;
         return (
           <Link
             key={tab.href}
             href={tab.href}
-            className={`flex-1 flex flex-col items-center py-2 text-xs transition-colors ${
-              active ? "text-brand-400" : "text-zinc-500"
+            className={`flex-1 flex flex-col items-center gap-1 py-3 text-[10px] font-medium tracking-wide transition-colors ${
+              active ? "text-brand-400" : "text-zinc-500 hover:text-zinc-300"
             }`}
           >
-            <span className="text-xl mb-0.5">{tab.icon}</span>
+            <Icon size={20} strokeWidth={active ? 2.2 : 1.8} />
             {tab.label}
           </Link>
         );

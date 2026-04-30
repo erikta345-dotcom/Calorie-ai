@@ -7,6 +7,7 @@ import type { MealTimes } from "@/hooks/useSuggestedMeal";
 import { subscribeAndSave } from "@/components/MealNotifications";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 type Settings = {
   weight: number;
@@ -209,13 +210,13 @@ export default function SettingsPage() {
           </p>
         </div>
 
-        <button
+        <Button
           onClick={handleSave}
           disabled={saving}
-          className="w-full py-3 rounded-xl bg-brand-500 text-white font-semibold disabled:opacity-40 transition-colors"
+          className="w-full py-3 h-auto rounded-xl bg-brand-500 hover:bg-brand-600 text-zinc-950 font-semibold disabled:opacity-40 transition-colors text-sm"
         >
-          {saved ? "✅ Guardado" : saving ? "Guardando..." : "Guardar configuración"}
-        </button>
+          {saved ? "✓ Guardado" : saving ? "Guardando..." : "Guardar configuración"}
+        </Button>
       </div>
 
       <BottomNav />
