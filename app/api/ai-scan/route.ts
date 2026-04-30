@@ -71,14 +71,20 @@ export async function POST(req: NextRequest) {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "meta-llama/llama-4-scout-17b-16e-instruct",
-        messages: [{
-          role: "user",
-          content: [
-            { type: "image_url", image_url: { url: image } },
-            { type: "text", text: prompt },
-          ],
-        }],
+        model: "meta-llama/llama-4-maverick-17b-128e-instruct",
+        messages: [
+          {
+            role: "system",
+            content: BASE_PROMPT,
+          },
+          {
+            role: "user",
+            content: [
+              { type: "image_url", image_url: { url: image } },
+              { type: "text", text: (contextLine || "") + JSON_RULES },
+            ],
+          },
+        ],
         temperature: 0.1,
         max_tokens: 1024,
       }),
