@@ -31,6 +31,9 @@ export async function GET(req: NextRequest) {
   const now = new Date();
   const utcMins = now.getUTCHours() * 60 + now.getUTCMinutes();
 
+  const errors: string[] = [];
+  const sent: string[] = [];
+
   const tasks = subs.map(async (sub) => {
     const utcOffset = Number(sub.utcOffset) || 0;
     const localMins = (utcMins + utcOffset + 1440) % 1440;
@@ -51,14 +54,18 @@ export async function GET(req: NextRequest) {
           { endpoint: sub.endpoint as string, keys: { p256dh: sub.p256dh as string, auth: sub.auth as string } },
           payload
         );
+        sent.push(`${meal}@${localTime}`);
       } catch (e: any) {
         if (e.statusCode === 410 || e.statusCode === 404) {
           await db.execute({ sql: "DELETE FROM PushSubscription WHERE endpoint = ?", args: [sub.endpoint as string] });
+          errors.push(`${meal}: expired (${e.statusCode})`);
+        } else {
+          errors.push(`${meal}: ${e.statusCode} ${e.message}`);
         }
       }
     }
   });
 
   await Promise.allSettled(tasks);
-  return NextResponse.json({ ok: true, subs: subs.length, time: new Date().toISOString() });
+  return NextResponse.json({ ok: true, subs: subs.length, time: new Date().toISOString(), sent, errors });
 }
