@@ -66,6 +66,15 @@ export async function GET(req: NextRequest) {
     }
   });
 
+  const debug = subs.map((sub) => {
+    const utcOffset = Number(sub.utcOffset) || 0;
+    const localMins = (utcMins + utcOffset + 1440) % 1440;
+    const localTime = `${pad(Math.floor(localMins / 60))}:${pad(localMins % 60)}`;
+    let mealTimes: Record<string, string> = {};
+    try { mealTimes = JSON.parse(sub.mealTimes as string); } catch {}
+    return { utcOffset, localTime, mealTimes };
+  });
+
   await Promise.allSettled(tasks);
-  return NextResponse.json({ ok: true, subs: subs.length, time: new Date().toISOString(), sent, errors });
+  return NextResponse.json({ ok: true, subs: subs.length, time: new Date().toISOString(), sent, errors, debug });
 }
