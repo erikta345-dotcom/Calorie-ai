@@ -5,6 +5,8 @@ import { signOut, useSession } from "next-auth/react";
 import BottomNav from "@/components/BottomNav";
 import type { MealTimes } from "@/hooks/useSuggestedMeal";
 import { subscribeAndSave } from "@/components/MealNotifications";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 type Settings = {
   weight: number;
@@ -32,6 +34,7 @@ const MEAL_LABELS: Record<keyof MealTimes, string> = {
 };
 
 export default function SettingsPage() {
+  const { data: session } = useSession();
   const [form, setForm] = useState<Settings>({
     weight: 75,
     goalCalories: 2800,
@@ -111,12 +114,31 @@ export default function SettingsPage() {
           <h1 className="text-2xl font-bold text-white">⚙️ Configuración</h1>
           <p className="text-zinc-500 text-sm mt-1">Ajusta tus objetivos y horarios</p>
         </div>
-        <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className="mt-1 text-xs text-zinc-500 hover:text-red-400 transition-colors"
-        >
-          Cerrar sesión
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="rounded-full ring-2 ring-zinc-700 hover:ring-brand-500 transition-all focus:outline-none">
+              <Avatar className="h-9 w-9">
+                <AvatarImage src={session?.user?.image ?? ""} alt={session?.user?.name ?? ""} />
+                <AvatarFallback className="bg-zinc-800 text-white text-sm">
+                  {session?.user?.name?.[0]?.toUpperCase() ?? "?"}
+                </AvatarFallback>
+              </Avatar>
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52 bg-zinc-900 border-zinc-800 text-white">
+            <DropdownMenuLabel className="text-zinc-400 font-normal text-xs">
+              <p className="font-semibold text-white truncate">{session?.user?.name}</p>
+              <p className="truncate text-zinc-500">{session?.user?.email}</p>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator className="bg-zinc-800" />
+            <DropdownMenuItem
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className="text-red-400 focus:text-red-400 focus:bg-zinc-800 cursor-pointer"
+            >
+              Cerrar sesión
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </header>
 
       <div className="space-y-4">
