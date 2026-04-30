@@ -50,8 +50,6 @@ async function subscribeAndSave() {
     body: JSON.stringify({ subscription: sub.toJSON(), mealTimes, utcOffset }),
   });
 
-  reg.active?.postMessage({ type: "SET_MEAL_TIMES", meals: mealTimes });
-
   return true;
 }
 
@@ -69,7 +67,6 @@ async function updateSubscription() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ subscription: sub.toJSON(), mealTimes, utcOffset }),
   });
-  reg.active?.postMessage({ type: "SET_MEAL_TIMES", meals: mealTimes });
 }
 
 export default function MealNotifications() {
@@ -98,18 +95,6 @@ export default function MealNotifications() {
     if (!("Notification" in window) || Notification.permission !== "granted") return;
     updateSubscription().catch(() => {});
   }, [status]);
-
-  // Re-sync when SW restarts and requests meal times
-  useEffect(() => {
-    if (!("serviceWorker" in navigator)) return;
-    const handleMsg = (e: MessageEvent) => {
-      if (e.data?.type === "REQUEST_MEAL_TIMES" && Notification.permission === "granted") {
-        updateSubscription().catch(() => {});
-      }
-    };
-    navigator.serviceWorker.addEventListener("message", handleMsg);
-    return () => navigator.serviceWorker.removeEventListener("message", handleMsg);
-  }, []);
 
   if (perm === "denied") {
     return (
