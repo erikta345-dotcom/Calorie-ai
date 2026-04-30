@@ -91,6 +91,7 @@ export async function POST(req: NextRequest) {
     });
 
     const data = await response.json();
+    if (data.error) throw new Error(`Groq error: ${data.error.message || JSON.stringify(data.error)}`);
     const text = data.choices?.[0]?.message?.content;
     if (!text) throw new Error(`Empty response: ${JSON.stringify(data)}`);
 
@@ -126,6 +127,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ dish: parsed.dish, items: parsed.items, total });
   } catch (e: any) {
     console.error("AI scan error:", e.message);
-    return NextResponse.json({ error: "Error al analizar imagen" }, { status: 500 });
+    return NextResponse.json({ error: "Error al analizar imagen", debug: e.message }, { status: 500 });
   }
 }
