@@ -13,10 +13,17 @@ export async function GET(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const uid = userId(session);
   const date = req.nextUrl.searchParams.get("date");
+  const from = req.nextUrl.searchParams.get("from");
+  const to = req.nextUrl.searchParams.get("to");
   try {
-    const result = date
-      ? await db.execute({ sql: "SELECT * FROM FoodEntry WHERE userId = ? AND date = ? ORDER BY createdAt ASC", args: [uid, date] })
-      : await db.execute({ sql: "SELECT * FROM FoodEntry WHERE userId = ? ORDER BY createdAt ASC", args: [uid] });
+    let result;
+    if (from && to) {
+      result = await db.execute({ sql: "SELECT * FROM FoodEntry WHERE userId = ? AND date >= ? AND date <= ? ORDER BY date ASC, createdAt ASC", args: [uid, from, to] });
+    } else if (date) {
+      result = await db.execute({ sql: "SELECT * FROM FoodEntry WHERE userId = ? AND date = ? ORDER BY createdAt ASC", args: [uid, date] });
+    } else {
+      result = await db.execute({ sql: "SELECT * FROM FoodEntry WHERE userId = ? ORDER BY createdAt ASC", args: [uid] });
+    }
     return NextResponse.json(result.rows);
   } catch {
     return NextResponse.json({ error: "Error al obtener entradas" }, { status: 500 });
