@@ -39,6 +39,8 @@ export default function HistoryPage() {
   const [view, setView] = useState<"calories" | "protein" | "carbs" | "fat">("calories");
   const [goalCalories, setGoalCalories] = useState(2800);
   const [goalProtein, setGoalProtein] = useState(150);
+  const [goalCarbs, setGoalCarbs] = useState(300);
+  const [goalFat, setGoalFat] = useState(80);
 
   useEffect(() => {
     setLoading(true);
@@ -57,6 +59,8 @@ export default function HistoryPage() {
       if (settings && !settings.error) {
         setGoalCalories(settings.goalCalories);
         setGoalProtein(settings.goalProtein);
+        setGoalCarbs(settings.goalCarbs);
+        setGoalFat(settings.goalFat);
       }
 
       const rawEntries = Array.isArray(entries) ? entries as any[] : [];
@@ -124,7 +128,8 @@ export default function HistoryPage() {
   }, [period]);
 
   const currentView = VIEWS.find((v) => v.key === view)!;
-  const currentGoal = view === "calories" ? goalCalories : view === "protein" ? goalProtein : null;
+  const goals = { calories: goalCalories, protein: goalProtein, carbs: goalCarbs, fat: goalFat };
+  const currentGoal = goals[view];
   const avg = data.length
     ? Math.round(data.reduce((s, d) => s + d[view], 0) / data.length)
     : 0;
