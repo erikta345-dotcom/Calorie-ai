@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, ScanLine, Search, BarChart2, Bell, Settings } from "lucide-react";
+import { Home, ScanLine, Search, BarChart2, Bell, MessageCircle, Settings } from "lucide-react";
 
 const tabs = [
   { href: "/", icon: Home, label: "Hoy" },
@@ -10,6 +10,7 @@ const tabs = [
   { href: "/search", icon: Search, label: "Buscar" },
   { href: "/history", icon: BarChart2, label: "Historial" },
   { href: "/alerts", icon: Bell, label: "Alertas" },
+  { href: "/feedback", icon: MessageCircle, label: "Feed" },
   { href: "/settings", icon: Settings, label: "Ajustes" },
 ];
 
