@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 type Settings = {
   weight: number;
   height: number;
+  age: number;
+  gender: "male" | "female";
   goal: "maintain" | "lose_fat" | "gain_muscle";
   goalCalories: number;
   goalProtein: number;
@@ -26,8 +28,9 @@ const PLANS: { id: Settings["goal"]; emoji: string; label: string; desc: string 
   { id: "gain_muscle", emoji: "💪", label: "Ganar músculo", desc: "Superávit" },
 ];
 
-function calcMacros(weight: number, height: number, goal: Settings["goal"]) {
-  const bmr = 10 * weight + 6.25 * Math.max(height, 100) - 203;
+function calcMacros(weight: number, height: number, age: number, gender: Settings["gender"], goal: Settings["goal"]) {
+  const sexOffset = gender === "male" ? 5 : -161;
+  const bmr = 10 * weight + 6.25 * Math.max(height, 100) - 5 * Math.max(age, 1) + sexOffset;
   const tdee = Math.round(bmr * 1.55);
   if (goal === "lose_fat") {
     const cal = Math.round(tdee * 0.82);
@@ -61,11 +64,13 @@ export default function SettingsPage() {
   const [form, setForm] = useState<Settings>({
     weight: 75,
     height: 175,
+    age: 25,
+    gender: "male",
     goal: "maintain",
-    goalCalories: 2542,
+    goalCalories: 2635,
     goalProtein: 135,
-    goalCarbs: 286,
-    goalFat: 71,
+    goalCarbs: 297,
+    goalFat: 73,
     mealTimes: DEFAULT_MEAL_TIMES,
   });
   const [saving, setSaving] = useState(false);
@@ -109,14 +114,14 @@ export default function SettingsPage() {
         const mealTimes = s.mealTimes
           ? (typeof s.mealTimes === "string" ? JSON.parse(s.mealTimes) : s.mealTimes)
           : DEFAULT_MEAL_TIMES;
-        setForm({ ...s, height: s.height ?? 175, goal: s.goal ?? "maintain", mealTimes: { ...DEFAULT_MEAL_TIMES, ...mealTimes } });
+        setForm({ ...s, height: s.height ?? 175, age: s.age ?? 25, gender: s.gender ?? "male", goal: s.goal ?? "maintain", mealTimes: { ...DEFAULT_MEAL_TIMES, ...mealTimes } });
       });
   }, []);
 
-  function handleBodyChange(patch: Partial<Pick<Settings, "weight" | "height" | "goal">>) {
+  function handleBodyChange(patch: Partial<Pick<Settings, "weight" | "height" | "age" | "gender" | "goal">>) {
     setForm((f) => {
       const next = { ...f, ...patch };
-      return { ...next, ...calcMacros(next.weight, next.height, next.goal) };
+      return { ...next, ...calcMacros(next.weight, next.height, next.age, next.gender, next.goal) };
     });
   }
 
@@ -135,9 +140,10 @@ export default function SettingsPage() {
 
   const bmi = form.height > 0 ? form.weight / Math.pow(form.height / 100, 2) : null;
   const bmiLabel = bmi ? (bmi < 18.5 ? "Bajo peso" : bmi < 25 ? "Normal" : bmi < 30 ? "Sobrepeso" : "Obesidad") : null;
-  const tdee = Math.round((10 * form.weight + 6.25 * Math.max(form.height, 100) - 203) * 1.55);
+  const sexOffset = form.gender === "male" ? 5 : -161;
+  const tdee = Math.round((10 * form.weight + 6.25 * Math.max(form.height, 100) - 5 * Math.max(form.age, 1) + sexOffset) * 1.55);
 
-  const numField = (label: string, key: keyof Omit<Settings, "mealTimes" | "goal">, unit: string) => (
+  const numField = (label: string, key: keyof Omit<Settings, "mealTimes" | "goal" | "gender">, unit: string) => (
     <div className="flex items-center justify-between py-3 border-b border-zinc-800 last:border-0">
       <div>
         <p className="text-sm text-white">{label}</p>
@@ -150,6 +156,7 @@ export default function SettingsPage() {
           const val = parseFloat(e.target.value) || 0;
           if (key === "weight") handleBodyChange({ weight: Math.max(1, val) });
           else if (key === "height") handleBodyChange({ height: Math.max(50, val) });
+          else if (key === "age") handleBodyChange({ age: Math.max(1, val) });
           else setForm({ ...form, [key]: val });
         }}
         className="w-24 bg-zinc-800 text-white text-right rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
@@ -196,6 +203,23 @@ export default function SettingsPage() {
           <p className="text-xs text-zinc-500 pt-3 pb-1 font-semibold uppercase tracking-wide">Tu cuerpo</p>
           {numField("Peso corporal", "weight", "kg")}
           {numField("Altura", "height", "cm")}
+          {numField("Edad", "age", "años")}
+          <div className="flex items-center justify-between py-3 border-b border-zinc-800">
+            <p className="text-sm text-white">Sexo</p>
+            <div className="flex gap-2">
+              {(["male", "female"] as const).map((g) => (
+                <button
+                  key={g}
+                  onClick={() => handleBodyChange({ gender: g })}
+                  className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                    form.gender === g ? "bg-brand-500 text-zinc-950" : "bg-zinc-800 text-zinc-400 hover:text-zinc-200"
+                  }`}
+                >
+                  {g === "male" ? "Hombre" : "Mujer"}
+                </button>
+              ))}
+            </div>
+          </div>
           {bmi && (
             <div className="flex items-center justify-between py-3 border-t border-zinc-800">
               <p className="text-sm text-zinc-400">IMC</p>
