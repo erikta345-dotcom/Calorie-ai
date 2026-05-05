@@ -3,6 +3,7 @@ import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { compare, hash } from "bcryptjs";
 import { db } from "@/lib/prisma";
+import { sendWelcomeEmail } from "@/lib/email";
 
 export const authOptions: NextAuthOptions = {
   secret: process.env.NEXTAUTH_SECRET,
@@ -41,6 +42,8 @@ export const authOptions: NextAuthOptions = {
             sql: "INSERT INTO UserPasswords (id, passwordHash) VALUES (?, ?)",
             args: [email, passwordHash],
           });
+          const displayName = email.split("@")[0];
+          sendWelcomeEmail(email, displayName).catch(() => {});
         } else {
           const valid = await compare(credentials.password, pwResult.rows[0].passwordHash as string);
           if (!valid) return null;
@@ -54,10 +57,19 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, account, profile }) {
       // Save email to UserSettings on Google sign-in so credentials can find it later
       if (account?.provider === "google" && token.sub && token.email) {
+        const existing = await db.execute({
+          sql: "SELECT id FROM UserSettings WHERE id = ?",
+          args: [token.sub],
+        }).catch(() => ({ rows: [1] }));
+        const isNew = existing.rows.length === 0;
         await db.execute({
           sql: "INSERT INTO UserSettings (id, email) VALUES (?, ?) ON CONFLICT(id) DO UPDATE SET email=excluded.email",
           args: [token.sub, token.email],
         }).catch(() => {});
+        if (isNew) {
+          const name = token.name || token.email.split("@")[0];
+          sendWelcomeEmail(token.email, name as string).catch(() => {});
+        }
       }
       return token;
     },
