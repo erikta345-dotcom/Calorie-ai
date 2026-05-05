@@ -138,8 +138,9 @@ export default function ScanPage() {
       setResult({ dish: data.dish, items });
       setPortion(1);
       setItemGramsStr({});
-    } catch {
-      setError("No pude identificar la comida. Intenta con otra foto más clara.");
+    } catch (e: any) {
+      const msg = e?.message || "";
+      setError(msg.includes("ocupada") ? msg : "No pude identificar la comida. Intenta con otra foto más clara.");
     } finally {
       setLoading(false);
     }

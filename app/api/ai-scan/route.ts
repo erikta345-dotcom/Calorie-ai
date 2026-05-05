@@ -64,33 +64,44 @@ export async function POST(req: NextRequest) {
   const prompt = BASE_PROMPT + contextLine + JSON_RULES;
 
   try {
-    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: "meta-llama/llama-4-scout-17b-16e-instruct",
-        messages: [
-          {
-            role: "system",
-            content: BASE_PROMPT,
-          },
-          {
-            role: "user",
-            content: [
-              { type: "image_url", image_url: { url: image } },
-              { type: "text", text: (contextLine || "") + JSON_RULES },
-            ],
-          },
-        ],
-        temperature: 0.1,
-        max_tokens: 1024,
-      }),
-    });
+    let response: Response | null = null;
+    for (let attempt = 0; attempt < 3; attempt++) {
+      if (attempt > 0) await new Promise((r) => setTimeout(r, attempt * 1500));
+      response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "meta-llama/llama-4-scout-17b-16e-instruct",
+          messages: [
+            {
+              role: "system",
+              content: BASE_PROMPT,
+            },
+            {
+              role: "user",
+              content: [
+                { type: "image_url", image_url: { url: image } },
+                { type: "text", text: (contextLine || "") + JSON_RULES },
+              ],
+            },
+          ],
+          temperature: 0.1,
+          max_tokens: 1024,
+        }),
+      });
+      if (response.status !== 429) break;
+    }
+    if (response!.status === 429) {
+      return NextResponse.json(
+        { error: "La IA está ocupada ahora mismo. Espera unos segundos e inténtalo de nuevo." },
+        { status: 429 }
+      );
+    }
 
-    const data = await response.json();
+    const data = await response!.json();
     if (data.error) throw new Error(`Groq error: ${data.error.message || JSON.stringify(data.error)}`);
     const text = data.choices?.[0]?.message?.content;
     if (!text) throw new Error(`Empty response: ${JSON.stringify(data)}`);
