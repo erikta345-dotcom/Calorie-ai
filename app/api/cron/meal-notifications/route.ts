@@ -42,27 +42,46 @@ export async function GET(req: NextRequest) {
     let mealTimes: Record<string, string> = {};
     try { mealTimes = JSON.parse(sub.mealTimes as string); } catch {}
 
-    for (const [meal, time] of Object.entries(mealTimes)) {
-      if (time !== localTime) continue;
-      const payload = JSON.stringify({
-        title: "⏰ Calorie AI",
-        body: `Son las ${localTime}, ¡es la hora de ${capitalize(meal)}!`,
-        tag: `meal-${meal}`,
-      });
+    async function pushTo(payload: string, tag: string) {
       try {
         await webpush.sendNotification(
           { endpoint: sub.endpoint as string, keys: { p256dh: sub.p256dh as string, auth: sub.auth as string } },
           payload
         );
-        sent.push(`${meal}@${localTime}`);
+        sent.push(tag);
       } catch (e: any) {
         if (e.statusCode === 410 || e.statusCode === 404) {
           await db.execute({ sql: "DELETE FROM PushSubscription WHERE endpoint = ?", args: [sub.endpoint as string] });
-          errors.push(`${meal}: expired (${e.statusCode})`);
+          errors.push(`${tag}: expired (${e.statusCode})`);
         } else {
-          errors.push(`${meal}: ${e.statusCode} ${e.message}`);
+          errors.push(`${tag}: ${e.statusCode} ${e.message}`);
         }
       }
+    }
+
+    for (const [meal, time] of Object.entries(mealTimes)) {
+      if (time !== localTime) continue;
+      await pushTo(
+        JSON.stringify({ title: "⏰ Calorie AI", body: `Son las ${localTime}, ¡es la hora de ${capitalize(meal)}!`, tag: `meal-${meal}` }),
+        `${meal}@${localTime}`
+      );
+    }
+
+    // Custom time alerts
+    if (sub.userId) {
+      try {
+        const alertsResult = await db.execute({
+          sql: "SELECT * FROM CustomAlert WHERE userId = ? AND type = 'time' AND enabled = 1",
+          args: [sub.userId as string],
+        });
+        for (const alert of alertsResult.rows) {
+          if (alert.time !== localTime) continue;
+          await pushTo(
+            JSON.stringify({ title: "🔔 Calorie AI", body: alert.label as string, tag: `alert-${alert.id}` }),
+            `alert:${alert.label}@${localTime}`
+          );
+        }
+      } catch {}
     }
   });
 

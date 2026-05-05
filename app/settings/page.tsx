@@ -47,10 +47,35 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [notifPerm, setNotifPerm] = useState<string>("default");
+  const [feedbackText, setFeedbackText] = useState("");
+  const [feedbacks, setFeedbacks] = useState<{ id: string; author: string; message: string; createdAt: string }[]>([]);
+  const [submittingFeedback, setSubmittingFeedback] = useState(false);
 
   useEffect(() => {
     if ("Notification" in window) setNotifPerm(Notification.permission);
   }, []);
+
+  useEffect(() => {
+    fetch("/api/feedback")
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) setFeedbacks(data); });
+  }, []);
+
+  async function handleFeedbackSubmit() {
+    if (!feedbackText.trim()) return;
+    setSubmittingFeedback(true);
+    const res = await fetch("/api/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ message: feedbackText.trim() }),
+    });
+    if (res.ok) {
+      setFeedbackText("");
+      const updated = await fetch("/api/feedback").then((r) => r.json());
+      if (Array.isArray(updated)) setFeedbacks(updated);
+    }
+    setSubmittingFeedback(false);
+  }
 
   useEffect(() => {
     fetch("/api/settings")
@@ -208,6 +233,44 @@ export default function SettingsPage() {
             (~{Math.round(form.weight * 33)} kcal para {form.weight}kg) y suficiente proteína
             (~{Math.round(form.weight * 2)}g/día).
           </p>
+        </div>
+
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3">
+          <p className="text-xs text-zinc-500 pt-1 pb-3 font-semibold uppercase tracking-wide">💬 Feedback de la comunidad</p>
+          <div className="flex gap-2 pb-3">
+            <input
+              type="text"
+              placeholder="Tu opinión o sugerencia..."
+              value={feedbackText}
+              onChange={(e) => setFeedbackText(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && handleFeedbackSubmit()}
+              className="flex-1 bg-zinc-800 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500 placeholder:text-zinc-600"
+            />
+            <button
+              onClick={handleFeedbackSubmit}
+              disabled={!feedbackText.trim() || submittingFeedback}
+              className="px-4 py-2 bg-brand-500 text-zinc-950 rounded-lg text-sm font-semibold disabled:opacity-40 transition-opacity"
+            >
+              {submittingFeedback ? "..." : "Enviar"}
+            </button>
+          </div>
+          <div className="space-y-2 max-h-64 overflow-y-auto pb-1">
+            {feedbacks.length === 0 ? (
+              <p className="text-xs text-zinc-600 text-center py-3">Sé el primero en dejar feedback</p>
+            ) : (
+              feedbacks.map((fb) => (
+                <div key={fb.id} className="bg-zinc-800 rounded-lg px-3 py-2">
+                  <div className="flex items-center justify-between mb-0.5">
+                    <span className="text-xs font-medium text-brand-400">{fb.author}</span>
+                    <span className="text-[10px] text-zinc-600">
+                      {new Date(fb.createdAt).toLocaleDateString("es-ES")}
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-300">{fb.message}</p>
+                </div>
+              ))
+            )}
+          </div>
         </div>
 
         <Button
