@@ -5,7 +5,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 export async function sendWelcomeEmail(to: string, name: string) {
   if (!process.env.RESEND_API_KEY) return;
   await resend.emails.send({
-    from: "Calorie AI <noreply@calorieai.app>",
+    from: "Calorie AI <onboarding@resend.dev>",
     to,
     subject: "¡Bienvenido a Calorie AI! 🥗",
     html: `<!DOCTYPE html>
