@@ -11,12 +11,34 @@ import { Button } from "@/components/ui/button";
 
 type Settings = {
   weight: number;
+  height: number;
+  goal: "maintain" | "lose_fat" | "gain_muscle";
   goalCalories: number;
   goalProtein: number;
   goalCarbs: number;
   goalFat: number;
   mealTimes: MealTimes;
 };
+
+const PLANS: { id: Settings["goal"]; emoji: string; label: string; desc: string }[] = [
+  { id: "maintain", emoji: "⚖️", label: "Mantener", desc: "Mismo peso" },
+  { id: "lose_fat", emoji: "🔥", label: "Perder grasa", desc: "Déficit calórico" },
+  { id: "gain_muscle", emoji: "💪", label: "Ganar músculo", desc: "Superávit" },
+];
+
+function calcMacros(weight: number, height: number, goal: Settings["goal"]) {
+  const bmr = 10 * weight + 6.25 * Math.max(height, 100) - 203;
+  const tdee = Math.round(bmr * 1.55);
+  if (goal === "lose_fat") {
+    const cal = Math.round(tdee * 0.82);
+    return { goalCalories: cal, goalProtein: Math.round(weight * 2.2), goalCarbs: Math.round((cal * 0.35) / 4), goalFat: Math.round((cal * 0.30) / 9) };
+  }
+  if (goal === "gain_muscle") {
+    const cal = Math.round(tdee * 1.15);
+    return { goalCalories: cal, goalProtein: Math.round(weight * 2.2), goalCarbs: Math.round((cal * 0.50) / 4), goalFat: Math.round((cal * 0.25) / 9) };
+  }
+  return { goalCalories: tdee, goalProtein: Math.round(weight * 1.8), goalCarbs: Math.round((tdee * 0.45) / 4), goalFat: Math.round((tdee * 0.25) / 9) };
+}
 
 const DEFAULT_MEAL_TIMES: MealTimes = {
   desayuno: "08:00",
@@ -38,10 +60,12 @@ export default function SettingsPage() {
   const { data: session } = useSession();
   const [form, setForm] = useState<Settings>({
     weight: 75,
-    goalCalories: 2800,
-    goalProtein: 150,
-    goalCarbs: 300,
-    goalFat: 80,
+    height: 175,
+    goal: "maintain",
+    goalCalories: 2542,
+    goalProtein: 135,
+    goalCarbs: 286,
+    goalFat: 71,
     mealTimes: DEFAULT_MEAL_TIMES,
   });
   const [saving, setSaving] = useState(false);
@@ -85,20 +109,15 @@ export default function SettingsPage() {
         const mealTimes = s.mealTimes
           ? (typeof s.mealTimes === "string" ? JSON.parse(s.mealTimes) : s.mealTimes)
           : DEFAULT_MEAL_TIMES;
-        setForm({ ...s, mealTimes: { ...DEFAULT_MEAL_TIMES, ...mealTimes } });
+        setForm({ ...s, height: s.height ?? 175, goal: s.goal ?? "maintain", mealTimes: { ...DEFAULT_MEAL_TIMES, ...mealTimes } });
       });
   }, []);
 
-  function handleWeightChange(w: number) {
-    const weight = Math.max(1, w);
-    setForm((f) => ({
-      ...f,
-      weight,
-      goalCalories: Math.round(weight * 33),
-      goalProtein: Math.round(weight * 2),
-      goalCarbs: Math.round((weight * 33 * 0.45) / 4),
-      goalFat: Math.round((weight * 33 * 0.25) / 9),
-    }));
+  function handleBodyChange(patch: Partial<Pick<Settings, "weight" | "height" | "goal">>) {
+    setForm((f) => {
+      const next = { ...f, ...patch };
+      return { ...next, ...calcMacros(next.weight, next.height, next.goal) };
+    });
   }
 
   async function handleSave() {
@@ -114,7 +133,11 @@ export default function SettingsPage() {
     window.dispatchEvent(new CustomEvent("meal-times-updated"));
   }
 
-  const numField = (label: string, key: keyof Omit<Settings, "mealTimes">, unit: string) => (
+  const bmi = form.height > 0 ? form.weight / Math.pow(form.height / 100, 2) : null;
+  const bmiLabel = bmi ? (bmi < 18.5 ? "Bajo peso" : bmi < 25 ? "Normal" : bmi < 30 ? "Sobrepeso" : "Obesidad") : null;
+  const tdee = Math.round((10 * form.weight + 6.25 * Math.max(form.height, 100) - 203) * 1.55);
+
+  const numField = (label: string, key: keyof Omit<Settings, "mealTimes" | "goal">, unit: string) => (
     <div className="flex items-center justify-between py-3 border-b border-zinc-800 last:border-0">
       <div>
         <p className="text-sm text-white">{label}</p>
@@ -123,11 +146,12 @@ export default function SettingsPage() {
       <input
         type="number"
         value={form[key] as number}
-        onChange={(e) =>
-          key === "weight"
-            ? handleWeightChange(parseFloat(e.target.value) || 0)
-            : setForm({ ...form, [key]: parseFloat(e.target.value) || 0 })
-        }
+        onChange={(e) => {
+          const val = parseFloat(e.target.value) || 0;
+          if (key === "weight") handleBodyChange({ weight: Math.max(1, val) });
+          else if (key === "height") handleBodyChange({ height: Math.max(50, val) });
+          else setForm({ ...form, [key]: val });
+        }}
         className="w-24 bg-zinc-800 text-white text-right rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
       />
     </div>
@@ -170,13 +194,44 @@ export default function SettingsPage() {
       <div className="space-y-4">
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-4">
           <p className="text-xs text-zinc-500 pt-3 pb-1 font-semibold uppercase tracking-wide">Tu cuerpo</p>
-          {numField("Peso corporal", "weight", "kg · ajusta para recalcular objetivos")}
+          {numField("Peso corporal", "weight", "kg")}
+          {numField("Altura", "height", "cm")}
+          {bmi && (
+            <div className="flex items-center justify-between py-3 border-t border-zinc-800">
+              <p className="text-sm text-zinc-400">IMC</p>
+              <div className="text-right">
+                <span className="text-sm text-white font-medium">{bmi.toFixed(1)}</span>
+                <span className={`ml-2 text-xs ${bmi < 18.5 || bmi >= 30 ? "text-yellow-400" : "text-green-400"}`}>{bmiLabel}</span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 pt-3 pb-4">
+          <p className="text-xs text-zinc-500 pb-3 font-semibold uppercase tracking-wide">Objetivo</p>
+          <div className="grid grid-cols-3 gap-2">
+            {PLANS.map((plan) => (
+              <button
+                key={plan.id}
+                onClick={() => handleBodyChange({ goal: plan.id })}
+                className={`flex flex-col items-center gap-1 py-3 rounded-xl border text-center transition-colors ${
+                  form.goal === plan.id
+                    ? "border-brand-500 bg-brand-500/10 text-white"
+                    : "border-zinc-800 bg-zinc-800/50 text-zinc-500 hover:text-zinc-300"
+                }`}
+              >
+                <span className="text-xl">{plan.emoji}</span>
+                <span className="text-xs font-medium">{plan.label}</span>
+                <span className="text-[10px] text-zinc-600">{plan.desc}</span>
+              </button>
+            ))}
+          </div>
         </div>
 
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-4">
-          <p className="text-xs text-zinc-500 pt-3 pb-1 font-semibold uppercase tracking-wide">Objetivos diarios</p>
+          <p className="text-xs text-zinc-500 pt-3 pb-1 font-semibold uppercase tracking-wide">Macros diarios</p>
           {numField("Calorías", "goalCalories", "kcal/día")}
-          {numField("Proteína", "goalProtein", "g/día · recomendado: peso × 2g")}
+          {numField("Proteína", "goalProtein", "g/día")}
           {numField("Carbohidratos", "goalCarbs", "g/día")}
           {numField("Grasa", "goalFat", "g/día")}
         </div>
@@ -229,9 +284,9 @@ export default function SettingsPage() {
 
         <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4">
           <p className="text-xs text-zinc-500 leading-relaxed">
-            💡 <span className="text-zinc-400">Para ganar músculo</span> necesitas un superávit calórico
-            (~{Math.round(form.weight * 33)} kcal para {form.weight}kg) y suficiente proteína
-            (~{Math.round(form.weight * 2)}g/día).
+            {form.goal === "lose_fat" && <>💡 <span className="text-zinc-400">Déficit de ~{tdee - form.goalCalories} kcal/día</span> respecto a tu TDEE ({tdee} kcal). Alta proteína ({form.goalProtein}g) para preservar músculo.</>}
+            {form.goal === "gain_muscle" && <>💡 <span className="text-zinc-400">Superávit de ~{form.goalCalories - tdee} kcal/día</span> respecto a tu TDEE ({tdee} kcal). Alta proteína ({form.goalProtein}g) y carbos para maximizar ganancias.</>}
+            {form.goal === "maintain" && <>💡 <span className="text-zinc-400">TDEE estimado: {tdee} kcal</span> para {form.weight}kg / {form.height}cm con actividad moderada. Mantén este balance para estabilizar tu peso.</>}
           </p>
         </div>
 
