@@ -16,6 +16,7 @@ async function ensureTables() {
     )
   `);
   await db.execute("ALTER TABLE Feedback ADD COLUMN stars INTEGER DEFAULT 5").catch(() => {});
+  await db.execute("ALTER TABLE Feedback ADD COLUMN userId TEXT").catch(() => {});
   await db.execute(`
     CREATE TABLE IF NOT EXISTS FeedbackLike (
       id TEXT PRIMARY KEY,
@@ -30,12 +31,14 @@ export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   const uid = session ? (session.user as any).id as string : null;
   await ensureTables();
-  const result = await db.execute(`
-    SELECT f.*,
+  const result = await db.execute({
+    sql: `SELECT f.*,
       (SELECT COUNT(*) FROM FeedbackLike WHERE feedbackId = f.id) AS likes,
-      ${uid ? `(SELECT COUNT(*) FROM FeedbackLike WHERE feedbackId = f.id AND userId = '${uid}')` : "0"} AS userLiked
-    FROM Feedback f ORDER BY f.createdAt DESC
-  `);
+      (SELECT COUNT(*) FROM FeedbackLike WHERE feedbackId = f.id AND userId = ?) AS userLiked,
+      CASE WHEN f.userId = ? THEN 1 ELSE 0 END AS isOwner
+    FROM Feedback f ORDER BY f.createdAt DESC`,
+    args: [uid ?? "", uid ?? ""],
+  });
   return NextResponse.json(result.rows);
 }
 
@@ -46,11 +49,12 @@ export async function POST(req: NextRequest) {
   const { message, stars } = await req.json();
   if (!message?.trim()) return NextResponse.json({ error: "Empty message" }, { status: 400 });
   const id = crypto.randomUUID();
+  const uid = (session.user as any).id as string;
   const author = session.user?.name || "Anónimo";
   const rating = Math.min(5, Math.max(1, parseInt(stars) || 5));
   await db.execute({
-    sql: "INSERT INTO Feedback (id, author, message, stars) VALUES (?, ?, ?, ?)",
-    args: [id, author, message.trim(), rating],
+    sql: "INSERT INTO Feedback (id, userId, author, message, stars) VALUES (?, ?, ?, ?, ?)",
+    args: [id, uid, author, message.trim(), rating],
   });
   return NextResponse.json({ ok: true });
 }

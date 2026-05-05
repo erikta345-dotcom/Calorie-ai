@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Heart, Star } from "lucide-react";
+import { Heart, Star, Trash2 } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 
 type Feedback = {
@@ -11,6 +11,7 @@ type Feedback = {
   stars: number;
   likes: number;
   userLiked: number;
+  isOwner: number;
   createdAt: string;
 };
 
@@ -92,6 +93,11 @@ export default function FeedbackPage() {
     await fetch(`/api/feedback/${id}/like`, { method: "POST" });
   }
 
+  async function handleDelete(id: string) {
+    setFeedbacks((prev) => prev.filter((f) => f.id !== id));
+    await fetch(`/api/feedback/${id}`, { method: "DELETE" });
+  }
+
   return (
     <div className="min-h-screen bg-zinc-950 max-w-md mx-auto pb-32 px-4">
       <header className="pt-14 pb-6">
@@ -136,15 +142,25 @@ export default function FeedbackPage() {
               <StarDisplay value={Number(fb.stars) || 5} />
             </div>
             <p className="text-sm text-zinc-300 leading-relaxed mb-2">{fb.message}</p>
-            <button
-              onClick={() => handleLike(fb.id)}
-              className={`flex items-center gap-1.5 text-xs transition-colors ${
-                fb.userLiked ? "text-red-400" : "text-zinc-600 hover:text-red-400"
-              }`}
-            >
-              <Heart size={14} className={fb.userLiked ? "fill-red-400" : ""} />
-              {Number(fb.likes) > 0 && <span>{fb.likes}</span>}
-            </button>
+            <div className="flex items-center justify-between">
+              <button
+                onClick={() => handleLike(fb.id)}
+                className={`flex items-center gap-1.5 text-xs transition-colors ${
+                  fb.userLiked ? "text-red-400" : "text-zinc-600 hover:text-red-400"
+                }`}
+              >
+                <Heart size={14} className={fb.userLiked ? "fill-red-400" : ""} />
+                {Number(fb.likes) > 0 && <span>{fb.likes}</span>}
+              </button>
+              {fb.isOwner ? (
+                <button
+                  onClick={() => handleDelete(fb.id)}
+                  className="text-zinc-700 hover:text-red-400 transition-colors p-1"
+                >
+                  <Trash2 size={13} />
+                </button>
+              ) : null}
+            </div>
           </div>
         ))}
       </div>
