@@ -31,7 +31,14 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const session = await getServerSession(authOptions);
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const uid = (session.user as any).id as string;
   const { endpoint } = await req.json();
-  await db.execute({ sql: "DELETE FROM PushSubscription WHERE endpoint = ?", args: [endpoint] });
+  if (!endpoint) return NextResponse.json({ error: "Missing endpoint" }, { status: 400 });
+  await db.execute({
+    sql: "DELETE FROM PushSubscription WHERE endpoint = ? AND userId = ?",
+    args: [endpoint, uid],
+  });
   return NextResponse.json({ ok: true });
 }

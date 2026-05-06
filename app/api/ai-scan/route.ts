@@ -51,6 +51,11 @@ RULES:
 - If image is unclear or not food, still return your best estimate`;
 
 export async function POST(req: NextRequest) {
+  const { getServerSession } = await import("next-auth");
+  const { authOptions } = await import("@/lib/auth");
+  const session = await getServerSession(authOptions);
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+
   const { image, description } = await req.json();
   if (!image) return NextResponse.json({ error: "Imagen requerida" }, { status: 400 });
 
