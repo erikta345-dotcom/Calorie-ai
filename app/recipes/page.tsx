@@ -85,7 +85,8 @@ export default function RecipesPage() {
     setLoadingList(true);
     try {
       const res = await fetch("/api/recipes");
-      setRecipes(await res.json());
+      const data = await res.json();
+      if (Array.isArray(data)) setRecipes(data);
     } finally {
       setLoadingList(false);
     }

@@ -16,7 +16,17 @@ export async function GET() {
       sql: "SELECT * FROM Recipe WHERE userId = ? ORDER BY createdAt DESC",
       args: [uid(session)],
     });
-    const rows = result.rows.map((r: any) => ({ ...r, items: JSON.parse(r.items as string) }));
+    const rows = result.rows.map((r: any) => ({
+      id: r.id,
+      userId: r.userId,
+      name: r.name,
+      items: JSON.parse(r.items as string),
+      totalCalories: r.totalCalories,
+      totalProtein: r.totalProtein,
+      totalCarbs: r.totalCarbs,
+      totalFat: r.totalFat,
+      createdAt: r.createdAt,
+    }));
     return NextResponse.json(rows);
   } catch {
     return NextResponse.json({ error: "Error al obtener recetas" }, { status: 500 });
@@ -36,7 +46,17 @@ export async function POST(req: NextRequest) {
     });
     const row = await db.execute({ sql: "SELECT * FROM Recipe WHERE id = ?", args: [id] });
     const r = row.rows[0] as any;
-    return NextResponse.json({ ...r, items: JSON.parse(r.items) }, { status: 201 });
+    return NextResponse.json({
+      id: r.id,
+      userId: r.userId,
+      name: r.name,
+      items: JSON.parse(r.items as string),
+      totalCalories: r.totalCalories,
+      totalProtein: r.totalProtein,
+      totalCarbs: r.totalCarbs,
+      totalFat: r.totalFat,
+      createdAt: r.createdAt,
+    }, { status: 201 });
   } catch (e) {
     console.error(e);
     return NextResponse.json({ error: "Error al crear receta" }, { status: 500 });
