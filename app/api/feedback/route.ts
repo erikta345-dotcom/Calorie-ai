@@ -48,7 +48,7 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   await ensureTables();
   const uid = (session.user as any).id as string;
-  if (!checkRateLimit(`feedback:${uid}`, 10, 60_000)) {
+  if (!(await checkRateLimit(`feedback:${uid}`, 10, 60_000))) {
     return NextResponse.json({ error: "Demasiadas peticiones. Espera un momento." }, { status: 429 });
   }
   const { message, stars } = await req.json();

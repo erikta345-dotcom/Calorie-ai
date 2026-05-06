@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
 
   const { checkRateLimit, getIP } = await import("@/lib/rateLimit");
   const uid = (session.user as any).id as string;
-  if (!checkRateLimit(`ai-scan:${uid}`, 10, 60_000)) {
+  if (!(await checkRateLimit(`ai-scan:${uid}`, 10, 60_000))) {
     return NextResponse.json({ error: "Demasiadas peticiones. Espera un momento." }, { status: 429 });
   }
 

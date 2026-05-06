@@ -1,26 +1,38 @@
 import { NextRequest } from "next/server";
 
-type Entry = { count: number; resetAt: number };
-const store = new Map<string, Entry>();
-
-export function checkRateLimit(key: string, limit: number, windowMs: number): boolean {
-  const now = Date.now();
-  // Cleanup to prevent unbounded growth
-  if (store.size > 5000) {
-    store.forEach((v, k) => {
-      if (now > v.resetAt) store.delete(k);
-    });
-  }
-  const entry = store.get(key);
-  if (!entry || now > entry.resetAt) {
-    store.set(key, { count: 1, resetAt: now + windowMs });
-    return true;
-  }
-  if (entry.count >= limit) return false;
-  entry.count++;
-  return true;
-}
-
 export function getIP(req: NextRequest): string {
   return req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? "unknown";
+}
+
+let redis: import("@upstash/redis").Redis | null = null;
+const limiters = new Map<string, import("@upstash/ratelimit").Ratelimit>();
+
+function getLimiter(limit: number, windowMs: number) {
+  const key = `${limit}:${windowMs}`;
+  if (!limiters.has(key)) {
+    const { Ratelimit } = require("@upstash/ratelimit");
+    const { Redis } = require("@upstash/redis");
+    if (!redis) redis = Redis.fromEnv();
+    limiters.set(
+      key,
+      new Ratelimit({
+        redis,
+        limiter: Ratelimit.slidingWindow(limit, `${Math.round(windowMs / 1000)} s`),
+        analytics: false,
+      })
+    );
+  }
+  return limiters.get(key)!;
+}
+
+export async function checkRateLimit(key: string, limit: number, windowMs: number): Promise<boolean> {
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) {
+    return true;
+  }
+  try {
+    const { success } = await getLimiter(limit, windowMs).limit(key);
+    return success;
+  } catch {
+    return true;
+  }
 }

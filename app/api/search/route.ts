@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit, getIP } from "@/lib/rateLimit";
 
 export async function GET(req: NextRequest) {
-  if (!checkRateLimit(`search:${getIP(req)}`, 30, 60_000)) {
+  if (!(await checkRateLimit(`search:${getIP(req)}`, 30, 60_000))) {
     return NextResponse.json({ error: "Demasiadas peticiones. Espera un momento." }, { status: 429 });
   }
   const q = req.nextUrl.searchParams.get("q");

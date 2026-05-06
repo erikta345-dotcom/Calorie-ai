@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const uid = userId(session);
-  if (!checkRateLimit(`entries:${uid}`, 60, 60_000)) {
+  if (!(await checkRateLimit(`entries:${uid}`, 60, 60_000))) {
     return NextResponse.json({ error: "Demasiadas peticiones. Espera un momento." }, { status: 429 });
   }
   try {
