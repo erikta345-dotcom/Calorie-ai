@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit, getIP } from "@/lib/rateLimit";
 
 export async function GET(req: NextRequest) {
+  if (!checkRateLimit(`barcode:${getIP(req)}`, 30, 60_000)) {
+    return NextResponse.json({ error: "Demasiadas peticiones. Espera un momento." }, { status: 429 });
+  }
   const code = req.nextUrl.searchParams.get("code");
-  if (!code) return NextResponse.json({ error: "Código requerido" }, { status: 400 });
+  if (!code || typeof code !== "string" || code.length > 50 || !/^[\w-]+$/.test(code)) {
+    return NextResponse.json({ error: "Código inválido" }, { status: 400 });
+  }
 
   try {
     const res = await fetch(

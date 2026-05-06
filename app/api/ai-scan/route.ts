@@ -56,8 +56,17 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+  const { checkRateLimit, getIP } = await import("@/lib/rateLimit");
+  const uid = (session.user as any).id as string;
+  if (!checkRateLimit(`ai-scan:${uid}`, 10, 60_000)) {
+    return NextResponse.json({ error: "Demasiadas peticiones. Espera un momento." }, { status: 429 });
+  }
+
   const { image, description } = await req.json();
-  if (!image) return NextResponse.json({ error: "Imagen requerida" }, { status: 400 });
+  if (!image || typeof image !== "string") return NextResponse.json({ error: "Imagen requerida" }, { status: 400 });
+  if (description && typeof description === "string" && description.length > 200) {
+    return NextResponse.json({ error: "Descripción demasiado larga" }, { status: 400 });
+  }
 
   const apiKey = process.env.GROQ_API_KEY;
   if (!apiKey) return NextResponse.json({ error: "GROQ_API_KEY no configurada" }, { status: 500 });

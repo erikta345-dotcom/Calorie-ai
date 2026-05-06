@@ -3,6 +3,7 @@ import { db } from "@/lib/prisma";
 import { randomUUID } from "crypto";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 function uid(session: any) {
   return (session?.user as any)?.id as string;
@@ -36,13 +37,22 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const userId = uid(session);
+  if (!checkRateLimit(`recipes:${userId}`, 20, 60_000)) {
+    return NextResponse.json({ error: "Demasiadas peticiones. Espera un momento." }, { status: 429 });
+  }
   try {
     const { name, items, totalCalories, totalProtein, totalCarbs, totalFat } = await req.json();
-    if (!name || !items?.length) return NextResponse.json({ error: "Faltan campos" }, { status: 400 });
+    if (!name || typeof name !== "string" || name.trim().length === 0 || name.length > 100) {
+      return NextResponse.json({ error: "Nombre inválido" }, { status: 400 });
+    }
+    if (!Array.isArray(items) || items.length === 0 || items.length > 50) {
+      return NextResponse.json({ error: "Items inválidos" }, { status: 400 });
+    }
     const id = randomUUID();
     await db.execute({
       sql: "INSERT INTO Recipe (id, userId, name, items, totalCalories, totalProtein, totalCarbs, totalFat) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-      args: [id, uid(session), name, JSON.stringify(items), totalCalories ?? 0, totalProtein ?? 0, totalCarbs ?? 0, totalFat ?? 0],
+      args: [id, userId, name.trim(), JSON.stringify(items), totalCalories ?? 0, totalProtein ?? 0, totalCarbs ?? 0, totalFat ?? 0],
     });
     const row = await db.execute({ sql: "SELECT * FROM Recipe WHERE id = ?", args: [id] });
     const r = row.rows[0] as any;

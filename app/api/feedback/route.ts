@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 export const dynamic = "force-dynamic";
 
@@ -46,10 +47,14 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   await ensureTables();
+  const uid = (session.user as any).id as string;
+  if (!checkRateLimit(`feedback:${uid}`, 10, 60_000)) {
+    return NextResponse.json({ error: "Demasiadas peticiones. Espera un momento." }, { status: 429 });
+  }
   const { message, stars } = await req.json();
   if (!message?.trim()) return NextResponse.json({ error: "Empty message" }, { status: 400 });
+  if (message.length > 1000) return NextResponse.json({ error: "Mensaje demasiado largo" }, { status: 400 });
   const id = crypto.randomUUID();
-  const uid = (session.user as any).id as string;
   const author = session.user?.name || "Anónimo";
   const rating = Math.min(5, Math.max(1, parseInt(stars) || 5));
   await db.execute({

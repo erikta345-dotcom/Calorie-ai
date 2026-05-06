@@ -1,8 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
+import { checkRateLimit, getIP } from "@/lib/rateLimit";
 
 export async function GET(req: NextRequest) {
+  if (!checkRateLimit(`search:${getIP(req)}`, 30, 60_000)) {
+    return NextResponse.json({ error: "Demasiadas peticiones. Espera un momento." }, { status: 429 });
+  }
   const q = req.nextUrl.searchParams.get("q");
-  if (!q) return NextResponse.json([], { status: 400 });
+  if (!q || typeof q !== "string" || q.trim().length === 0 || q.length > 100) {
+    return NextResponse.json([], { status: 400 });
+  }
 
   try {
     const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=10&fields=id,product_name,nutriments`;

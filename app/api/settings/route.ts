@@ -3,6 +3,9 @@ import { db } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
+const VALID_GENDERS = ["male", "female", "other"];
+const VALID_GOALS = ["lose", "maintain", "gain"];
+
 export const dynamic = "force-dynamic";
 
 async function ensureColumns() {
@@ -36,6 +39,25 @@ export async function PUT(req: NextRequest) {
   const uid = (session.user as any).id as string;
   try {
     const { weight, height, age, gender, goal, goalCalories, goalProtein, goalCarbs, goalFat, mealTimes } = await req.json();
+    if (weight != null && (isNaN(parseFloat(weight)) || parseFloat(weight) < 20 || parseFloat(weight) > 500)) {
+      return NextResponse.json({ error: "Peso inválido" }, { status: 400 });
+    }
+    if (height != null && (isNaN(parseFloat(height)) || parseFloat(height) < 50 || parseFloat(height) > 300)) {
+      return NextResponse.json({ error: "Altura inválida" }, { status: 400 });
+    }
+    if (age != null && (isNaN(parseInt(age)) || parseInt(age) < 10 || parseInt(age) > 120)) {
+      return NextResponse.json({ error: "Edad inválida" }, { status: 400 });
+    }
+    if (gender != null && !VALID_GENDERS.includes(gender)) {
+      return NextResponse.json({ error: "Género inválido" }, { status: 400 });
+    }
+    if (goal != null && !VALID_GOALS.includes(goal)) {
+      return NextResponse.json({ error: "Objetivo inválido" }, { status: 400 });
+    }
+    const macroFields = [goalCalories, goalProtein, goalCarbs, goalFat];
+    if (macroFields.some((v) => v != null && (isNaN(parseFloat(v)) || parseFloat(v) < 0 || parseFloat(v) > 10000))) {
+      return NextResponse.json({ error: "Macros inválidos" }, { status: 400 });
+    }
     await ensureColumns();
     await db.execute({
       sql: `INSERT INTO UserSettings (id, weight, height, age, gender, goal, goalCalories, goalProtein, goalCarbs, goalFat, mealTimes)
