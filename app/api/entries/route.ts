@@ -12,13 +12,20 @@ function userId(session: any) {
   return (session?.user as any)?.id as string;
 }
 
+const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const uid = userId(session);
+  if (!(await checkRateLimit(`entries-get:${uid}`, 60, 60_000))) {
+    return NextResponse.json({ error: "Demasiadas peticiones." }, { status: 429 });
+  }
   const date = req.nextUrl.searchParams.get("date");
   const from = req.nextUrl.searchParams.get("from");
   const to = req.nextUrl.searchParams.get("to");
+  if (date && !DATE_RE.test(date)) return NextResponse.json({ error: "Fecha inválida" }, { status: 400 });
+  if ((from && !DATE_RE.test(from)) || (to && !DATE_RE.test(to))) return NextResponse.json({ error: "Fecha inválida" }, { status: 400 });
   try {
     let result;
     if (from && to) {
@@ -68,7 +75,7 @@ export async function POST(req: NextRequest) {
       sql: "INSERT INTO FoodEntry (id, userId, date, meal, name, calories, protein, carbs, fat, grams, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       args: [id, uid, date, meal, name.trim(), cal, Math.max(0, parseFloat(protein) || 0), Math.max(0, parseFloat(carbs) || 0), Math.max(0, parseFloat(fat) || 0), Math.max(1, parseFloat(grams) || 100), src],
     });
-    const row = await db.execute({ sql: "SELECT * FROM FoodEntry WHERE id = ?", args: [id] });
+    const row = await db.execute({ sql: "SELECT * FROM FoodEntry WHERE id = ? AND userId = ?", args: [id, uid] });
     return NextResponse.json(row.rows[0], { status: 201 });
   } catch (e) {
     console.error(e);
