@@ -9,25 +9,26 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/";
 
+  const [tab, setTab] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  async function handleCredentials(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email || !password) return;
-    setLoading(true);
     setError("");
-    const res = await signIn("credentials", {
-      email,
-      password,
-      callbackUrl,
-      redirect: false,
-    });
+    if (tab === "register") {
+      if (password.length < 6) { setError("La contraseña debe tener al menos 6 caracteres."); return; }
+      if (password !== confirm) { setError("Las contraseñas no coinciden."); return; }
+    }
+    setLoading(true);
+    const res = await signIn("credentials", { email, password, mode: tab, callbackUrl, redirect: false });
     setLoading(false);
     if (res?.error) {
-      setError("Contraseña incorrecta.");
+      if (tab === "login") setError("Email o contraseña incorrectos.");
+      else setError("Este email ya tiene una cuenta. Inicia sesión.");
     } else if (res?.url) {
       router.push(res.url);
     }
@@ -61,7 +62,22 @@ function LoginForm() {
           <div className="flex-1 h-px bg-zinc-800" />
         </div>
 
-        <form onSubmit={handleCredentials} className="space-y-3 text-left">
+        <div className="flex bg-zinc-900 rounded-xl p-1">
+          <button
+            onClick={() => { setTab("login"); setError(""); }}
+            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${tab === "login" ? "bg-zinc-700 text-white" : "text-zinc-500 hover:text-zinc-300"}`}
+          >
+            Iniciar sesión
+          </button>
+          <button
+            onClick={() => { setTab("register"); setError(""); }}
+            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${tab === "register" ? "bg-zinc-700 text-white" : "text-zinc-500 hover:text-zinc-300"}`}
+          >
+            Crear cuenta
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-3 text-left">
           <input
             type="email"
             placeholder="tu@email.com"
@@ -76,15 +92,27 @@ function LoginForm() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            minLength={6}
             className="w-full bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
+          {tab === "register" && (
+            <input
+              type="password"
+              placeholder="Confirmar contraseña"
+              value={confirm}
+              onChange={(e) => setConfirm(e.target.value)}
+              required
+              minLength={6}
+              className="w-full bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
+            />
+          )}
           {error && <p className="text-red-400 text-xs text-center">{error}</p>}
           <button
             type="submit"
             disabled={loading}
             className="w-full bg-brand-500 text-white font-semibold py-3 rounded-xl hover:opacity-90 transition-opacity disabled:opacity-40"
           >
-            {loading ? "Entrando..." : "Entrar / Crear cuenta"}
+            {loading ? "..." : tab === "login" ? "Iniciar sesión" : "Crear cuenta"}
           </button>
         </form>
 

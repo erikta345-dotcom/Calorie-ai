@@ -17,16 +17,20 @@ export const authOptions: NextAuthOptions = {
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Contraseña", type: "password" },
+        mode: { label: "Mode", type: "text" },
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
         const email = credentials.email.toLowerCase().trim();
+        const mode = credentials.mode === "register" ? "register" : "login";
 
         const pwResult = await db.execute({
           sql: "SELECT * FROM UserPasswords WHERE id = ?",
           args: [email],
         });
-        if (pwResult.rows.length === 0) {
+
+        if (mode === "register") {
+          if (pwResult.rows.length > 0) return null; // already exists
           const passwordHash = await hash(credentials.password, 10);
           await db.execute({
             sql: "INSERT INTO UserPasswords (id, passwordHash) VALUES (?, ?)",
@@ -34,6 +38,7 @@ export const authOptions: NextAuthOptions = {
           });
           sendWelcomeEmail(email, email.split("@")[0]).catch(() => {});
         } else {
+          if (pwResult.rows.length === 0) return null; // no account
           const valid = await compare(credentials.password, pwResult.rows[0].passwordHash as string);
           if (!valid) return null;
         }
