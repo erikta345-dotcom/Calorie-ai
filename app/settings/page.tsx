@@ -273,7 +273,7 @@ export default function SettingsPage() {
               <p className="text-sm text-white">{MEAL_LABELS[meal]}</p>
               <input
                 type="time"
-                value={form.mealTimes[meal]}
+                value={form.mealTimes[meal] || DEFAULT_MEAL_TIMES[meal]}
                 onChange={(e) =>
                   setForm({ ...form, mealTimes: { ...form.mealTimes, [meal]: e.target.value } })
                 }

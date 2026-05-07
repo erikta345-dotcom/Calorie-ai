@@ -13,6 +13,7 @@ async function ensureColumns() {
   await db.execute("ALTER TABLE UserSettings ADD COLUMN age INTEGER DEFAULT 25").catch(() => {});
   await db.execute("ALTER TABLE UserSettings ADD COLUMN gender TEXT DEFAULT 'male'").catch(() => {});
   await db.execute("ALTER TABLE UserSettings ADD COLUMN goal TEXT DEFAULT 'maintain'").catch(() => {});
+  await db.execute("ALTER TABLE UserSettings ADD COLUMN mealTimes TEXT").catch(() => {});
 }
 
 export async function GET() {
