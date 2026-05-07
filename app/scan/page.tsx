@@ -285,6 +285,7 @@ export default function ScanPage() {
             } else {
               pendingCodeRef.current = { code: "", count: 0 };
             }
+          }
         } catch {}
         animFrameRef.current = requestAnimationFrame(scan);
       }
