@@ -3,11 +3,13 @@ import { db } from "@/lib/prisma";
 import { randomUUID } from "crypto";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const userId = (session.user as any).id as string;
+  if (!(await checkRateLimit(`recipes:${userId}`, 20, 60_000))) return NextResponse.json({ error: "Demasiadas peticiones." }, { status: 429 });
   try {
     const VALID_MEALS = ["desayuno", "comida", "merienda", "cena", "snack", "picoteo"];
     const { meal, date } = await req.json();

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { checkRateLimit } from "@/lib/rateLimit";
 
 async function ensureTable() {
   await db.execute(`
@@ -18,6 +19,7 @@ export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const uid = (session.user as any).id as string;
+  if (!(await checkRateLimit(`weight-get:${uid}`, 30, 60_000))) return NextResponse.json({ error: "Demasiadas peticiones." }, { status: 429 });
   await ensureTable();
   const result = await db.execute({
     sql: "SELECT date, weight FROM WeightLog WHERE userId = ? ORDER BY date ASC LIMIT 90",
@@ -30,6 +32,7 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const uid = (session.user as any).id as string;
+  if (!(await checkRateLimit(`weight-post:${uid}`, 10, 60_000))) return NextResponse.json({ error: "Demasiadas peticiones." }, { status: 429 });
   const { date, weight } = await req.json();
   if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return NextResponse.json({ error: "Fecha inválida" }, { status: 400 });
   const w = parseFloat(weight);
