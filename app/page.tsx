@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { format } from "date-fns";
+import { format, subDays } from "date-fns";
 import { es } from "date-fns/locale";
 import { useRouter } from "next/navigation";
 import BottomNav from "@/components/BottomNav";
@@ -52,6 +52,7 @@ export default function DashboardPage() {
     goalCalories: 2800, goalProtein: 150, goalCarbs: 300, goalFat: 80,
   });
   const [loading, setLoading] = useState(true);
+  const [copyingYesterday, setCopyingYesterday] = useState(false);
   const [editEntry, setEditEntry] = useState<FoodEntry | null>(null);
   const [editForm, setEditForm] = useState<EditForm | null>(null);
   const [editSaving, setEditSaving] = useState(false);
@@ -98,6 +99,26 @@ export default function DashboardPage() {
     setEditSaving(false);
   }
 
+  async function copyYesterday() {
+    setCopyingYesterday(true);
+    const yesterday = format(subDays(new Date(), 1), "yyyy-MM-dd");
+    const res = await fetch(`/api/entries?date=${yesterday}`);
+    if (!res.ok) { setCopyingYesterday(false); return; }
+    const yesterdayEntries: FoodEntry[] = await res.json();
+    if (!yesterdayEntries.length) { setCopyingYesterday(false); return; }
+    const created = await Promise.all(
+      yesterdayEntries.map((e) =>
+        fetch("/api/entries", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ date: today, meal: e.meal, name: e.name, calories: e.calories, protein: e.protein, carbs: e.carbs, fat: e.fat, grams: e.grams, source: "manual" }),
+        }).then((r) => r.ok ? r.json() : null)
+      )
+    );
+    setEntries((prev) => [...prev, ...created.filter(Boolean)]);
+    setCopyingYesterday(false);
+  }
+
   const totals = entries.reduce(
     (acc, e) => ({
       calories: acc.calories + (e.calories || 0),
@@ -113,11 +134,20 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-zinc-950 max-w-md mx-auto pb-32">
       {/* Header */}
-      <header className="px-4 pt-14 pb-5">
-        <p className="text-zinc-500 text-xs uppercase tracking-widest font-medium capitalize">
-          {format(new Date(), "EEEE, d MMMM", { locale: es })}
-        </p>
-        <h1 className="text-3xl font-bold text-white mt-0.5">Hoy</h1>
+      <header className="px-4 pt-14 pb-5 flex items-end justify-between">
+        <div>
+          <p className="text-zinc-500 text-xs uppercase tracking-widest font-medium capitalize">
+            {format(new Date(), "EEEE, d MMMM", { locale: es })}
+          </p>
+          <h1 className="text-3xl font-bold text-white mt-0.5">Hoy</h1>
+        </div>
+        <button
+          onClick={copyYesterday}
+          disabled={copyingYesterday}
+          className="text-xs text-zinc-400 bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40 mb-1"
+        >
+          {copyingYesterday ? "Copiando..." : "📋 Copiar ayer"}
+        </button>
       </header>
 
       {/* Calorie Ring + Macros */}
