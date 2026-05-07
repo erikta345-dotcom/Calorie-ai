@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
+import { timingSafeEqual } from "crypto";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
-  const secret = req.nextUrl.searchParams.get("secret");
-  if (secret !== process.env.NEXTAUTH_SECRET) {
+  const secret = req.headers.get("authorization")?.replace("Bearer ", "") ?? "";
+  const expected = process.env.ADMIN_SECRET ?? "";
+  if (
+    !expected ||
+    secret.length !== expected.length ||
+    !timingSafeEqual(Buffer.from(secret), Buffer.from(expected))
+  ) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   await db.execute(`

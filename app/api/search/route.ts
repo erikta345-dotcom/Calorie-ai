@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { checkRateLimit, getIP } from "@/lib/rateLimit";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 
 export async function GET(req: NextRequest) {
-  if (!(await checkRateLimit(`search:${getIP(req)}`, 30, 60_000))) {
+  const session = await getServerSession(authOptions);
+  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const uid = (session.user as any).id as string;
+  if (!(await checkRateLimit(`search:${uid}`, 30, 60_000))) {
     return NextResponse.json({ error: "Demasiadas peticiones. Espera un momento." }, { status: 429 });
   }
   const q = req.nextUrl.searchParams.get("q");

@@ -9,8 +9,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const userId = (session.user as any).id as string;
   try {
+    const VALID_MEALS = ["desayuno", "comida", "merienda", "cena", "snack", "picoteo"];
     const { meal, date } = await req.json();
     if (!meal || !date) return NextResponse.json({ error: "Faltan campos" }, { status: 400 });
+    if (!VALID_MEALS.includes(meal)) return NextResponse.json({ error: "Comida inválida" }, { status: 400 });
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return NextResponse.json({ error: "Fecha inválida" }, { status: 400 });
 
     const result = await db.execute({
       sql: "SELECT * FROM Recipe WHERE id = ? AND userId = ?",

@@ -15,6 +15,12 @@ export async function POST(req: NextRequest) {
   }
   const { endpoint, keys } = subscription;
   const { p256dh, auth } = keys;
+  if (typeof endpoint !== "string" || !/^https:\/\//.test(endpoint) || endpoint.length > 500) {
+    return NextResponse.json({ error: "Invalid endpoint" }, { status: 400 });
+  }
+  if (typeof p256dh !== "string" || typeof auth !== "string") {
+    return NextResponse.json({ error: "Invalid keys" }, { status: 400 });
+  }
   const id = crypto.randomUUID();
   await db.execute({
     sql: `INSERT INTO PushSubscription (id, userId, endpoint, p256dh, auth, mealTimes, utcOffset)

@@ -14,7 +14,7 @@ export async function sendWelcomeEmail(to: string, name: string) {
     },
   });
 
-  console.log("[email] Sending welcome email to", to);
+  console.log("[email] Sending welcome email");
   await transporter.sendMail({
     from: `"Calorie AI" <${process.env.GMAIL_USER}>`,
     to,
@@ -72,5 +72,5 @@ export async function sendWelcomeEmail(to: string, name: string) {
 </body>
 </html>`,
   });
-  console.log("[email] Sent successfully to", to);
+  console.log("[email] Sent successfully");
 }

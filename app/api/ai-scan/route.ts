@@ -64,6 +64,10 @@ export async function POST(req: NextRequest) {
 
   const { image, description } = await req.json();
   if (!image || typeof image !== "string") return NextResponse.json({ error: "Imagen requerida" }, { status: 400 });
+  const isDataUri = /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/]+=*$/.test(image);
+  const isHttpsUrl = /^https:\/\//.test(image);
+  if (!isDataUri && !isHttpsUrl) return NextResponse.json({ error: "Formato de imagen inválido" }, { status: 400 });
+  if (isDataUri && image.length > 10 * 1024 * 1024) return NextResponse.json({ error: "Imagen demasiado grande" }, { status: 400 });
   if (description && typeof description === "string" && description.length > 200) {
     return NextResponse.json({ error: "Descripción demasiado larga" }, { status: 400 });
   }
