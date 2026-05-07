@@ -77,6 +77,9 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [notifPerm, setNotifPerm] = useState<string>("default");
+  const [weightLog, setWeightLog] = useState<{ date: string; weight: number }[]>([]);
+  const [weightInput, setWeightInput] = useState("");
+  const [weightSaving, setWeightSaving] = useState(false);
 
   useEffect(() => {
     if ("Notification" in window) setNotifPerm(Notification.permission);
@@ -93,6 +96,9 @@ export default function SettingsPage() {
           : DEFAULT_MEAL_TIMES;
         setForm({ ...s, height: s.height ?? 175, age: s.age ?? 25, gender: s.gender ?? "male", goal: s.goal ?? "maintain", mealTimes: { ...DEFAULT_MEAL_TIMES, ...mealTimes } });
       });
+    fetch("/api/weight")
+      .then((r) => r.json())
+      .then((data) => { if (Array.isArray(data)) setWeightLog(data); });
   }, []);
 
   function handleBodyChange(patch: Partial<Pick<Settings, "weight" | "height" | "age" | "gender" | "goal">>) {
@@ -100,6 +106,27 @@ export default function SettingsPage() {
       const next = { ...f, ...patch };
       return { ...next, ...calcMacros(next.weight, next.height, next.age, next.gender, next.goal) };
     });
+  }
+
+  async function logWeight() {
+    const w = parseFloat(weightInput);
+    if (isNaN(w) || w < 20 || w > 500) return;
+    setWeightSaving(true);
+    const today = new Date().toISOString().split("T")[0];
+    const res = await fetch("/api/weight", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date: today, weight: w }),
+    });
+    if (res.ok) {
+      const entry = await res.json();
+      setWeightLog((prev) => {
+        const filtered = prev.filter((e) => e.date !== entry.date);
+        return [...filtered, entry].sort((a, b) => a.date.localeCompare(b.date));
+      });
+      setWeightInput("");
+    }
+    setWeightSaving(false);
   }
 
   async function handleSave() {
@@ -235,6 +262,59 @@ export default function SettingsPage() {
           {numField("Proteína", "goalProtein", "g/día")}
           {numField("Carbohidratos", "goalCarbs", "g/día")}
           {numField("Grasa", "goalFat", "g/día")}
+        </div>
+
+        {/* Weight log */}
+        <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 pt-3 pb-4">
+          <p className="text-xs text-zinc-500 pb-3 font-semibold uppercase tracking-wide">📈 Evolución de peso</p>
+          <div className="flex gap-2 mb-4">
+            <input
+              type="number"
+              step="0.1"
+              placeholder="Peso hoy (kg)"
+              value={weightInput}
+              onChange={(e) => setWeightInput(e.target.value)}
+              className="flex-1 bg-zinc-800 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
+            />
+            <button
+              onClick={logWeight}
+              disabled={weightSaving}
+              className="px-4 py-2 rounded-lg bg-brand-500 text-zinc-950 font-semibold text-sm disabled:opacity-40"
+            >
+              {weightSaving ? "..." : "Añadir"}
+            </button>
+          </div>
+          {weightLog.length >= 2 ? (() => {
+            const W = 320; const H = 100; const PAD = 8;
+            const weights = weightLog.map((e) => e.weight);
+            const min = Math.min(...weights) - 1;
+            const max = Math.max(...weights) + 1;
+            const xStep = (W - PAD * 2) / (weightLog.length - 1);
+            const yScale = (H - PAD * 2) / (max - min);
+            const points = weightLog.map((e, i) => `${PAD + i * xStep},${H - PAD - (e.weight - min) * yScale}`).join(" ");
+            const last = weightLog[weightLog.length - 1];
+            const first = weightLog[0];
+            const diff = last.weight - first.weight;
+            return (
+              <div>
+                <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 100 }}>
+                  <polyline points={points} fill="none" stroke="#22c55e" strokeWidth="2" strokeLinejoin="round" />
+                  {weightLog.map((e, i) => (
+                    <circle key={e.date} cx={PAD + i * xStep} cy={H - PAD - (e.weight - min) * yScale} r="3" fill="#22c55e" />
+                  ))}
+                </svg>
+                <div className="flex justify-between text-[11px] text-zinc-500 mt-1">
+                  <span>{first.date.slice(5)}</span>
+                  <span className={diff < 0 ? "text-green-400" : diff > 0 ? "text-red-400" : "text-zinc-400"}>
+                    {diff > 0 ? "+" : ""}{diff.toFixed(1)} kg
+                  </span>
+                  <span>{last.date.slice(5)} · {last.weight} kg</span>
+                </div>
+              </div>
+            );
+          })() : (
+            <p className="text-xs text-zinc-600 text-center py-2">Registra al menos 2 días para ver la gráfica</p>
+          )}
         </div>
 
         {/* Meal times */}
