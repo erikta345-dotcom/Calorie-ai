@@ -12,7 +12,7 @@ export async function GET(req: NextRequest) {
 
   try {
     const res = await fetch(
-      `https://world.openfoodfacts.org/api/v0/product/${encodeURIComponent(code)}.json`,
+      `https://es.openfoodfacts.org/api/v0/product/${encodeURIComponent(code)}.json`,
       { headers: { "User-Agent": "CalorieAI/1.0 (personal app)" } }
     );
     const data = await res.json();
