@@ -11,11 +11,13 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const res = await fetch(
-      `https://es.openfoodfacts.org/api/v0/product/${encodeURIComponent(code)}.json`,
-      { headers: { "User-Agent": "CalorieAI/1.0 (personal app)" } }
-    );
-    const data = await res.json();
+    const headers = { "User-Agent": "CalorieAI/1.0 (personal app)" };
+    const url = (host: string) => `https://${host}/api/v0/product/${encodeURIComponent(code)}.json`;
+
+    let data = await fetch(url("es.openfoodfacts.org"), { headers }).then((r) => r.json());
+    if (data.status !== 1 || !data.product) {
+      data = await fetch(url("world.openfoodfacts.org"), { headers }).then((r) => r.json());
+    }
 
     if (data.status !== 1 || !data.product) {
       return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
