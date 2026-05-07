@@ -210,6 +210,7 @@ export default function ScanPage() {
 
   const streamRef = useRef<MediaStream | null>(null);
   const animFrameRef = useRef<number>(0);
+  const pendingCodeRef = useRef<{ code: string; count: number }>({ code: "", count: 0 });
   const [barcodeSupported, setBarcodeSupported] = useState<boolean | null>(null);
   const [manualCode, setManualCode] = useState("");
 
@@ -268,13 +269,22 @@ export default function ScanPage() {
           if (barcodes.length > 0) {
             const code = barcodes[0].rawValue;
             if (code && code !== lastCode) {
-              setLastCode(code);
-              stopBarcode();
-              setBarcodeActive(false);
-              await fetchBarcodeProduct(code);
-              return;
+              if (pendingCodeRef.current.code === code) {
+                pendingCodeRef.current.count++;
+              } else {
+                pendingCodeRef.current = { code, count: 1 };
+              }
+              if (pendingCodeRef.current.count >= 8) {
+                pendingCodeRef.current = { code: "", count: 0 };
+                setLastCode(code);
+                stopBarcode();
+                setBarcodeActive(false);
+                await fetchBarcodeProduct(code);
+                return;
+              }
+            } else {
+              pendingCodeRef.current = { code: "", count: 0 };
             }
-          }
         } catch {}
         animFrameRef.current = requestAnimationFrame(scan);
       }
