@@ -10,7 +10,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const uid = (session.user as any).id as string;
   try {
-    await db.execute({ sql: "DELETE FROM FoodEntry WHERE id = ? AND userId = ?", args: [params.id, uid] });
+    const result = await db.execute({ sql: "DELETE FROM FoodEntry WHERE id = ? AND userId = ?", args: [params.id, uid] });
+    if (!result.rowsAffected) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Error al eliminar" }, { status: 500 });
