@@ -22,16 +22,6 @@ export const authOptions: NextAuthOptions = {
         if (!credentials?.email || !credentials?.password) return null;
         const email = credentials.email.toLowerCase().trim();
 
-        // Check if Google user already exists with this email → reuse their ID
-        let userId = email;
-        try {
-          const existing = await db.execute({
-            sql: "SELECT id FROM UserSettings WHERE email = ?",
-            args: [email],
-          });
-          if (existing.rows.length > 0) userId = existing.rows[0].id as string;
-        } catch {}
-
         const pwResult = await db.execute({
           sql: "SELECT * FROM UserPasswords WHERE id = ?",
           args: [email],
@@ -42,14 +32,13 @@ export const authOptions: NextAuthOptions = {
             sql: "INSERT INTO UserPasswords (id, passwordHash) VALUES (?, ?)",
             args: [email, passwordHash],
           });
-          const displayName = email.split("@")[0];
-          sendWelcomeEmail(email, displayName).catch(() => {});
+          sendWelcomeEmail(email, email.split("@")[0]).catch(() => {});
         } else {
           const valid = await compare(credentials.password, pwResult.rows[0].passwordHash as string);
           if (!valid) return null;
         }
 
-        return { id: userId, email, name: email.split("@")[0] };
+        return { id: email, email, name: email.split("@")[0] };
       },
     }),
   ],
