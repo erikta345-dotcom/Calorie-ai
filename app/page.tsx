@@ -21,6 +21,8 @@ type FoodEntry = {
   createdAt: string;
 };
 
+type EditForm = { name: string; calories: string; protein: string; carbs: string; fat: string; grams: string; meal: string };
+
 type Settings = {
   goalCalories: number;
   goalProtein: number;
@@ -50,6 +52,9 @@ export default function DashboardPage() {
     goalCalories: 2800, goalProtein: 150, goalCarbs: 300, goalFat: 80,
   });
   const [loading, setLoading] = useState(true);
+  const [editEntry, setEditEntry] = useState<FoodEntry | null>(null);
+  const [editForm, setEditForm] = useState<EditForm | null>(null);
+  const [editSaving, setEditSaving] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -69,6 +74,28 @@ export default function DashboardPage() {
   async function deleteEntry(id: string) {
     const res = await fetch(`/api/entries/${id}`, { method: "DELETE" });
     if (res.ok) setEntries((prev) => prev.filter((e) => e.id !== id));
+  }
+
+  function openEdit(entry: FoodEntry) {
+    setEditEntry(entry);
+    setEditForm({ name: entry.name, calories: String(entry.calories), protein: String(entry.protein), carbs: String(entry.carbs), fat: String(entry.fat), grams: String(entry.grams), meal: entry.meal });
+  }
+
+  async function saveEdit() {
+    if (!editEntry || !editForm) return;
+    setEditSaving(true);
+    const res = await fetch(`/api/entries/${editEntry.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ...editForm, calories: parseFloat(editForm.calories), protein: parseFloat(editForm.protein), carbs: parseFloat(editForm.carbs), fat: parseFloat(editForm.fat), grams: parseFloat(editForm.grams) }),
+    });
+    if (res.ok) {
+      const updated = await res.json();
+      setEntries((prev) => prev.map((e) => (e.id === editEntry.id ? updated : e)));
+      setEditEntry(null);
+      setEditForm(null);
+    }
+    setEditSaving(false);
   }
 
   const totals = entries.reduce(
@@ -153,7 +180,7 @@ export default function DashboardPage() {
                         className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-800/40 last:border-0"
                       >
                         <div className="min-w-0 flex-1 pr-3">
-                          <p className="text-sm text-zinc-200 truncate">{entry.name}</p>
+                          <p className="text-sm text-zinc-200 truncate cursor-pointer hover:text-white" onClick={() => openEdit(entry)}>{entry.name}</p>
                           <p className="text-[11px] text-zinc-500 mt-0.5">
                             {entry.createdAt ? new Date(entry.createdAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : ""}{entry.createdAt ? " · " : ""}{entry.grams}g · P {Math.round(entry.protein)}g · C {Math.round(entry.carbs)}g · G {Math.round(entry.fat)}g
                           </p>
@@ -179,6 +206,32 @@ export default function DashboardPage() {
           })
         )}
       </div>
+
+      {editEntry && editForm && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60" onClick={() => { setEditEntry(null); setEditForm(null); }}>
+          <div className="bg-zinc-900 border border-zinc-800 rounded-t-2xl w-full max-w-md p-5 pb-8 space-y-3" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-white font-semibold text-base">Editar entrada</h2>
+            <input className="w-full bg-zinc-800 text-white rounded-lg px-3 py-2 text-sm" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} placeholder="Nombre" />
+            <div className="grid grid-cols-2 gap-2">
+              {(["calories", "protein", "carbs", "fat", "grams"] as const).map((k) => (
+                <div key={k}>
+                  <p className="text-xs text-zinc-500 mb-1 capitalize">{k === "calories" ? "kcal" : k === "grams" ? "gramos" : k}</p>
+                  <input type="number" className="w-full bg-zinc-800 text-white rounded-lg px-3 py-2 text-sm" value={editForm[k]} onChange={(e) => setEditForm({ ...editForm, [k]: e.target.value })} />
+                </div>
+              ))}
+              <div>
+                <p className="text-xs text-zinc-500 mb-1">Comida</p>
+                <select className="w-full bg-zinc-800 text-white rounded-lg px-3 py-2 text-sm" value={editForm.meal} onChange={(e) => setEditForm({ ...editForm, meal: e.target.value })}>
+                  {MEALS.map((m) => <option key={m} value={m}>{m}</option>)}
+                </select>
+              </div>
+            </div>
+            <button onClick={saveEdit} disabled={editSaving} className="w-full py-3 rounded-xl bg-brand-500 text-white font-semibold disabled:opacity-40">
+              {editSaving ? "Guardando..." : "Guardar"}
+            </button>
+          </div>
+        </div>
+      )}
 
       <BottomNav />
     </div>
