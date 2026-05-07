@@ -33,7 +33,7 @@ type BarcodeProduct = {
   servingG: number | null;
 };
 
-const MEALS = ["desayuno", "comida", "merienda", "cena", "snack"];
+const MEALS = ["desayuno", "comida", "merienda", "cena", "snack", "picoteo"];
 const LOAD_STEPS = ["Comprimiendo imagen...", "Identificando alimentos...", "Calculando macros..."];
 const PORTIONS = [0.5, 0.75, 1, 1.5, 2] as const;
 const PORTION_LABELS = ["½×", "¾×", "1×", "1½×", "2×"];

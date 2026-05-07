@@ -28,9 +28,9 @@ type Settings = {
   mealTimes?: { desayuno?: string; comida?: string; merienda?: string; cena?: string; snack?: string };
 };
 
-const MEALS = ["desayuno", "comida", "merienda", "cena", "snack"];
+const MEALS = ["desayuno", "comida", "merienda", "cena", "snack", "picoteo"];
 const MEAL_ICONS: Record<string, string> = {
-  desayuno: "🌅", comida: "☀️", merienda: "🍊", cena: "🌙", snack: "🍎",
+  desayuno: "🌅", comida: "☀️", merienda: "🍊", cena: "🌙", snack: "🍎", picoteo: "🫙",
 };
 const MEAL_COLORS: Record<string, string> = {
   desayuno: "border-l-amber-400",
@@ -38,6 +38,7 @@ const MEAL_COLORS: Record<string, string> = {
   merienda: "border-l-lime-400",
   cena: "border-l-indigo-400",
   snack: "border-l-pink-400",
+  picoteo: "border-l-zinc-400",
 };
 
 export default function DashboardPage() {

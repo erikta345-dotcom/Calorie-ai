@@ -33,7 +33,7 @@ type FoodResult = {
   fat: number;
 };
 
-const MEALS = ["desayuno", "comida", "merienda", "cena", "snack"];
+const MEALS = ["desayuno", "comida", "merienda", "cena", "snack", "picoteo"];
 
 function MacroRow({ cal, prot, carbs, fat }: { cal: number; prot: number; carbs: number; fat: number }) {
   return (
