@@ -1,7 +1,10 @@
 import nodemailer from "nodemailer";
 
 export async function sendWelcomeEmail(to: string, name: string) {
-  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) return;
+  if (!process.env.GMAIL_USER || !process.env.GMAIL_APP_PASSWORD) {
+    console.error("[email] Missing GMAIL_USER or GMAIL_APP_PASSWORD");
+    return;
+  }
 
   const transporter = nodemailer.createTransport({
     service: "gmail",
@@ -11,6 +14,7 @@ export async function sendWelcomeEmail(to: string, name: string) {
     },
   });
 
+  console.log("[email] Sending welcome email to", to);
   await transporter.sendMail({
     from: `"Calorie AI" <${process.env.GMAIL_USER}>`,
     to,
@@ -68,4 +72,5 @@ export async function sendWelcomeEmail(to: string, name: string) {
 </body>
 </html>`,
   });
+  console.log("[email] Sent successfully to", to);
 }
