@@ -26,29 +26,72 @@ async function fetchOpenFoodFacts(code: string) {
   };
 }
 
-async function fetchEdamam(code: string) {
-  const { EDAMAM_APP_ID, EDAMAM_APP_KEY } = process.env;
-  if (!EDAMAM_APP_ID || !EDAMAM_APP_KEY) return null;
+// FatSecret OAuth2 token cache (lives for the duration of the serverless instance)
+let fsToken: { value: string; expiresAt: number } | null = null;
 
-  const res = await fetch(
-    `https://api.edamam.com/api/food-database/v2/parser?upc=${encodeURIComponent(code)}&app_id=${EDAMAM_APP_ID}&app_key=${EDAMAM_APP_KEY}`
-  );
+async function getFatSecretToken(): Promise<string | null> {
+  const { FATSECRET_CLIENT_ID, FATSECRET_CLIENT_SECRET } = process.env;
+  if (!FATSECRET_CLIENT_ID || !FATSECRET_CLIENT_SECRET) return null;
+  if (fsToken && Date.now() < fsToken.expiresAt) return fsToken.value;
+
+  const res = await fetch("https://oauth.fatsecret.com/connect/token", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Authorization: `Basic ${Buffer.from(`${FATSECRET_CLIENT_ID}:${FATSECRET_CLIENT_SECRET}`).toString("base64")}`,
+    },
+    body: "grant_type=client_credentials&scope=basic",
+  });
   if (!res.ok) return null;
   const data = await res.json();
+  fsToken = { value: data.access_token, expiresAt: Date.now() + (data.expires_in - 60) * 1000 };
+  return fsToken.value;
+}
 
-  const food = data.hints?.[0]?.food ?? data.parsed?.[0]?.food;
+async function fetchFatSecret(code: string) {
+  const token = await getFatSecretToken();
+  if (!token) return null;
+
+  const headers = { Authorization: `Bearer ${token}` };
+  const base = "https://platform.fatsecret.com/rest/server.api";
+
+  const barcodeRes = await fetch(
+    `${base}?method=food.find_id_for_barcode&barcode=${encodeURIComponent(code)}&format=json`,
+    { headers }
+  );
+  if (!barcodeRes.ok) return null;
+  const barcodeData = await barcodeRes.json();
+  const foodId = barcodeData?.food_id?.value;
+  if (!foodId) return null;
+
+  const foodRes = await fetch(
+    `${base}?method=food.get.v4&food_id=${foodId}&format=json`,
+    { headers }
+  );
+  if (!foodRes.ok) return null;
+  const foodData = await foodRes.json();
+  const food = foodData?.food;
   if (!food) return null;
 
-  const n = food.nutrients;
-  if (!n?.ENERC_KCAL) return null;
+  // Use 100g serving if available, else first serving
+  const servings: any[] = Array.isArray(food.servings?.serving)
+    ? food.servings.serving
+    : food.servings?.serving
+    ? [food.servings.serving]
+    : [];
+
+  const per100 = servings.find((s) => s.serving_description === "100 g") ?? servings[0];
+  if (!per100 || !per100.calories) return null;
+
+  const factor = per100.serving_description === "100 g" ? 1 : 100 / (parseFloat(per100.metric_serving_amount) || 100);
 
   return {
-    name: food.label || "Producto desconocido",
-    brand: food.brand || null,
-    calories: Math.round(n.ENERC_KCAL ?? 0),
-    protein: Math.round((n.PROCNT ?? 0) * 10) / 10,
-    carbs: Math.round((n.CHOCDF ?? 0) * 10) / 10,
-    fat: Math.round((n.FAT ?? 0) * 10) / 10,
+    name: food.food_name || "Producto desconocido",
+    brand: food.brand_name || null,
+    calories: Math.round(parseFloat(per100.calories) * factor),
+    protein: Math.round(parseFloat(per100.protein ?? "0") * factor * 10) / 10,
+    carbs: Math.round(parseFloat(per100.carbohydrate ?? "0") * factor * 10) / 10,
+    fat: Math.round(parseFloat(per100.fat ?? "0") * factor * 10) / 10,
     servingG: null,
   };
 }
@@ -63,7 +106,7 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    const product = (await fetchOpenFoodFacts(code)) ?? (await fetchEdamam(code));
+    const product = (await fetchOpenFoodFacts(code)) ?? (await fetchFatSecret(code));
     if (!product) {
       return NextResponse.json({ error: "Producto no encontrado" }, { status: 404 });
     }
