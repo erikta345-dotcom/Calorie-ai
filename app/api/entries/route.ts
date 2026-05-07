@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/rateLimit";
 
-const VALID_MEALS = ["desayuno", "comida", "merienda", "cena", "snack"];
+const VALID_MEALS = ["desayuno", "comida", "merienda", "cena", "snack", "picoteo"];
 const VALID_SOURCES = ["manual", "search", "scan", "barcode", "recipe"];
 
 function userId(session: any) {

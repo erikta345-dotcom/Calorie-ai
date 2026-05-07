@@ -18,6 +18,7 @@ type FoodEntry = {
   carbs: number;
   fat: number;
   grams: number;
+  createdAt: string;
 };
 
 type Settings = {
@@ -154,7 +155,7 @@ export default function DashboardPage() {
                         <div className="min-w-0 flex-1 pr-3">
                           <p className="text-sm text-zinc-200 truncate">{entry.name}</p>
                           <p className="text-[11px] text-zinc-500 mt-0.5">
-                            {entry.grams}g · P {Math.round(entry.protein)}g · C {Math.round(entry.carbs)}g · G {Math.round(entry.fat)}g
+                            {entry.createdAt ? new Date(entry.createdAt).toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : ""}{entry.createdAt ? " · " : ""}{entry.grams}g · P {Math.round(entry.protein)}g · C {Math.round(entry.carbs)}g · G {Math.round(entry.fat)}g
                           </p>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
