@@ -28,7 +28,7 @@ type Settings = {
   mealTimes?: { desayuno?: string; comida?: string; merienda?: string; cena?: string; snack?: string };
 };
 
-const MEALS = ["desayuno", "comida", "merienda", "cena", "snack", "picoteo"];
+const MEALS = ["desayuno", "snack", "comida", "merienda", "cena", "picoteo"];
 const MEAL_ICONS: Record<string, string> = {
   desayuno: "🌅", comida: "☀️", merienda: "🍊", cena: "🌙", snack: "🍎", picoteo: "🫙",
 };

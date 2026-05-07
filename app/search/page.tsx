@@ -16,7 +16,7 @@ type FoodResult = {
 };
 
 type Tab = "search" | "manual";
-const MEALS = ["desayuno", "comida", "merienda", "cena", "snack", "picoteo"];
+const MEALS = ["desayuno", "snack", "comida", "merienda", "cena", "picoteo"];
 
 function NumInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
