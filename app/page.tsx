@@ -53,6 +53,7 @@ export default function DashboardPage() {
     goalCalories: 2800, goalProtein: 150, goalCarbs: 300, goalFat: 80,
   });
   const [loading, setLoading] = useState(true);
+  const [streak, setStreak] = useState(0);
   const [copyingYesterday, setCopyingYesterday] = useState(false);
   const [editEntry, setEditEntry] = useState<FoodEntry | null>(null);
   const [editForm, setEditForm] = useState<EditForm | null>(null);
@@ -63,7 +64,8 @@ export default function DashboardPage() {
     Promise.all([
       fetch(`/api/entries?date=${today}`).then((r) => r.json()),
       fetch("/api/settings").then((r) => r.json()),
-    ]).then(([ent, sett]) => {
+      fetch(`/api/streak?date=${today}`).then((r) => r.json()),
+    ]).then(([ent, sett, str]) => {
       if (Array.isArray(ent)) setEntries(ent);
       if (sett && !sett.error) {
         const mealTimes = sett.mealTimes
@@ -71,6 +73,7 @@ export default function DashboardPage() {
           : undefined;
         setSettings({ ...sett, mealTimes });
       }
+      if (str?.streak) setStreak(str.streak);
     }).catch(() => {}).finally(() => setLoading(false));
   }, [today]);
 
@@ -176,7 +179,12 @@ export default function DashboardPage() {
           <p className="text-gray-400 dark:text-zinc-500 text-xs uppercase tracking-widest font-medium capitalize">
             {format(new Date(), "EEEE, d MMMM", { locale: es })}
           </p>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mt-0.5">Hoy</h1>
+          <div className="flex items-baseline gap-2.5">
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mt-0.5">Hoy</h1>
+            {streak >= 2 && (
+              <span className="text-sm font-semibold text-orange-400">🔥 {streak}</span>
+            )}
+          </div>
         </div>
         <button
           onClick={copyYesterday}

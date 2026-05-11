@@ -71,8 +71,12 @@ export default function RecipesPage() {
 
   const [loggingId, setLoggingId] = useState<string | null>(null);
   const [logMeal, setLogMeal] = useState("comida");
+  const [logMultiplier, setLogMultiplier] = useState(1);
   const [logging, setLogging] = useState(false);
   const [logSuccess, setLogSuccess] = useState<string | null>(null);
+
+  const LOG_PORTIONS = [0.5, 0.75, 1, 1.5, 2] as const;
+  const LOG_LABELS = ["½×", "¾×", "1×", "1½×", "2×"];
 
   useEffect(() => {
     if (view === "list") loadRecipes();
@@ -178,7 +182,7 @@ export default function RecipesPage() {
       const res = await fetch(`/api/recipes/${id}/log`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ meal: logMeal, date: today }),
+        body: JSON.stringify({ meal: logMeal, date: today, multiplier: logMultiplier }),
       });
       if (!res.ok) throw new Error();
       setLoggingId(null);
@@ -445,6 +449,18 @@ export default function RecipesPage() {
 
             {loggingId === recipe.id ? (
               <div className="mt-3 space-y-2">
+                <p className="text-xs text-gray-400 dark:text-zinc-500">Porción</p>
+                <div className="flex gap-1">
+                  {LOG_PORTIONS.map((p, i) => (
+                    <button
+                      key={p}
+                      onClick={() => setLogMultiplier(p)}
+                      className={`flex-1 py-1.5 rounded-lg text-xs font-semibold transition-colors ${logMultiplier === p ? "bg-brand-500 text-white" : "bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400"}`}
+                    >
+                      {LOG_LABELS[i]}
+                    </button>
+                  ))}
+                </div>
                 <p className="text-xs text-gray-400 dark:text-zinc-500">¿En qué comida?</p>
                 <div className="grid grid-cols-5 gap-1">
                   {MEALS.map((m) => (
@@ -466,13 +482,13 @@ export default function RecipesPage() {
                     disabled={logging}
                     className="flex-1 py-2.5 rounded-xl bg-brand-500 text-white text-sm font-semibold disabled:opacity-40"
                   >
-                    {logging ? "..." : "Registrar"}
+                    {logging ? "..." : `Registrar · ${Math.round(recipe.totalCalories * logMultiplier)} kcal`}
                   </button>
                 </div>
               </div>
             ) : (
               <button
-                onClick={() => { setLoggingId(recipe.id); setLogMeal("comida"); }}
+                onClick={() => { setLoggingId(recipe.id); setLogMeal("comida"); setLogMultiplier(1); }}
                 className="mt-3 w-full py-2.5 rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 text-sm font-semibold hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
               >
                 + Añadir al diario
