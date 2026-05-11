@@ -23,14 +23,15 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const uid = (session.user as any).id as string;
   try {
-    const { name, calories, protein, carbs, fat, grams, meal } = await req.json();
+    const { name, calories, protein, carbs, fat, grams, meal, note } = await req.json();
     if (meal && !VALID_MEALS.includes(meal)) return NextResponse.json({ error: "Comida inválida" }, { status: 400 });
     const cal = parseFloat(calories);
     if (isNaN(cal) || cal < 0 || cal > 10000) return NextResponse.json({ error: "Calorías inválidas" }, { status: 400 });
     if (typeof name !== "string" || name.trim().length === 0 || name.length > 200) return NextResponse.json({ error: "Nombre inválido" }, { status: 400 });
+    const noteVal = typeof note === "string" && note.trim().length > 0 ? note.trim().slice(0, 300) : null;
     await db.execute({
-      sql: "UPDATE FoodEntry SET name=?, calories=?, protein=?, carbs=?, fat=?, grams=?, meal=? WHERE id=? AND userId=?",
-      args: [name.trim(), cal, Math.max(0, parseFloat(protein) || 0), Math.max(0, parseFloat(carbs) || 0), Math.max(0, parseFloat(fat) || 0), Math.max(1, parseFloat(grams) || 100), meal, params.id, uid],
+      sql: "UPDATE FoodEntry SET name=?, calories=?, protein=?, carbs=?, fat=?, grams=?, meal=?, note=? WHERE id=? AND userId=?",
+      args: [name.trim(), cal, Math.max(0, parseFloat(protein) || 0), Math.max(0, parseFloat(carbs) || 0), Math.max(0, parseFloat(fat) || 0), Math.max(1, parseFloat(grams) || 100), meal, noteVal, params.id, uid],
     });
     const row = await db.execute({ sql: "SELECT * FROM FoodEntry WHERE id = ? AND userId = ?", args: [params.id, uid] });
     if (!row.rows.length) return NextResponse.json({ error: "Not found" }, { status: 404 });

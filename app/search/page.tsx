@@ -51,6 +51,7 @@ function SearchContent() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [note, setNote] = useState("");
 
   const [mName, setMName] = useState("");
   const [mCal, setMCal] = useState("");
@@ -61,6 +62,7 @@ function SearchContent() {
   const [mMeal, setMMeal] = useState(suggestedMeal);
   const [mSaving, setMSaving] = useState(false);
   const [mError, setMError] = useState("");
+  const [mNote, setMNote] = useState("");
 
   useEffect(() => {
     if (forcedMeal) {
@@ -108,6 +110,7 @@ function SearchContent() {
           date: today,
           source: "search",
           createdAt: new Date().toISOString(),
+          note: note.trim() || undefined,
         }),
       });
       if (!res.ok) throw new Error();
@@ -144,6 +147,7 @@ function SearchContent() {
           date: today,
           source: "manual",
           createdAt: new Date().toISOString(),
+          note: mNote.trim() || undefined,
         }),
       });
       if (!res.ok) throw new Error();
@@ -269,6 +273,16 @@ function SearchContent() {
                   ))}
                 </div>
               </div>
+              <div>
+                <label className="text-xs text-gray-400 dark:text-zinc-500 block mb-2">Nota (opcional)</label>
+                <input
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  placeholder="Ej: post-entreno, estimado..."
+                  maxLength={300}
+                  className="w-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white rounded-xl px-4 py-2.5 text-sm placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                />
+              </div>
               {error && <p className="text-red-400 text-sm text-center">{error}</p>}
               <button onClick={handleSave} disabled={saving} className="w-full py-3 rounded-xl bg-brand-500 text-white font-semibold disabled:opacity-40">
                 {saving ? "Guardando..." : "💾 Añadir al diario"}
@@ -333,6 +347,17 @@ function SearchContent() {
                 <button key={m} onClick={() => setMMeal(m)} className={`py-2 rounded-lg text-xs font-medium capitalize transition-colors ${mMeal === m ? "bg-brand-500 text-white" : "bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400"}`}>{m}</button>
               ))}
             </div>
+          </div>
+
+          <div>
+            <label className="text-xs text-gray-400 dark:text-zinc-500 block mb-2">Nota (opcional)</label>
+            <input
+              value={mNote}
+              onChange={(e) => setMNote(e.target.value)}
+              placeholder="Ej: post-entreno, estimado..."
+              maxLength={300}
+              className="w-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white rounded-xl px-4 py-2.5 text-sm placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            />
           </div>
 
           {mError && <p className="text-red-400 text-sm text-center">{mError}</p>}

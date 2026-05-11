@@ -46,6 +46,10 @@ try {
   await db.execute(`ALTER TABLE FoodEntry ADD COLUMN userId TEXT DEFAULT 'legacy'`);
 } catch {}
 
+try {
+  await db.execute(`ALTER TABLE FoodEntry ADD COLUMN note TEXT`);
+} catch {}
+
 await db.execute(`
   CREATE TABLE IF NOT EXISTS PushSubscription (
     id TEXT PRIMARY KEY,

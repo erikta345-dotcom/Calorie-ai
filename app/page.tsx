@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import BottomNav from "@/components/BottomNav";
 import CalorieRing from "@/components/CalorieRing";
 import MacroBar from "@/components/MacroBar";
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, RotateCcw, Copy } from "lucide-react";
 
 type FoodEntry = {
   id: string;
@@ -19,9 +19,10 @@ type FoodEntry = {
   fat: number;
   grams: number;
   createdAt: string;
+  note?: string;
 };
 
-type EditForm = { name: string; calories: string; protein: string; carbs: string; fat: string; grams: string; meal: string };
+type EditForm = { name: string; calories: string; protein: string; carbs: string; fat: string; grams: string; meal: string; note: string };
 
 type Settings = {
   goalCalories: number;
@@ -56,6 +57,7 @@ export default function DashboardPage() {
   const [editEntry, setEditEntry] = useState<FoodEntry | null>(null);
   const [editForm, setEditForm] = useState<EditForm | null>(null);
   const [editSaving, setEditSaving] = useState(false);
+  const [copyingMeal, setCopyingMeal] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     Promise.all([
@@ -79,7 +81,7 @@ export default function DashboardPage() {
 
   function openEdit(entry: FoodEntry) {
     setEditEntry(entry);
-    setEditForm({ name: entry.name, calories: String(entry.calories), protein: String(entry.protein), carbs: String(entry.carbs), fat: String(entry.fat), grams: String(entry.grams), meal: entry.meal });
+    setEditForm({ name: entry.name, calories: String(entry.calories), protein: String(entry.protein), carbs: String(entry.carbs), fat: String(entry.fat), grams: String(entry.grams), meal: entry.meal, note: entry.note || "" });
   }
 
   async function saveEdit() {
@@ -117,6 +119,41 @@ export default function DashboardPage() {
     );
     setEntries((prev) => [...prev, ...created.filter(Boolean)]);
     setCopyingYesterday(false);
+  }
+
+  async function relogEntry(entry: FoodEntry) {
+    const res = await fetch("/api/entries", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ date: today, meal: entry.meal, name: entry.name, calories: entry.calories, protein: entry.protein, carbs: entry.carbs, fat: entry.fat, grams: entry.grams, source: "manual", createdAt: new Date().toISOString(), note: entry.note }),
+    });
+    if (res.ok) {
+      const created = await res.json();
+      setEntries((prev) => [...prev, created]);
+    }
+  }
+
+  async function copyMealFromYesterday(meal: string) {
+    setCopyingMeal((prev) => ({ ...prev, [meal]: true }));
+    const yesterday = format(subDays(new Date(), 1), "yyyy-MM-dd");
+    const res = await fetch(`/api/entries?date=${yesterday}`);
+    if (res.ok) {
+      const all: FoodEntry[] = await res.json();
+      const mealEntries = all.filter((e) => e.meal === meal);
+      if (mealEntries.length) {
+        const created = await Promise.all(
+          mealEntries.map((e) =>
+            fetch("/api/entries", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ date: today, meal: e.meal, name: e.name, calories: e.calories, protein: e.protein, carbs: e.carbs, fat: e.fat, grams: e.grams, source: "manual", createdAt: new Date().toISOString(), note: e.note }),
+            }).then((r) => r.ok ? r.json() : null)
+          )
+        );
+        setEntries((prev) => [...prev, ...created.filter(Boolean)]);
+      }
+    }
+    setCopyingMeal((prev) => ({ ...prev, [meal]: false }));
   }
 
   const totals = entries.reduce(
@@ -190,10 +227,18 @@ export default function DashboardPage() {
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-2.5">
+                  <div className="flex items-center gap-2">
                     {mealCals > 0 && (
                       <span className="text-xs font-medium text-gray-500 dark:text-zinc-400">{Math.round(mealCals)} kcal</span>
                     )}
+                    <button
+                      onClick={() => copyMealFromYesterday(meal)}
+                      disabled={copyingMeal[meal]}
+                      title="Copiar de ayer"
+                      className="w-7 h-7 rounded-full bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 flex items-center justify-center transition-colors disabled:opacity-40"
+                    >
+                      <Copy size={12} />
+                    </button>
                     <button
                       onClick={() => router.push(`/search?meal=${meal}`)}
                       className="w-7 h-7 rounded-full bg-gray-100 dark:bg-zinc-800 hover:bg-brand-500 text-gray-500 dark:text-zinc-400 hover:text-white flex items-center justify-center transition-colors"
@@ -211,12 +256,20 @@ export default function DashboardPage() {
                       >
                         <div className="min-w-0 flex-1 pr-3">
                           <p className="text-sm text-gray-700 dark:text-zinc-200 truncate cursor-pointer hover:text-gray-900 dark:hover:text-white" onClick={() => openEdit(entry)}>{entry.name}</p>
+                          {entry.note && <p className="text-[11px] text-gray-400 dark:text-zinc-500 italic mt-0.5 truncate">{entry.note}</p>}
                           <p className="text-[11px] text-gray-400 dark:text-zinc-500 mt-0.5">
                             {entry.createdAt ? new Date(entry.createdAt.includes("T") || entry.createdAt.endsWith("Z") ? entry.createdAt : entry.createdAt.replace(" ", "T") + "Z").toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : ""}{entry.createdAt ? " · " : ""}{entry.grams}g · P {Math.round(entry.protein)}g · C {Math.round(entry.carbs)}g · G {Math.round(entry.fat)}g
                           </p>
                         </div>
-                        <div className="flex items-center gap-3 shrink-0">
+                        <div className="flex items-center gap-2.5 shrink-0">
                           <span className="text-sm font-medium text-gray-600 dark:text-zinc-300">{Math.round(entry.calories)} kcal</span>
+                          <button
+                            onClick={() => relogEntry(entry)}
+                            title="Volver a añadir"
+                            className="text-gray-300 dark:text-zinc-600 hover:text-brand-500 transition-colors"
+                          >
+                            <RotateCcw size={13} />
+                          </button>
                           <button
                             onClick={() => deleteEntry(entry.id)}
                             className="text-gray-300 dark:text-zinc-600 hover:text-red-400 transition-colors"
@@ -242,6 +295,7 @@ export default function DashboardPage() {
           <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-t-2xl w-full max-w-md p-5 pb-8 space-y-3" onClick={(e) => e.stopPropagation()}>
             <h2 className="text-gray-900 dark:text-white font-semibold text-base">Editar entrada</h2>
             <input className="w-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} placeholder="Nombre" />
+            <input className="w-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm placeholder-gray-400 dark:placeholder-zinc-600" value={editForm.note} onChange={(e) => setEditForm({ ...editForm, note: e.target.value })} placeholder="Nota (opcional)" maxLength={300} />
             <div className="grid grid-cols-2 gap-2">
               {(["calories", "protein", "carbs", "fat", "grams"] as const).map((k) => (
                 <div key={k}>
