@@ -109,6 +109,7 @@ function SearchContent() {
           meal,
           date: today,
           source: "search",
+          createdAt: new Date().toISOString(),
         }),
       });
       if (!res.ok) throw new Error();
@@ -144,6 +145,7 @@ function SearchContent() {
           meal: mMeal,
           date: today,
           source: "manual",
+          createdAt: new Date().toISOString(),
         }),
       });
       if (!res.ok) throw new Error();

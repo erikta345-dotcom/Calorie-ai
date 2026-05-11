@@ -188,7 +188,7 @@ export default function ScanPage() {
       const res = await fetch("/api/entries", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: result.dish, calories: total.calories, protein: total.protein, carbs: total.carbs, fat: total.fat, grams: total.grams, meal, date: today, source: "scan" }),
+        body: JSON.stringify({ name: result.dish, calories: total.calories, protein: total.protein, carbs: total.carbs, fat: total.fat, grams: total.grams, meal, date: today, source: "scan", createdAt: new Date().toISOString() }),
       });
       if (!res.ok) throw new Error();
       router.push("/");
@@ -334,6 +334,7 @@ export default function ScanPage() {
           meal: barcodeMeal,
           date: today,
           source: "barcode",
+          createdAt: new Date().toISOString(),
         }),
       });
       if (!res.ok) throw new Error();

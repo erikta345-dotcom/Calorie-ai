@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Demasiadas peticiones. Espera un momento." }, { status: 429 });
   }
   try {
-    const { date, meal, name, calories, protein, carbs, fat, grams, source } = await req.json();
+    const { date, meal, name, calories, protein, carbs, fat, grams, source, createdAt } = await req.json();
     if (!date || !meal || !name || calories == null) {
       return NextResponse.json({ error: "Faltan campos requeridos" }, { status: 400 });
     }
@@ -70,10 +70,11 @@ export async function POST(req: NextRequest) {
     if (!VALID_SOURCES.includes(src)) {
       return NextResponse.json({ error: "Fuente inválida" }, { status: 400 });
     }
+    const ts = typeof createdAt === "string" && createdAt.length > 0 ? createdAt : new Date().toISOString();
     const id = randomUUID();
     await db.execute({
-      sql: "INSERT INTO FoodEntry (id, userId, date, meal, name, calories, protein, carbs, fat, grams, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      args: [id, uid, date, meal, name.trim(), cal, Math.max(0, parseFloat(protein) || 0), Math.max(0, parseFloat(carbs) || 0), Math.max(0, parseFloat(fat) || 0), Math.max(1, parseFloat(grams) || 100), src],
+      sql: "INSERT INTO FoodEntry (id, userId, date, meal, name, calories, protein, carbs, fat, grams, source, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      args: [id, uid, date, meal, name.trim(), cal, Math.max(0, parseFloat(protein) || 0), Math.max(0, parseFloat(carbs) || 0), Math.max(0, parseFloat(fat) || 0), Math.max(1, parseFloat(grams) || 100), src, ts],
     });
     const row = await db.execute({ sql: "SELECT * FROM FoodEntry WHERE id = ? AND userId = ?", args: [id, uid] });
     return NextResponse.json(row.rows[0], { status: 201 });
