@@ -6,7 +6,7 @@ import { format } from "date-fns";
 import BottomNav from "@/components/BottomNav";
 import { useSuggestedMeal } from "@/hooks/useSuggestedMeal";
 import { Button } from "@/components/ui/button";
-import { Camera, ImageIcon, Sparkles, RotateCcw, Save } from "lucide-react";
+import { Camera, ImageIcon, Sparkles, RotateCcw, Save, BookOpen } from "lucide-react";
 
 type FoodItem = {
   name: string;
@@ -82,6 +82,7 @@ export default function ScanPage() {
   const [loading, setLoading] = useState(false);
   const [loadStep, setLoadStep] = useState(0);
   const [saving, setSaving] = useState(false);
+  const [savingRecipe, setSavingRecipe] = useState(false);
   const [error, setError] = useState("");
 
   const [description, setDescription] = useState("");
@@ -95,6 +96,7 @@ export default function ScanPage() {
   const [barcodeMeal, setBarcodeMeal] = useState(suggestedMeal);
   const [barcodeError, setBarcodeError] = useState("");
   const [barcodeSaving, setBarcodeSaving] = useState(false);
+  const [barcodeSavingRecipe, setBarcodeSavingRecipe] = useState(false);
   const [lastCode, setLastCode] = useState("");
 
   function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
@@ -196,6 +198,30 @@ export default function ScanPage() {
       setError("Error al guardar.");
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleSaveToRecipe() {
+    if (!result || !total || total.calories === 0) return;
+    setSavingRecipe(true);
+    try {
+      const recipeItems = result.items
+        .filter((i) => i.enabled)
+        .map((item) => {
+          const m = macros(item, portion);
+          return { name: item.name, calories: m.calories, protein: m.protein, carbs: m.carbs, fat: m.fat, grams: Math.round(item.grams * portion) };
+        });
+      const res = await fetch("/api/recipes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: result.dish, items: recipeItems, totalCalories: total.calories, totalProtein: total.protein, totalCarbs: total.carbs, totalFat: total.fat }),
+      });
+      if (!res.ok) throw new Error();
+      router.push("/recipes");
+    } catch {
+      setError("Error al guardar en recetas.");
+    } finally {
+      setSavingRecipe(false);
     }
   }
 
@@ -303,6 +329,26 @@ export default function ScanPage() {
     setBarcodeError("");
     await fetchBarcodeProduct(manualCode.trim());
     setManualCode("");
+  }
+
+  async function handleBarcodeSaveToRecipe() {
+    if (!barcodeProduct || !barcodeTotal) return;
+    setBarcodeSavingRecipe(true);
+    try {
+      const name = barcodeProduct.brand ? `${barcodeProduct.name} (${barcodeProduct.brand})` : barcodeProduct.name;
+      const recipeItems = [{ name, calories: barcodeTotal.calories, protein: barcodeTotal.protein, carbs: barcodeTotal.carbs, fat: barcodeTotal.fat, grams: barcodeGrams }];
+      const res = await fetch("/api/recipes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, items: recipeItems, totalCalories: barcodeTotal.calories, totalProtein: barcodeTotal.protein, totalCarbs: barcodeTotal.carbs, totalFat: barcodeTotal.fat }),
+      });
+      if (!res.ok) throw new Error();
+      router.push("/recipes");
+    } catch {
+      setBarcodeError("Error al guardar en recetas.");
+    } finally {
+      setBarcodeSavingRecipe(false);
+    }
   }
 
   const barcodeGrams = Math.max(1, parseFloat(barcodeGramsStr) || 1);
@@ -521,6 +567,9 @@ export default function ScanPage() {
           <Button onClick={handleSave} disabled={saving || total.calories === 0} className="w-full h-auto py-3 rounded-xl bg-brand-500 hover:bg-brand-600 text-zinc-950 font-semibold disabled:opacity-40 gap-2">
             <Save size={16} />{saving ? "Guardando..." : `Añadir ${total.calories} kcal al diario`}
           </Button>
+          <Button variant="outline" onClick={handleSaveToRecipe} disabled={savingRecipe || total.calories === 0} className="w-full h-auto py-3 rounded-xl border-zinc-700 bg-transparent text-zinc-300 hover:border-brand-500 hover:text-white hover:bg-transparent disabled:opacity-40 gap-2">
+            <BookOpen size={16} />{savingRecipe ? "Guardando..." : "Guardar en recetas"}
+          </Button>
         </div>
       )}
 
@@ -659,6 +708,9 @@ export default function ScanPage() {
                 {barcodeSaving ? "Guardando..." : `💾 Añadir ${barcodeTotal.calories} kcal`}
               </button>
             </div>
+            <button onClick={handleBarcodeSaveToRecipe} disabled={barcodeSavingRecipe} className="w-full py-3 rounded-xl border border-zinc-700 text-zinc-300 text-sm font-semibold hover:border-brand-500 hover:text-white transition-colors disabled:opacity-40 flex items-center justify-center gap-2">
+              📖 {barcodeSavingRecipe ? "Guardando..." : "Guardar en recetas"}
+            </button>
           </div>
         )}
       </div>)}
