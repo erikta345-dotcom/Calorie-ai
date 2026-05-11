@@ -132,26 +132,26 @@ export default function DashboardPage() {
   const entriesByMeal = (meal: string) => entries.filter((e) => e.meal === meal);
 
   return (
-    <div className="min-h-screen bg-zinc-950 max-w-md mx-auto pb-32">
+    <div className="min-h-screen bg-white dark:bg-zinc-950 max-w-md mx-auto pb-32">
       {/* Header */}
       <header className="px-4 pt-14 pb-5 flex items-end justify-between">
         <div>
-          <p className="text-zinc-500 text-xs uppercase tracking-widest font-medium capitalize">
+          <p className="text-gray-400 dark:text-zinc-500 text-xs uppercase tracking-widest font-medium capitalize">
             {format(new Date(), "EEEE, d MMMM", { locale: es })}
           </p>
-          <h1 className="text-3xl font-bold text-white mt-0.5">Hoy</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mt-0.5">Hoy</h1>
         </div>
         <button
           onClick={copyYesterday}
           disabled={copyingYesterday}
-          className="text-xs text-zinc-400 bg-zinc-800 hover:bg-zinc-700 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40 mb-1"
+          className="text-xs text-gray-500 dark:text-zinc-400 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 px-3 py-1.5 rounded-lg transition-colors disabled:opacity-40 mb-1"
         >
           {copyingYesterday ? "Copiando..." : "📋 Copiar ayer"}
         </button>
       </header>
 
       {/* Calorie Ring + Macros */}
-      <div className="mx-4 bg-gradient-to-br from-zinc-900 to-zinc-900/80 rounded-2xl p-5 border border-zinc-800/80 shadow-xl shadow-black/30">
+      <div className="mx-4 bg-gradient-to-br from-gray-50 to-gray-50/80 dark:from-zinc-900 dark:to-zinc-900/80 rounded-2xl p-5 border border-gray-200/80 dark:border-zinc-800/80 shadow-xl shadow-black/5 dark:shadow-black/30">
         <div className="flex items-center gap-5">
           <CalorieRing consumed={totals.calories} goal={settings.goalCalories} />
           <div className="flex-1 space-y-3.5">
@@ -160,7 +160,7 @@ export default function DashboardPage() {
             <MacroBar label="Grasa" consumed={totals.fat} goal={settings.goalFat} color="#eab308" />
           </div>
         </div>
-        <div className="mt-4 pt-4 border-t border-zinc-800/60 flex justify-between text-xs text-zinc-500">
+        <div className="mt-4 pt-4 border-t border-gray-200/60 dark:border-zinc-800/60 flex justify-between text-xs text-gray-400 dark:text-zinc-500">
           <span>{Math.round(totals.calories)} kcal consumidas</span>
           <span>{Math.max(0, settings.goalCalories - Math.round(totals.calories))} restantes</span>
         </div>
@@ -171,7 +171,7 @@ export default function DashboardPage() {
         {loading ? (
           <div className="space-y-2">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-[60px] rounded-xl bg-zinc-800/50 animate-pulse" />
+              <div key={i} className="h-[60px] rounded-xl bg-gray-100/50 dark:bg-zinc-800/50 animate-pulse" />
             ))}
           </div>
         ) : (
@@ -179,47 +179,47 @@ export default function DashboardPage() {
             const mealEntries = entriesByMeal(meal);
             const mealCals = mealEntries.reduce((s, e) => s + e.calories, 0);
             return (
-              <div key={meal} className={`bg-zinc-900 rounded-xl border border-zinc-800/60 border-l-2 ${MEAL_COLORS[meal]} overflow-hidden`}>
+              <div key={meal} className={`bg-gray-50 dark:bg-zinc-900 rounded-xl border border-gray-200/60 dark:border-zinc-800/60 border-l-2 ${MEAL_COLORS[meal]} overflow-hidden`}>
                 <div className="flex items-center justify-between px-4 py-3">
                   <div className="flex items-center gap-2.5">
                     <span className="text-base">{MEAL_ICONS[meal]}</span>
                     <div>
-                      <span className="font-semibold text-sm text-white capitalize">{meal}</span>
+                      <span className="font-semibold text-sm text-gray-900 dark:text-white capitalize">{meal}</span>
                       {settings.mealTimes?.[meal as keyof typeof settings.mealTimes] && (
-                        <span className="ml-2 text-[11px] text-zinc-500">{settings.mealTimes[meal as keyof typeof settings.mealTimes]}</span>
+                        <span className="ml-2 text-[11px] text-gray-400 dark:text-zinc-500">{settings.mealTimes[meal as keyof typeof settings.mealTimes]}</span>
                       )}
                     </div>
                   </div>
                   <div className="flex items-center gap-2.5">
                     {mealCals > 0 && (
-                      <span className="text-xs font-medium text-zinc-400">{Math.round(mealCals)} kcal</span>
+                      <span className="text-xs font-medium text-gray-500 dark:text-zinc-400">{Math.round(mealCals)} kcal</span>
                     )}
                     <button
                       onClick={() => router.push(`/search?meal=${meal}`)}
-                      className="w-7 h-7 rounded-full bg-zinc-800 hover:bg-brand-500 text-zinc-400 hover:text-white flex items-center justify-center transition-colors"
+                      className="w-7 h-7 rounded-full bg-gray-100 dark:bg-zinc-800 hover:bg-brand-500 text-gray-500 dark:text-zinc-400 hover:text-white flex items-center justify-center transition-colors"
                     >
                       <Plus size={14} strokeWidth={2.5} />
                     </button>
                   </div>
                 </div>
                 {mealEntries.length > 0 && (
-                  <div className="border-t border-zinc-800/60">
+                  <div className="border-t border-gray-200/60 dark:border-zinc-800/60">
                     {mealEntries.map((entry) => (
                       <div
                         key={entry.id}
-                        className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-800/40 last:border-0"
+                        className="flex items-center justify-between px-4 py-2.5 border-b border-gray-200/40 dark:border-zinc-800/40 last:border-0"
                       >
                         <div className="min-w-0 flex-1 pr-3">
-                          <p className="text-sm text-zinc-200 truncate cursor-pointer hover:text-white" onClick={() => openEdit(entry)}>{entry.name}</p>
-                          <p className="text-[11px] text-zinc-500 mt-0.5">
+                          <p className="text-sm text-gray-700 dark:text-zinc-200 truncate cursor-pointer hover:text-gray-900 dark:hover:text-white" onClick={() => openEdit(entry)}>{entry.name}</p>
+                          <p className="text-[11px] text-gray-400 dark:text-zinc-500 mt-0.5">
                             {entry.createdAt ? new Date(entry.createdAt.includes("T") || entry.createdAt.endsWith("Z") ? entry.createdAt : entry.createdAt.replace(" ", "T") + "Z").toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : ""}{entry.createdAt ? " · " : ""}{entry.grams}g · P {Math.round(entry.protein)}g · C {Math.round(entry.carbs)}g · G {Math.round(entry.fat)}g
                           </p>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
-                          <span className="text-sm font-medium text-zinc-300">{Math.round(entry.calories)} kcal</span>
+                          <span className="text-sm font-medium text-gray-600 dark:text-zinc-300">{Math.round(entry.calories)} kcal</span>
                           <button
                             onClick={() => deleteEntry(entry.id)}
-                            className="text-zinc-600 hover:text-red-400 transition-colors"
+                            className="text-gray-300 dark:text-zinc-600 hover:text-red-400 transition-colors"
                           >
                             <Trash2 size={14} />
                           </button>
@@ -229,7 +229,7 @@ export default function DashboardPage() {
                   </div>
                 )}
                 {mealEntries.length === 0 && (
-                  <p className="px-4 pb-3 text-[11px] text-zinc-600">Sin alimentos registrados</p>
+                  <p className="px-4 pb-3 text-[11px] text-gray-300 dark:text-zinc-600">Sin alimentos registrados</p>
                 )}
               </div>
             );
@@ -239,19 +239,19 @@ export default function DashboardPage() {
 
       {editEntry && editForm && (
         <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/60" onClick={() => { setEditEntry(null); setEditForm(null); }}>
-          <div className="bg-zinc-900 border border-zinc-800 rounded-t-2xl w-full max-w-md p-5 pb-8 space-y-3" onClick={(e) => e.stopPropagation()}>
-            <h2 className="text-white font-semibold text-base">Editar entrada</h2>
-            <input className="w-full bg-zinc-800 text-white rounded-lg px-3 py-2 text-sm" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} placeholder="Nombre" />
+          <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-t-2xl w-full max-w-md p-5 pb-8 space-y-3" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-gray-900 dark:text-white font-semibold text-base">Editar entrada</h2>
+            <input className="w-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm" value={editForm.name} onChange={(e) => setEditForm({ ...editForm, name: e.target.value })} placeholder="Nombre" />
             <div className="grid grid-cols-2 gap-2">
               {(["calories", "protein", "carbs", "fat", "grams"] as const).map((k) => (
                 <div key={k}>
-                  <p className="text-xs text-zinc-500 mb-1 capitalize">{k === "calories" ? "kcal" : k === "grams" ? "gramos" : k}</p>
-                  <input type="number" className="w-full bg-zinc-800 text-white rounded-lg px-3 py-2 text-sm" value={editForm[k]} onChange={(e) => setEditForm({ ...editForm, [k]: e.target.value })} />
+                  <p className="text-xs text-gray-400 dark:text-zinc-500 mb-1 capitalize">{k === "calories" ? "kcal" : k === "grams" ? "gramos" : k}</p>
+                  <input type="number" className="w-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm" value={editForm[k]} onChange={(e) => setEditForm({ ...editForm, [k]: e.target.value })} />
                 </div>
               ))}
               <div>
-                <p className="text-xs text-zinc-500 mb-1">Comida</p>
-                <select className="w-full bg-zinc-800 text-white rounded-lg px-3 py-2 text-sm" value={editForm.meal} onChange={(e) => setEditForm({ ...editForm, meal: e.target.value })}>
+                <p className="text-xs text-gray-400 dark:text-zinc-500 mb-1">Comida</p>
+                <select className="w-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm" value={editForm.meal} onChange={(e) => setEditForm({ ...editForm, meal: e.target.value })}>
                   {MEALS.map((m) => <option key={m} value={m}>{m}</option>)}
                 </select>
               </div>

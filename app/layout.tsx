@@ -27,12 +27,12 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={cn("font-sans", geist.variable)}>
+    <html lang="es" className={cn("font-sans", geist.variable)} suppressHydrationWarning>
       <head>
         <link rel="apple-touch-icon" href="/icons/icon-192.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
       </head>
-      <body className="bg-zinc-950 text-white antialiased">
+      <body className="bg-white dark:bg-zinc-950 text-gray-900 dark:text-white antialiased">
         <Providers>
           <HealthCheck />
           <MealNotifications />

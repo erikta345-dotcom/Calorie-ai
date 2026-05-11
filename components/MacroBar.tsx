@@ -11,12 +11,12 @@ export default function MacroBar({ label, consumed, goal, color, unit = "g" }: P
   return (
     <div className="flex-1">
       <div className="flex justify-between text-xs mb-1">
-        <span className="text-zinc-400">{label}</span>
-        <span className="text-zinc-300 font-medium">
-          {Math.round(consumed)}<span className="text-zinc-500">/{goal}{unit}</span>
+        <span className="text-gray-500 dark:text-zinc-400">{label}</span>
+        <span className="text-gray-600 dark:text-zinc-300 font-medium">
+          {Math.round(consumed)}<span className="text-gray-400 dark:text-zinc-500">/{goal}{unit}</span>
         </span>
       </div>
-      <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
+      <div className="h-1.5 bg-gray-200 dark:bg-zinc-800 rounded-full overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{ width: `${pct}%`, backgroundColor: color }}

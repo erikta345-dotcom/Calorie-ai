@@ -393,23 +393,23 @@ export default function ScanPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 max-w-md mx-auto pb-32 px-4">
+    <div className="min-h-screen bg-white dark:bg-zinc-950 max-w-md mx-auto pb-32 px-4">
       <header className="pt-14 pb-5">
-        <p className="text-zinc-500 text-xs uppercase tracking-widest font-medium">Registro</p>
-        <h1 className="text-3xl font-bold text-white mt-0.5">Escanear</h1>
+        <p className="text-gray-400 dark:text-zinc-500 text-xs uppercase tracking-widest font-medium">Registro</p>
+        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mt-0.5">Escanear</h1>
       </header>
 
       {/* ── TABS ── */}
-      <div className="flex gap-1 bg-zinc-900/80 rounded-xl p-1 mb-4 border border-zinc-800/60">
+      <div className="flex gap-1 bg-gray-100/80 dark:bg-zinc-900/80 rounded-xl p-1 mb-4 border border-gray-200/60 dark:border-zinc-800/60">
         <button
           onClick={() => { if (barcodeActive) stopBarcode(); setActiveTab("ai"); }}
-          className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${activeTab === "ai" ? "bg-brand-500 text-zinc-950 shadow-sm" : "text-zinc-400 hover:text-white"}`}
+          className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${activeTab === "ai" ? "bg-brand-500 text-zinc-950 shadow-sm" : "text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-white"}`}
         >
           IA Vision
         </button>
         <button
           onClick={() => { if (barcodeActive) stopBarcode(); setActiveTab("barcode"); }}
-          className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${activeTab === "barcode" ? "bg-brand-500 text-zinc-950 shadow-sm" : "text-zinc-400 hover:text-white"}`}
+          className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-all ${activeTab === "barcode" ? "bg-brand-500 text-zinc-950 shadow-sm" : "text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-white"}`}
         >
           Código de barras
         </button>
@@ -419,19 +419,19 @@ export default function ScanPage() {
       <>{/* ── AI SCAN ── */}
       <div
         onClick={() => preview ? fileRef.current?.click() : undefined}
-        className={`relative w-full aspect-square rounded-2xl border-2 border-dashed flex items-center justify-center overflow-hidden bg-zinc-900/80 transition-all ${preview ? "cursor-pointer border-brand-500/60 hover:border-brand-500" : "border-zinc-800"}`}
+        className={`relative w-full aspect-square rounded-2xl border-2 border-dashed flex items-center justify-center overflow-hidden bg-gray-50/80 dark:bg-zinc-900/80 transition-all ${preview ? "cursor-pointer border-brand-500/60 hover:border-brand-500" : "border-gray-200 dark:border-zinc-800"}`}
       >
         {preview ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={preview} alt="preview" className="w-full h-full object-cover" />
         ) : (
           <div className="text-center space-y-3 p-8">
-            <div className="w-16 h-16 rounded-2xl bg-zinc-800 flex items-center justify-center mx-auto">
-              <Camera size={28} className="text-zinc-500" />
+            <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-zinc-800 flex items-center justify-center mx-auto">
+              <Camera size={28} className="text-gray-400 dark:text-zinc-500" />
             </div>
             <div>
-              <p className="text-zinc-300 text-sm font-medium">Añade una foto</p>
-              <p className="text-zinc-600 text-xs mt-1">La IA identificará los alimentos y calculará los macros</p>
+              <p className="text-gray-600 dark:text-zinc-300 text-sm font-medium">Añade una foto</p>
+              <p className="text-gray-300 dark:text-zinc-600 text-xs mt-1">La IA identificará los alimentos y calculará los macros</p>
             </div>
           </div>
         )}
@@ -442,14 +442,14 @@ export default function ScanPage() {
           <Button
             variant="outline"
             onClick={() => cameraRef.current?.click()}
-            className="flex-1 border-zinc-700 bg-transparent text-zinc-300 hover:border-brand-500 hover:text-white hover:bg-transparent gap-2"
+            className="flex-1 border-gray-300 dark:border-zinc-700 bg-transparent text-gray-600 dark:text-zinc-300 hover:border-brand-500 hover:text-gray-900 dark:hover:text-white hover:bg-transparent gap-2"
           >
             <Camera size={16} /> Cámara
           </Button>
           <Button
             variant="outline"
             onClick={() => fileRef.current?.click()}
-            className="flex-1 border-zinc-700 bg-transparent text-zinc-300 hover:border-brand-500 hover:text-white hover:bg-transparent gap-2"
+            className="flex-1 border-gray-300 dark:border-zinc-700 bg-transparent text-gray-600 dark:text-zinc-300 hover:border-brand-500 hover:text-gray-900 dark:hover:text-white hover:bg-transparent gap-2"
           >
             <ImageIcon size={16} /> Galería
           </Button>
@@ -464,7 +464,7 @@ export default function ScanPage() {
         value={description}
         onChange={(e) => setDescription(e.target.value)}
         placeholder="Describe el plato (opcional): ej. tortilla española, ración de bar"
-        className="w-full mt-3 bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-brand-500"
+        className="w-full mt-3 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-brand-500"
       />
 
       {preview && (
@@ -486,14 +486,14 @@ export default function ScanPage() {
           <input
             value={result.dish}
             onChange={(e) => setResult({ ...result, dish: e.target.value })}
-            className="w-full bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 text-white font-semibold focus:outline-none focus:border-brand-500"
+            className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-gray-900 dark:text-white font-semibold focus:outline-none focus:border-brand-500"
           />
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+          <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden">
             {result.items.map((item, idx) => {
               const m = macros(item, portion);
               return (
-                <div key={idx} className={`p-3 border-b border-zinc-800 last:border-0 ${!item.enabled ? "opacity-40" : ""}`}>
+                <div key={idx} className={`p-3 border-b border-gray-200 dark:border-zinc-800 last:border-0 ${!item.enabled ? "opacity-40" : ""}`}>
                   <div className="flex items-center gap-2 mb-1.5">
                     <button
                       onClick={() => toggleItem(idx)}
@@ -501,7 +501,7 @@ export default function ScanPage() {
                     >
                       {item.enabled && "✓"}
                     </button>
-                    <input value={item.name} onChange={(e) => updateName(idx, e.target.value)} className="flex-1 bg-transparent text-sm text-white focus:outline-none min-w-0" />
+                    <input value={item.name} onChange={(e) => updateName(idx, e.target.value)} className="flex-1 bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none min-w-0" />
                     <div className="flex items-center gap-1 flex-shrink-0">
                       <input
                         type="text"
@@ -516,7 +516,7 @@ export default function ScanPage() {
                           updateGrams(idx, val);
                           setItemGramsStr(p => ({ ...p, [idx]: String(val) }));
                         }}
-                        className="w-14 bg-zinc-800 text-white text-xs text-right rounded-lg px-2 py-1 focus:outline-none"
+                        className="w-14 bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white text-xs text-right rounded-lg px-2 py-1 focus:outline-none"
                       />
                       <span className="text-zinc-500 text-xs">g</span>
                     </div>
@@ -536,30 +536,30 @@ export default function ScanPage() {
             <p className="text-xs text-zinc-500 mb-2">Tamaño de porción</p>
             <div className="flex gap-1.5">
               {PORTIONS.map((p, i) => (
-                <button key={p} onClick={() => setPortion(p)} className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors ${portion === p ? "bg-brand-500 text-white" : "bg-zinc-800 text-zinc-400"}`}>
+                <button key={p} onClick={() => setPortion(p)} className={`flex-1 py-2 rounded-lg text-xs font-medium transition-colors ${portion === p ? "bg-brand-500 text-white" : "bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400"}`}>
                   {PORTION_LABELS[i]}
                 </button>
               ))}
             </div>
           </div>
 
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-            <p className="text-xs text-zinc-500 mb-3">Total{portion !== 1 ? ` · porción ×${portion}` : ""} · {total.grams}g</p>
+          <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4">
+            <p className="text-xs text-gray-400 dark:text-zinc-500 mb-3">Total{portion !== 1 ? ` · porción ×${portion}` : ""} · {total.grams}g</p>
             <div className="grid grid-cols-5 gap-1">
-              {[{ label: "kcal", value: total.calories, color: "text-white" }, { label: "Prot", value: total.protein, color: "text-orange-400" }, { label: "Carb", value: total.carbs, color: "text-blue-400" }, { label: "Gras", value: total.fat, color: "text-yellow-400" }].map((m) => (
-                <div key={m.label} className="bg-zinc-800 rounded-lg p-2 text-center">
+              {[{ label: "kcal", value: total.calories, color: "text-gray-900 dark:text-white" }, { label: "Prot", value: total.protein, color: "text-orange-400" }, { label: "Carb", value: total.carbs, color: "text-blue-400" }, { label: "Gras", value: total.fat, color: "text-yellow-400" }].map((m) => (
+                <div key={m.label} className="bg-gray-100 dark:bg-zinc-800 rounded-lg p-2 text-center">
                   <p className={`text-base font-bold ${m.color}`}>{Math.round(m.value)}</p>
-                  <p className="text-xs text-zinc-500">{m.label}</p>
+                  <p className="text-xs text-gray-400 dark:text-zinc-500">{m.label}</p>
                 </div>
               ))}
             </div>
           </div>
 
           <div>
-            <label className="text-xs text-zinc-500 block mb-2">¿En qué comida?</label>
+            <label className="text-xs text-gray-400 dark:text-zinc-500 block mb-2">¿En qué comida?</label>
             <div className="grid grid-cols-5 gap-1">
               {MEALS.map((m) => (
-                <button key={m} onClick={() => setMeal(m)} className={`py-2 rounded-lg text-xs font-medium capitalize transition-colors ${meal === m ? "bg-brand-500 text-white" : "bg-zinc-800 text-zinc-400"}`}>{m}</button>
+                <button key={m} onClick={() => setMeal(m)} className={`py-2 rounded-lg text-xs font-medium capitalize transition-colors ${meal === m ? "bg-brand-500 text-white" : "bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400"}`}>{m}</button>
               ))}
             </div>
           </div>
@@ -567,7 +567,7 @@ export default function ScanPage() {
           <Button onClick={handleSave} disabled={saving || total.calories === 0} className="w-full h-auto py-3 rounded-xl bg-brand-500 hover:bg-brand-600 text-zinc-950 font-semibold disabled:opacity-40 gap-2">
             <Save size={16} />{saving ? "Guardando..." : `Añadir ${total.calories} kcal al diario`}
           </Button>
-          <Button variant="outline" onClick={handleSaveToRecipe} disabled={savingRecipe || total.calories === 0} className="w-full h-auto py-3 rounded-xl border-zinc-700 bg-transparent text-zinc-300 hover:border-brand-500 hover:text-white hover:bg-transparent disabled:opacity-40 gap-2">
+          <Button variant="outline" onClick={handleSaveToRecipe} disabled={savingRecipe || total.calories === 0} className="w-full h-auto py-3 rounded-xl border-gray-300 dark:border-zinc-700 bg-transparent text-gray-600 dark:text-zinc-300 hover:border-brand-500 hover:text-gray-900 dark:hover:text-white hover:bg-transparent disabled:opacity-40 gap-2">
             <BookOpen size={16} />{savingRecipe ? "Guardando..." : "Guardar en recetas"}
           </Button>
         </div>
@@ -580,8 +580,8 @@ export default function ScanPage() {
         <div className="flex items-center gap-2">
           <span className="text-lg">🔢</span>
           <div>
-            <p className="text-white text-sm font-semibold">Código de barras</p>
-            <p className="text-zinc-500 text-xs">Datos exactos del fabricante</p>
+            <p className="text-gray-900 dark:text-white text-sm font-semibold">Código de barras</p>
+            <p className="text-gray-400 dark:text-zinc-500 text-xs">Datos exactos del fabricante</p>
           </div>
         </div>
 
@@ -590,7 +590,7 @@ export default function ScanPage() {
             {barcodeSupported !== false && (
               <button
                 onClick={startBarcodeScanner}
-                className="w-full py-3 rounded-xl border border-zinc-700 text-zinc-300 font-semibold hover:border-brand-500 hover:text-white transition-colors flex items-center justify-center gap-2"
+                className="w-full py-3 rounded-xl border border-gray-300 dark:border-zinc-700 text-gray-600 dark:text-zinc-300 font-semibold hover:border-brand-500 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center justify-center gap-2"
               >
                 📷 Escanear código de barras
               </button>
@@ -602,12 +602,12 @@ export default function ScanPage() {
                 onChange={(e) => setManualCode(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleManualBarcode()}
                 placeholder="Introducir código manualmente"
-                className="flex-1 bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-brand-500"
+                className="flex-1 bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-brand-500"
               />
               <button
                 onClick={handleManualBarcode}
                 disabled={!manualCode.trim()}
-                className="px-4 py-2.5 bg-zinc-800 text-zinc-300 rounded-xl text-sm font-medium disabled:opacity-40 hover:bg-zinc-700 transition-colors"
+                className="px-4 py-2.5 bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 rounded-xl text-sm font-medium disabled:opacity-40 hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
               >
                 Buscar
               </button>
@@ -616,7 +616,7 @@ export default function ScanPage() {
         )}
 
         {barcodeActive && (
-          <div className="relative rounded-2xl overflow-hidden bg-zinc-900 border border-zinc-700">
+          <div className="relative rounded-2xl overflow-hidden bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700">
             <video ref={videoRef} className="w-full aspect-square object-cover" />
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
               <div className="w-48 h-48 border-2 border-brand-500 rounded-xl relative">
@@ -624,14 +624,14 @@ export default function ScanPage() {
               </div>
               <p className="text-white text-xs mt-3 bg-black/50 px-3 py-1 rounded-full">Apunta al código de barras</p>
             </div>
-            <button onClick={stopBarcode} className="absolute top-3 right-3 bg-zinc-900/80 text-zinc-300 text-xs px-3 py-1.5 rounded-full">
+            <button onClick={stopBarcode} className="absolute top-3 right-3 bg-gray-900/80 text-zinc-300 text-xs px-3 py-1.5 rounded-full">
               Cancelar
             </button>
           </div>
         )}
 
         {barcodeLoading && (
-          <div className="flex items-center justify-center gap-2 py-6 text-zinc-400 text-sm">
+          <div className="flex items-center justify-center gap-2 py-6 text-gray-400 dark:text-zinc-400 text-sm">
             <span className="animate-spin inline-block">⚙️</span> Buscando producto...
           </div>
         )}
@@ -639,7 +639,7 @@ export default function ScanPage() {
         {barcodeError && (
           <div className="space-y-2">
             <p className="text-red-400 text-sm text-center">{barcodeError}</p>
-            <button onClick={startBarcodeScanner} className="w-full py-2.5 rounded-xl border border-zinc-700 text-zinc-400 text-sm hover:border-brand-500 transition-colors">
+            <button onClick={startBarcodeScanner} className="w-full py-2.5 rounded-xl border border-gray-300 dark:border-zinc-700 text-gray-400 dark:text-zinc-400 text-sm hover:border-brand-500 transition-colors">
               Intentar de nuevo
             </button>
           </div>
@@ -647,14 +647,14 @@ export default function ScanPage() {
 
         {barcodeProduct && barcodeTotal && (
           <div className="space-y-3">
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-1">
-              <p className="text-white font-semibold text-sm">{barcodeProduct.name}</p>
-              {barcodeProduct.brand && <p className="text-zinc-500 text-xs">{barcodeProduct.brand}</p>}
-              <p className="text-zinc-600 text-xs">Por 100g: {barcodeProduct.calories} kcal · P {barcodeProduct.protein}g · C {barcodeProduct.carbs}g · G {barcodeProduct.fat}g</p>
+            <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4 space-y-1">
+              <p className="text-gray-900 dark:text-white font-semibold text-sm">{barcodeProduct.name}</p>
+              {barcodeProduct.brand && <p className="text-gray-400 dark:text-zinc-500 text-xs">{barcodeProduct.brand}</p>}
+              <p className="text-gray-300 dark:text-zinc-600 text-xs">Por 100g: {barcodeProduct.calories} kcal · P {barcodeProduct.protein}g · C {barcodeProduct.carbs}g · G {barcodeProduct.fat}g</p>
             </div>
 
             <div>
-              <label className="text-xs text-zinc-500 block mb-2">Cantidad (gramos)</label>
+              <label className="text-xs text-gray-400 dark:text-zinc-500 block mb-2">Cantidad (gramos)</label>
               <div className="flex items-center gap-3">
                 <input
                   type="text"
@@ -664,51 +664,51 @@ export default function ScanPage() {
                     if (e.target.value === "" || /^\d*\.?\d*$/.test(e.target.value)) setBarcodeGramsStr(e.target.value);
                   }}
                   onBlur={() => setBarcodeGramsStr(String(Math.max(1, parseFloat(barcodeGramsStr) || 1)))}
-                  className="flex-1 bg-zinc-900 border border-zinc-700 text-white text-center text-xl font-bold rounded-xl py-3 focus:outline-none focus:border-brand-500"
+                  className="flex-1 bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 text-gray-900 dark:text-white text-center text-xl font-bold rounded-xl py-3 focus:outline-none focus:border-brand-500"
                 />
                 <div className="flex flex-col gap-1">
                   {barcodeProduct.servingG && (
-                    <button onClick={() => setBarcodeGramsStr(String(Math.round(barcodeProduct.servingG!)))} className="text-xs text-zinc-400 bg-zinc-800 px-2 py-1 rounded-lg hover:text-white transition-colors whitespace-nowrap">
+                    <button onClick={() => setBarcodeGramsStr(String(Math.round(barcodeProduct.servingG!)))} className="text-xs text-gray-500 dark:text-zinc-400 bg-gray-100 dark:bg-zinc-800 px-2 py-1 rounded-lg hover:text-gray-900 dark:hover:text-white transition-colors whitespace-nowrap">
                       1 ración ({barcodeProduct.servingG}g)
                     </button>
                   )}
-                  <button onClick={() => setBarcodeGramsStr("100")} className="text-xs text-zinc-400 bg-zinc-800 px-2 py-1 rounded-lg hover:text-white transition-colors">
+                  <button onClick={() => setBarcodeGramsStr("100")} className="text-xs text-gray-500 dark:text-zinc-400 bg-gray-100 dark:bg-zinc-800 px-2 py-1 rounded-lg hover:text-gray-900 dark:hover:text-white transition-colors">
                     100g
                   </button>
                 </div>
               </div>
             </div>
 
-            <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
-              <p className="text-xs text-zinc-500 mb-3">Total · {barcodeGrams}g</p>
+            <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4">
+              <p className="text-xs text-gray-400 dark:text-zinc-500 mb-3">Total · {barcodeGrams}g</p>
               <div className="grid grid-cols-5 gap-1">
-                {[{ label: "kcal", value: barcodeTotal.calories, color: "text-white" }, { label: "Prot", value: barcodeTotal.protein, color: "text-orange-400" }, { label: "Carb", value: barcodeTotal.carbs, color: "text-blue-400" }, { label: "Gras", value: barcodeTotal.fat, color: "text-yellow-400" }].map((m) => (
-                  <div key={m.label} className="bg-zinc-800 rounded-lg p-2 text-center">
+                {[{ label: "kcal", value: barcodeTotal.calories, color: "text-gray-900 dark:text-white" }, { label: "Prot", value: barcodeTotal.protein, color: "text-orange-400" }, { label: "Carb", value: barcodeTotal.carbs, color: "text-blue-400" }, { label: "Gras", value: barcodeTotal.fat, color: "text-yellow-400" }].map((m) => (
+                  <div key={m.label} className="bg-gray-100 dark:bg-zinc-800 rounded-lg p-2 text-center">
                     <p className={`text-base font-bold ${m.color}`}>{Math.round(m.value)}</p>
-                    <p className="text-xs text-zinc-500">{m.label}</p>
+                    <p className="text-xs text-gray-400 dark:text-zinc-500">{m.label}</p>
                   </div>
                 ))}
               </div>
             </div>
 
             <div>
-              <label className="text-xs text-zinc-500 block mb-2">¿En qué comida?</label>
+              <label className="text-xs text-gray-400 dark:text-zinc-500 block mb-2">¿En qué comida?</label>
               <div className="grid grid-cols-5 gap-1">
                 {MEALS.map((m) => (
-                  <button key={m} onClick={() => setBarcodeMeal(m)} className={`py-2 rounded-lg text-xs font-medium capitalize transition-colors ${barcodeMeal === m ? "bg-brand-500 text-white" : "bg-zinc-800 text-zinc-400"}`}>{m}</button>
+                  <button key={m} onClick={() => setBarcodeMeal(m)} className={`py-2 rounded-lg text-xs font-medium capitalize transition-colors ${barcodeMeal === m ? "bg-brand-500 text-white" : "bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400"}`}>{m}</button>
                 ))}
               </div>
             </div>
 
             <div className="flex gap-2">
-              <button onClick={() => { setBarcodeProduct(null); setBarcodeError(""); startBarcodeScanner(); }} className="flex-1 py-3 rounded-xl border border-zinc-700 text-zinc-400 text-sm font-medium hover:border-brand-500 transition-colors">
+              <button onClick={() => { setBarcodeProduct(null); setBarcodeError(""); startBarcodeScanner(); }} className="flex-1 py-3 rounded-xl border border-gray-300 dark:border-zinc-700 text-gray-400 dark:text-zinc-400 text-sm font-medium hover:border-brand-500 transition-colors">
                 🔄 Otro producto
               </button>
               <button onClick={handleBarcodeSave} disabled={barcodeSaving} className="flex-1 py-3 rounded-xl bg-brand-500 text-white font-semibold disabled:opacity-40">
                 {barcodeSaving ? "Guardando..." : `💾 Añadir ${barcodeTotal.calories} kcal`}
               </button>
             </div>
-            <button onClick={handleBarcodeSaveToRecipe} disabled={barcodeSavingRecipe} className="w-full py-3 rounded-xl border border-zinc-700 text-zinc-300 text-sm font-semibold hover:border-brand-500 hover:text-white transition-colors disabled:opacity-40 flex items-center justify-center gap-2">
+            <button onClick={handleBarcodeSaveToRecipe} disabled={barcodeSavingRecipe} className="w-full py-3 rounded-xl border border-gray-300 dark:border-zinc-700 text-gray-600 dark:text-zinc-300 text-sm font-semibold hover:border-brand-500 hover:text-gray-900 dark:hover:text-white transition-colors disabled:opacity-40 flex items-center justify-center gap-2">
               📖 {barcodeSavingRecipe ? "Guardando..." : "Guardar en recetas"}
             </button>
           </div>

@@ -51,13 +51,11 @@ export default function RecipesPage() {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loadingList, setLoadingList] = useState(true);
 
-  // Create view state
   const [recipeName, setRecipeName] = useState("");
   const [items, setItems] = useState<RecipeItem[]>([]);
   const [saving, setSaving] = useState(false);
   const [createError, setCreateError] = useState("");
 
-  // Add item state
   const [addTab, setAddTab] = useState<"search" | "manual">("search");
   const [query, setQuery] = useState("");
   const [searchResults, setSearchResults] = useState<FoodResult[]>([]);
@@ -71,7 +69,6 @@ export default function RecipesPage() {
   const [mFat, setMFat] = useState("");
   const [mGrams, setMGrams] = useState("100");
 
-  // Log state
   const [loggingId, setLoggingId] = useState<string | null>(null);
   const [logMeal, setLogMeal] = useState("comida");
   const [logging, setLogging] = useState(false);
@@ -209,39 +206,37 @@ export default function RecipesPage() {
       : null;
 
     return (
-      <div className="min-h-screen bg-zinc-950 max-w-md mx-auto pb-32 px-4">
+      <div className="min-h-screen bg-white dark:bg-zinc-950 max-w-md mx-auto pb-32 px-4">
         <header className="pt-14 pb-4 flex items-center gap-3">
-          <button onClick={() => { setView("list"); setItems([]); setRecipeName(""); }} className="text-zinc-400 text-sm">
+          <button onClick={() => { setView("list"); setItems([]); setRecipeName(""); }} className="text-gray-400 dark:text-zinc-400 text-sm">
             ← Recetas
           </button>
-          <h1 className="text-xl font-bold text-white">Nueva receta</h1>
+          <h1 className="text-xl font-bold text-gray-900 dark:text-white">Nueva receta</h1>
         </header>
 
-        {/* Recipe name */}
         <div className="mb-4">
-          <label className="text-xs text-zinc-500 block mb-1.5">Nombre de la receta *</label>
+          <label className="text-xs text-gray-400 dark:text-zinc-500 block mb-1.5">Nombre de la receta *</label>
           <input
             value={recipeName}
             onChange={(e) => setRecipeName(e.target.value)}
             placeholder="Ej: Paella valenciana"
-            className="w-full bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-brand-500"
+            className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-brand-500"
           />
         </div>
 
-        {/* Items list */}
         {items.length > 0 && (
           <div className="mb-4 space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-xs text-zinc-500 font-medium">Ingredientes ({items.length})</p>
+              <p className="text-xs text-gray-400 dark:text-zinc-500 font-medium">Ingredientes ({items.length})</p>
               <MacroRow cal={totals.cal} prot={totals.prot} carbs={totals.carbs} fat={totals.fat} />
             </div>
             {items.map((item, i) => (
-              <div key={i} className="bg-zinc-900 border border-zinc-800 rounded-xl px-3 py-2.5 flex items-center justify-between">
+              <div key={i} className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-3 py-2.5 flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-white font-medium">{item.name}</p>
+                  <p className="text-sm text-gray-900 dark:text-white font-medium">{item.name}</p>
                   <MacroRow cal={item.calories} prot={item.protein} carbs={item.carbs} fat={item.fat} />
                 </div>
-                <button onClick={() => setItems(prev => prev.filter((_, j) => j !== i))} className="text-zinc-600 hover:text-red-400 ml-3">
+                <button onClick={() => setItems(prev => prev.filter((_, j) => j !== i))} className="text-gray-300 dark:text-zinc-600 hover:text-red-400 ml-3">
                   <Trash2 size={16} />
                 </button>
               </div>
@@ -249,19 +244,18 @@ export default function RecipesPage() {
           </div>
         )}
 
-        {/* Add item */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 mb-4">
-          <p className="text-xs text-zinc-500 font-medium mb-3">Añadir ingrediente</p>
-          <div className="flex gap-1 bg-zinc-800 rounded-lg p-1 mb-3">
+        <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4 mb-4">
+          <p className="text-xs text-gray-400 dark:text-zinc-500 font-medium mb-3">Añadir ingrediente</p>
+          <div className="flex gap-1 bg-gray-100 dark:bg-zinc-800 rounded-lg p-1 mb-3">
             <button
               onClick={() => setAddTab("search")}
-              className={`flex-1 py-2 rounded-md text-xs font-semibold transition-colors ${addTab === "search" ? "bg-brand-500 text-white" : "text-zinc-400"}`}
+              className={`flex-1 py-2 rounded-md text-xs font-semibold transition-colors ${addTab === "search" ? "bg-brand-500 text-white" : "text-gray-400 dark:text-zinc-400"}`}
             >
               🔍 Buscar
             </button>
             <button
               onClick={() => setAddTab("manual")}
-              className={`flex-1 py-2 rounded-md text-xs font-semibold transition-colors ${addTab === "manual" ? "bg-brand-500 text-white" : "text-zinc-400"}`}
+              className={`flex-1 py-2 rounded-md text-xs font-semibold transition-colors ${addTab === "manual" ? "bg-brand-500 text-white" : "text-gray-400 dark:text-zinc-400"}`}
             >
               ✏️ Manual
             </button>
@@ -277,7 +271,7 @@ export default function RecipesPage() {
                       onChange={(e) => setQuery(e.target.value)}
                       onKeyDown={(e) => e.key === "Enter" && handleSearch()}
                       placeholder="Buscar alimento..."
-                      className="flex-1 bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-brand-500"
+                      className="flex-1 bg-gray-100 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-brand-500"
                     />
                     <button
                       onClick={handleSearch}
@@ -291,12 +285,12 @@ export default function RecipesPage() {
                     <button
                       key={food.id}
                       onClick={() => { setSelectedFood(food); setGramsStr("100"); }}
-                      className="w-full text-left bg-zinc-800 border border-zinc-700 rounded-xl p-3 mb-1 hover:border-brand-500 transition-colors"
+                      className="w-full text-left bg-gray-100 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-xl p-3 mb-1 hover:border-brand-500 transition-colors"
                     >
-                      <p className="text-sm font-medium text-white">{food.name}</p>
-                      <p className="text-xs text-zinc-400 mt-0.5">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">{food.name}</p>
+                      <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
                         {Math.round(food.calories)} kcal · P {Math.round(food.protein)}g · C {Math.round(food.carbs)}g · G {Math.round(food.fat)}g
-                        <span className="text-zinc-600"> /100g</span>
+                        <span className="text-gray-300 dark:text-zinc-600"> /100g</span>
                       </p>
                     </button>
                   ))}
@@ -305,17 +299,17 @@ export default function RecipesPage() {
 
               {selectedFood && adjusted && (
                 <div className="space-y-3">
-                  <button onClick={() => { setSelectedFood(null); setSearchResults([]); }} className="text-zinc-500 text-xs">← Volver</button>
-                  <p className="text-sm font-medium text-white">{selectedFood.name}</p>
+                  <button onClick={() => { setSelectedFood(null); setSearchResults([]); }} className="text-gray-400 dark:text-zinc-500 text-xs">← Volver</button>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">{selectedFood.name}</p>
                   <div>
-                    <label className="text-xs text-zinc-500 block mb-1.5">Gramos</label>
+                    <label className="text-xs text-gray-400 dark:text-zinc-500 block mb-1.5">Gramos</label>
                     <input
                       type="text"
                       inputMode="decimal"
                       value={gramsStr}
                       onChange={(e) => { if (e.target.value === "" || /^\d*\.?\d*$/.test(e.target.value)) setGramsStr(e.target.value); }}
                       onBlur={() => setGramsStr(String(Math.max(1, parseFloat(gramsStr) || 1)))}
-                      className="w-full bg-zinc-800 text-white text-center text-lg font-bold rounded-xl py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      className="w-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white text-center text-lg font-bold rounded-xl py-2.5 focus:outline-none focus:ring-2 focus:ring-brand-500"
                     />
                   </div>
                   <MacroRow cal={adjusted.calories} prot={adjusted.protein} carbs={adjusted.carbs} fat={adjusted.fat} />
@@ -333,29 +327,29 @@ export default function RecipesPage() {
                 value={mName}
                 onChange={(e) => setMName(e.target.value)}
                 placeholder="Nombre del ingrediente *"
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-brand-500"
+                className="w-full bg-gray-100 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl px-3 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-brand-500"
               />
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="text-xs text-zinc-500 block mb-1">Calorías *</label>
+                  <label className="text-xs text-gray-400 dark:text-zinc-500 block mb-1">Calorías *</label>
                   <input
                     type="text"
                     inputMode="decimal"
                     value={mCal}
                     placeholder="0"
                     onChange={(e) => { if (e.target.value === "" || /^\d*\.?\d*$/.test(e.target.value)) setMCal(e.target.value); }}
-                    className="w-full bg-zinc-800 text-white text-center rounded-xl py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white text-center rounded-xl py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
                 <div>
-                  <label className="text-xs text-zinc-500 block mb-1">Gramos</label>
+                  <label className="text-xs text-gray-400 dark:text-zinc-500 block mb-1">Gramos</label>
                   <input
                     type="text"
                     inputMode="decimal"
                     value={mGrams}
                     placeholder="100"
                     onChange={(e) => { if (e.target.value === "" || /^\d*\.?\d*$/.test(e.target.value)) setMGrams(e.target.value); }}
-                    className="w-full bg-zinc-800 text-white text-center rounded-xl py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white text-center rounded-xl py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
               </div>
@@ -366,14 +360,14 @@ export default function RecipesPage() {
                   { label: "Grasas", val: mFat, set: setMFat },
                 ].map(({ label, val, set }) => (
                   <div key={label}>
-                    <label className="text-xs text-zinc-500 block mb-1">{label} (g)</label>
+                    <label className="text-xs text-gray-400 dark:text-zinc-500 block mb-1">{label} (g)</label>
                     <input
                       type="text"
                       inputMode="decimal"
                       value={val}
                       placeholder="0"
                       onChange={(e) => { if (e.target.value === "" || /^\d*\.?\d*$/.test(e.target.value)) set(e.target.value); }}
-                      className="w-full bg-zinc-800 text-white text-center rounded-xl py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                      className="w-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white text-center rounded-xl py-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                     />
                   </div>
                 ))}
@@ -404,9 +398,9 @@ export default function RecipesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 max-w-md mx-auto pb-32 px-4">
+    <div className="min-h-screen bg-white dark:bg-zinc-950 max-w-md mx-auto pb-32 px-4">
       <header className="pt-14 pb-4 flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">🍳 Recetas</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">🍳 Recetas</h1>
         <button
           onClick={() => { setView("create"); setItems([]); setRecipeName(""); setCreateError(""); }}
           className="px-4 py-2 bg-brand-500 text-white rounded-xl text-sm font-semibold"
@@ -416,31 +410,31 @@ export default function RecipesPage() {
       </header>
 
       {loadingList && (
-        <div className="text-center text-zinc-600 text-sm mt-16">Cargando...</div>
+        <div className="text-center text-gray-300 dark:text-zinc-600 text-sm mt-16">Cargando...</div>
       )}
 
       {!loadingList && recipes.length === 0 && (
         <div className="text-center mt-16 space-y-2">
-          <p className="text-zinc-500 text-sm">Aún no tienes recetas guardadas.</p>
-          <p className="text-zinc-600 text-xs">Pulsa "+ Nueva" para crear tu primera receta.</p>
+          <p className="text-gray-400 dark:text-zinc-500 text-sm">Aún no tienes recetas guardadas.</p>
+          <p className="text-gray-300 dark:text-zinc-600 text-xs">Pulsa "+ Nueva" para crear tu primera receta.</p>
         </div>
       )}
 
       <div className="space-y-3">
         {recipes.map((recipe) => (
-          <div key={recipe.id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+          <div key={recipe.id} className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <p className="font-semibold text-white">{recipe.name}</p>
+                <p className="font-semibold text-gray-900 dark:text-white">{recipe.name}</p>
                 <MacroRow
                   cal={recipe.totalCalories}
                   prot={recipe.totalProtein}
                   carbs={recipe.totalCarbs}
                   fat={recipe.totalFat}
                 />
-                <p className="text-xs text-zinc-600 mt-1">{recipe.items.length} ingrediente{recipe.items.length !== 1 ? "s" : ""}</p>
+                <p className="text-xs text-gray-300 dark:text-zinc-600 mt-1">{recipe.items.length} ingrediente{recipe.items.length !== 1 ? "s" : ""}</p>
               </div>
-              <button onClick={() => deleteRecipe(recipe.id)} className="text-zinc-600 hover:text-red-400 transition-colors mt-0.5">
+              <button onClick={() => deleteRecipe(recipe.id)} className="text-gray-300 dark:text-zinc-600 hover:text-red-400 transition-colors mt-0.5">
                 <Trash2 size={16} />
               </button>
             </div>
@@ -451,20 +445,20 @@ export default function RecipesPage() {
 
             {loggingId === recipe.id ? (
               <div className="mt-3 space-y-2">
-                <p className="text-xs text-zinc-500">¿En qué comida?</p>
+                <p className="text-xs text-gray-400 dark:text-zinc-500">¿En qué comida?</p>
                 <div className="grid grid-cols-5 gap-1">
                   {MEALS.map((m) => (
                     <button
                       key={m}
                       onClick={() => setLogMeal(m)}
-                      className={`py-2 rounded-lg text-xs font-medium capitalize transition-colors ${logMeal === m ? "bg-brand-500 text-white" : "bg-zinc-800 text-zinc-400"}`}
+                      className={`py-2 rounded-lg text-xs font-medium capitalize transition-colors ${logMeal === m ? "bg-brand-500 text-white" : "bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400"}`}
                     >
                       {m}
                     </button>
                   ))}
                 </div>
                 <div className="flex gap-2">
-                  <button onClick={() => setLoggingId(null)} className="flex-1 py-2.5 rounded-xl bg-zinc-800 text-zinc-400 text-sm font-semibold">
+                  <button onClick={() => setLoggingId(null)} className="flex-1 py-2.5 rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 text-sm font-semibold">
                     Cancelar
                   </button>
                   <button
@@ -479,7 +473,7 @@ export default function RecipesPage() {
             ) : (
               <button
                 onClick={() => { setLoggingId(recipe.id); setLogMeal("comida"); }}
-                className="mt-3 w-full py-2.5 rounded-xl bg-zinc-800 text-zinc-300 text-sm font-semibold hover:bg-zinc-700 transition-colors"
+                className="mt-3 w-full py-2.5 rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-600 dark:text-zinc-300 text-sm font-semibold hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
               >
                 + Añadir al diario
               </button>

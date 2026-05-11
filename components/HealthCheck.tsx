@@ -28,7 +28,7 @@ export default function HealthCheck() {
 
   if (status === "ok") {
     return (
-      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-zinc-900 border border-green-500/40 text-green-400 text-xs px-4 py-2 rounded-full shadow-lg flex items-center gap-2 animate-fade-in">
+      <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-gray-50 dark:bg-zinc-900 border border-green-500/40 text-green-400 text-xs px-4 py-2 rounded-full shadow-lg flex items-center gap-2 animate-fade-in">
         <span className="w-1.5 h-1.5 rounded-full bg-green-400 inline-block" />
         Servidor OK
       </div>
@@ -36,12 +36,12 @@ export default function HealthCheck() {
   }
 
   return (
-    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-zinc-900 border border-red-500/60 text-red-400 text-xs px-4 py-2.5 rounded-xl shadow-lg max-w-xs text-center">
+    <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-gray-50 dark:bg-zinc-900 border border-red-500/60 text-red-400 text-xs px-4 py-2.5 rounded-xl shadow-lg max-w-xs text-center">
       <p className="font-semibold mb-0.5">⚠️ Error del servidor</p>
-      <p className="text-zinc-500 break-all">{msg}</p>
+      <p className="text-gray-400 dark:text-zinc-500 break-all">{msg}</p>
       <button
         onClick={() => setStatus(null)}
-        className="mt-1.5 text-zinc-600 hover:text-zinc-400 text-xs"
+        className="mt-1.5 text-gray-400 dark:text-zinc-600 hover:text-gray-600 dark:hover:text-zinc-400 text-xs"
       >
         Cerrar
       </button>

@@ -98,7 +98,7 @@ export default function MealNotifications() {
 
   if (perm === "denied") {
     return (
-      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 bg-zinc-900 border border-yellow-500/40 text-yellow-400 text-xs px-4 py-2 rounded-xl shadow-lg text-center max-w-xs pointer-events-none">
+      <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 bg-gray-50 dark:bg-zinc-900 border border-yellow-500/40 text-yellow-400 text-xs px-4 py-2 rounded-xl shadow-lg text-center max-w-xs pointer-events-none">
         🔔 Notificaciones bloqueadas — actívalas en ajustes del navegador
       </div>
     );

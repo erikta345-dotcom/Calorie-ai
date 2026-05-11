@@ -63,26 +63,26 @@ export default function AlertsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 max-w-md mx-auto pb-32 px-4">
+    <div className="min-h-screen bg-white dark:bg-zinc-950 max-w-md mx-auto pb-32 px-4">
       <header className="pt-14 pb-6">
-        <h1 className="text-2xl font-bold text-white">🔔 Alertas</h1>
-        <p className="text-zinc-500 text-sm mt-1">Recordatorios y avisos personalizados</p>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">🔔 Alertas</h1>
+        <p className="text-gray-400 dark:text-zinc-500 text-sm mt-1">Recordatorios y avisos personalizados</p>
       </header>
 
       <div className="space-y-2">
         {alerts.length === 0 && !adding && (
-          <p className="text-zinc-600 text-sm text-center py-10">Sin alertas. ¡Añade una!</p>
+          <p className="text-gray-300 dark:text-zinc-600 text-sm text-center py-10">Sin alertas. ¡Añade una!</p>
         )}
 
         {alerts.map((alert) => (
           <div
             key={alert.id}
-            className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3 flex items-center gap-3"
+            className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-4 py-3 flex items-center gap-3"
           >
             <button
               onClick={() => handleToggle(alert.id, alert.enabled)}
               className={`w-11 h-6 rounded-full transition-colors flex-shrink-0 relative ${
-                alert.enabled ? "bg-brand-500" : "bg-zinc-700"
+                alert.enabled ? "bg-brand-500" : "bg-gray-200 dark:bg-zinc-700"
               }`}
             >
               <span
@@ -92,14 +92,14 @@ export default function AlertsPage() {
               />
             </button>
             <div className="flex-1 min-w-0">
-              <p className="text-sm text-white truncate">{alert.label}</p>
-              <p className="text-xs text-zinc-500">
+              <p className="text-sm text-gray-900 dark:text-white truncate">{alert.label}</p>
+              <p className="text-xs text-gray-400 dark:text-zinc-500">
                 {alert.type === "time" ? `⏰ ${alert.time}` : `🔥 ${alert.threshold} kcal`}
               </p>
             </div>
             <button
               onClick={() => handleDelete(alert.id)}
-              className="text-zinc-600 hover:text-red-400 transition-colors p-1"
+              className="text-gray-300 dark:text-zinc-600 hover:text-red-400 transition-colors p-1"
             >
               <Trash2 size={15} />
             </button>
@@ -107,7 +107,7 @@ export default function AlertsPage() {
         ))}
 
         {adding && (
-          <div className="bg-zinc-900 border border-brand-500/40 rounded-xl px-4 py-4 space-y-3">
+          <div className="bg-gray-50 dark:bg-zinc-900 border border-brand-500/40 rounded-xl px-4 py-4 space-y-3">
             <div className="flex gap-2">
               {(["time", "calorie"] as const).map((t) => (
                 <button
@@ -116,7 +116,7 @@ export default function AlertsPage() {
                   className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
                     form.type === t
                       ? "bg-brand-500 text-zinc-950"
-                      : "bg-zinc-800 text-zinc-400 hover:text-zinc-200"
+                      : "bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200"
                   }`}
                 >
                   {t === "time" ? "⏰ Hora" : "🔥 Calorías"}
@@ -129,7 +129,7 @@ export default function AlertsPage() {
               placeholder={form.type === "time" ? "ej: Tomar magnesio" : "ej: Límite de calorías"}
               value={form.label}
               onChange={(e) => setForm({ ...form, label: e.target.value })}
-              className="w-full bg-zinc-800 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500 placeholder:text-zinc-600"
+              className="w-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500 placeholder:text-gray-400 dark:placeholder:text-zinc-600"
             />
 
             {form.type === "time" ? (
@@ -137,7 +137,7 @@ export default function AlertsPage() {
                 type="time"
                 value={form.time}
                 onChange={(e) => setForm({ ...form, time: e.target.value })}
-                className="w-full bg-zinc-800 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
+                className="w-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
               />
             ) : (
               <div className="flex items-center gap-2">
@@ -145,14 +145,14 @@ export default function AlertsPage() {
                   type="number"
                   value={form.threshold}
                   onChange={(e) => setForm({ ...form, threshold: e.target.value })}
-                  className="flex-1 bg-zinc-800 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  className="flex-1 bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
                 />
-                <span className="text-zinc-500 text-sm">kcal</span>
+                <span className="text-gray-400 dark:text-zinc-500 text-sm">kcal</span>
               </div>
             )}
 
             {form.type === "calorie" && (
-              <p className="text-xs text-zinc-600">Las alertas de calorías se muestran al abrir la app</p>
+              <p className="text-xs text-gray-300 dark:text-zinc-600">Las alertas de calorías se muestran al abrir la app</p>
             )}
 
             <div className="flex gap-2">
@@ -165,7 +165,7 @@ export default function AlertsPage() {
               </button>
               <button
                 onClick={() => setAdding(false)}
-                className="flex-1 py-2 rounded-lg bg-zinc-800 text-zinc-400 text-sm hover:text-zinc-200 transition-colors"
+                className="flex-1 py-2 rounded-lg bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 text-sm hover:text-gray-700 dark:hover:text-zinc-200 transition-colors"
               >
                 Cancelar
               </button>
@@ -177,7 +177,7 @@ export default function AlertsPage() {
       {!adding && (
         <button
           onClick={() => setAdding(true)}
-          className="mt-4 w-full py-3 rounded-xl border border-dashed border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:border-zinc-500 transition-colors flex items-center justify-center gap-2 text-sm"
+          className="mt-4 w-full py-3 rounded-xl border border-dashed border-gray-300 dark:border-zinc-700 text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 hover:border-gray-400 dark:hover:border-zinc-500 transition-colors flex items-center justify-center gap-2 text-sm"
         >
           <Plus size={16} />
           Añadir alerta

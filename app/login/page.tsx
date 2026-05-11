@@ -35,12 +35,12 @@ function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex flex-col items-center justify-center px-6">
+    <div className="min-h-screen bg-white dark:bg-zinc-950 flex flex-col items-center justify-center px-6">
       <div className="w-full max-w-sm space-y-6 text-center">
         <div className="space-y-2">
           <p className="text-6xl">🥗</p>
-          <h1 className="text-3xl font-bold text-white">Calorie AI</h1>
-          <p className="text-zinc-400 text-sm">Registra tu comida con inteligencia artificial</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Calorie AI</h1>
+          <p className="text-gray-500 dark:text-zinc-400 text-sm">Registra tu comida con inteligencia artificial</p>
         </div>
 
         <button
@@ -57,21 +57,21 @@ function LoginForm() {
         </button>
 
         <div className="flex items-center gap-3">
-          <div className="flex-1 h-px bg-zinc-800" />
-          <span className="text-zinc-600 text-xs">o con email</span>
-          <div className="flex-1 h-px bg-zinc-800" />
+          <div className="flex-1 h-px bg-gray-200 dark:bg-zinc-800" />
+          <span className="text-gray-400 dark:text-zinc-600 text-xs">o con email</span>
+          <div className="flex-1 h-px bg-gray-200 dark:bg-zinc-800" />
         </div>
 
-        <div className="flex bg-zinc-900 rounded-xl p-1">
+        <div className="flex bg-gray-100 dark:bg-zinc-900 rounded-xl p-1">
           <button
             onClick={() => { setTab("login"); setError(""); }}
-            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${tab === "login" ? "bg-zinc-700 text-white" : "text-zinc-500 hover:text-zinc-300"}`}
+            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${tab === "login" ? "bg-gray-200 dark:bg-zinc-700 text-gray-900 dark:text-white" : "text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300"}`}
           >
             Iniciar sesión
           </button>
           <button
             onClick={() => { setTab("register"); setError(""); }}
-            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${tab === "register" ? "bg-zinc-700 text-white" : "text-zinc-500 hover:text-zinc-300"}`}
+            className={`flex-1 py-2 rounded-lg text-sm font-semibold transition-all ${tab === "register" ? "bg-gray-200 dark:bg-zinc-700 text-gray-900 dark:text-white" : "text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300"}`}
           >
             Crear cuenta
           </button>
@@ -84,7 +84,7 @@ function LoginForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            className="w-full bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-zinc-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
           <input
             type="password"
@@ -93,7 +93,7 @@ function LoginForm() {
             onChange={(e) => setPassword(e.target.value)}
             required
             minLength={6}
-            className="w-full bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
+            className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-zinc-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
           />
           {tab === "register" && (
             <input
@@ -103,7 +103,7 @@ function LoginForm() {
               onChange={(e) => setConfirm(e.target.value)}
               required
               minLength={6}
-              className="w-full bg-zinc-900 border border-zinc-800 text-white placeholder-zinc-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-zinc-600 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
           )}
           {error && <p className="text-red-400 text-xs text-center">{error}</p>}
@@ -116,7 +116,7 @@ function LoginForm() {
           </button>
         </form>
 
-        <p className="text-zinc-600 text-xs">Tus datos son privados y solo tú puedes verlos.</p>
+        <p className="text-gray-400 dark:text-zinc-600 text-xs">Tus datos son privados y solo tú puedes verlos.</p>
       </div>
     </div>
   );

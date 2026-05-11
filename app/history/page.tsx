@@ -7,6 +7,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine,
 } from "recharts";
 import BottomNav from "@/components/BottomNav";
+import { useTheme } from "next-themes";
 
 type Period = "week" | "month" | "year";
 
@@ -41,6 +42,8 @@ export default function HistoryPage() {
   const [goalProtein, setGoalProtein] = useState(150);
   const [goalCarbs, setGoalCarbs] = useState(300);
   const [goalFat, setGoalFat] = useState(80);
+  const { resolvedTheme } = useTheme();
+  const dark = resolvedTheme === "dark";
 
   useEffect(() => {
     setLoading(true);
@@ -134,10 +137,15 @@ export default function HistoryPage() {
     ? Math.round(data.reduce((s, d) => s + d[view], 0) / data.length)
     : 0;
 
+  const tickColor = dark ? "#71717a" : "#9ca3af";
+  const tooltipBg = dark ? "#18181b" : "#ffffff";
+  const tooltipBorder = dark ? "#3f3f46" : "#e5e7eb";
+  const tooltipLabelColor = dark ? "#fff" : "#111827";
+
   return (
-    <div className="min-h-screen bg-zinc-950 max-w-md mx-auto pb-32 px-4">
+    <div className="min-h-screen bg-white dark:bg-zinc-950 max-w-md mx-auto pb-32 px-4">
       <header className="pt-14 pb-4">
-        <h1 className="text-2xl font-bold text-white">📊 Historial</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">📊 Historial</h1>
       </header>
 
       {/* Period toggle */}
@@ -148,8 +156,8 @@ export default function HistoryPage() {
             onClick={() => setPeriod(p.key)}
             className={`flex-1 py-2 rounded-xl text-sm font-medium transition-colors ${
               period === p.key
-                ? "bg-zinc-700 text-white"
-                : "bg-zinc-900 text-zinc-500"
+                ? "bg-gray-200 dark:bg-zinc-700 text-gray-900 dark:text-white"
+                : "bg-gray-50 dark:bg-zinc-900 text-gray-400 dark:text-zinc-500"
             }`}
           >
             {p.label}
@@ -164,7 +172,7 @@ export default function HistoryPage() {
             key={v.key}
             onClick={() => setView(v.key)}
             className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-              view === v.key ? "text-white" : "bg-zinc-800 text-zinc-400"
+              view === v.key ? "text-white" : "bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400"
             }`}
             style={view === v.key ? { backgroundColor: v.color } : {}}
           >
@@ -174,39 +182,39 @@ export default function HistoryPage() {
       </div>
 
       {/* Stat summary */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 mb-4 flex justify-between">
+      <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4 mb-4 flex justify-between">
         <div>
-          <p className="text-xs text-zinc-500">Promedio diario</p>
-          <p className="text-2xl font-bold text-white">{avg}</p>
-          <p className="text-xs text-zinc-500">{view === "calories" ? "kcal" : "g"}</p>
+          <p className="text-xs text-gray-400 dark:text-zinc-500">Promedio diario</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white">{avg}</p>
+          <p className="text-xs text-gray-400 dark:text-zinc-500">{view === "calories" ? "kcal" : "g"}</p>
         </div>
         {currentGoal && (
           <div className="text-right">
-            <p className="text-xs text-zinc-500">Objetivo</p>
+            <p className="text-xs text-gray-400 dark:text-zinc-500">Objetivo</p>
             <p className="text-2xl font-bold" style={{ color: currentView.color }}>{currentGoal}</p>
-            <p className="text-xs text-zinc-500">{view === "calories" ? "kcal" : "g"}</p>
+            <p className="text-xs text-gray-400 dark:text-zinc-500">{view === "calories" ? "kcal" : "g"}</p>
           </div>
         )}
       </div>
 
       {/* Chart */}
       {loading ? (
-        <div className="h-48 bg-zinc-800 rounded-xl animate-pulse mb-4" />
+        <div className="h-48 bg-gray-100 dark:bg-zinc-800 rounded-xl animate-pulse mb-4" />
       ) : (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 mb-4">
+        <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4 mb-4">
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={data} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
               <XAxis
                 dataKey="label"
-                tick={{ fill: "#71717a", fontSize: 10 }}
+                tick={{ fill: tickColor, fontSize: 10 }}
                 axisLine={false}
                 tickLine={false}
                 interval={period === "month" ? 4 : 0}
               />
-              <YAxis tick={{ fill: "#71717a", fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: tickColor, fontSize: 10 }} axisLine={false} tickLine={false} />
               <Tooltip
-                contentStyle={{ backgroundColor: "#18181b", border: "1px solid #3f3f46", borderRadius: 8 }}
-                labelStyle={{ color: "#fff" }}
+                contentStyle={{ backgroundColor: tooltipBg, border: `1px solid ${tooltipBorder}`, borderRadius: 8 }}
+                labelStyle={{ color: tooltipLabelColor }}
                 itemStyle={{ color: currentView.color }}
                 formatter={(val: number) => [
                   `${Math.round(val)} ${view === "calories" ? "kcal" : "g"}`,
@@ -242,31 +250,33 @@ export default function HistoryPage() {
           }
 
           return (
-            <div key={day.date} className="relative bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+            <div key={day.date} className="relative bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden">
               {/* calorie fill */}
               {!isEmpty && (
                 <div
                   className="absolute inset-0 transition-all duration-500"
                   style={{
                     width: `${calPct}%`,
-                    backgroundColor: overGoal ? "rgba(239,68,68,0.08)" : "rgba(132,204,22,0.07)",
+                    backgroundColor: overGoal
+                      ? (dark ? "rgba(239,68,68,0.08)" : "rgba(239,68,68,0.06)")
+                      : (dark ? "rgba(132,204,22,0.07)" : "rgba(132,204,22,0.09)"),
                   }}
                 />
               )}
               <div className="relative z-10 px-4 py-3 flex justify-between items-center">
                 <div>
-                  <p className="text-sm font-medium text-white capitalize">{dateLabel}</p>
-                  <p className="text-xs text-zinc-500 mt-0.5">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white capitalize">{dateLabel}</p>
+                  <p className="text-xs text-gray-400 dark:text-zinc-500 mt-0.5">
                     {isEmpty
                       ? "Sin registros"
                       : `P: ${Math.round(day.protein)}g · C: ${Math.round(day.carbs)}g · G: ${Math.round(day.fat)}g`}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className={`font-bold ${overGoal ? "text-red-400" : isEmpty ? "text-zinc-600" : "text-white"}`}>
+                  <p className={`font-bold ${overGoal ? "text-red-400" : isEmpty ? "text-gray-300 dark:text-zinc-600" : "text-gray-900 dark:text-white"}`}>
                     {isEmpty ? "—" : Math.round(day.calories)}
                   </p>
-                  <p className="text-xs text-zinc-500">kcal</p>
+                  <p className="text-xs text-gray-400 dark:text-zinc-500">kcal</p>
                 </div>
               </div>
               {/* macro bar */}

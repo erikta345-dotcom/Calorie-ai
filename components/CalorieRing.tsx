@@ -17,7 +17,7 @@ export default function CalorieRing({ consumed, goal, size = 160 }: Props) {
       <circle
         cx="60" cy="60" r={r}
         fill="none"
-        stroke="#3f3f46"
+        stroke="var(--ring-track)"
         strokeWidth="12"
       />
       {/* Progress */}
@@ -33,10 +33,10 @@ export default function CalorieRing({ consumed, goal, size = 160 }: Props) {
         style={{ transition: "stroke-dasharray 0.5s ease" }}
       />
       {/* Calorías */}
-      <text x="60" y="52" textAnchor="middle" fill="white" fontSize="20" fontWeight="bold">
+      <text x="60" y="52" textAnchor="middle" className="fill-gray-900 dark:fill-white" fontSize="20" fontWeight="bold">
         {Math.round(consumed)}
       </text>
-      <text x="60" y="64" textAnchor="middle" fill="#71717a" fontSize="8">
+      <text x="60" y="64" textAnchor="middle" fill="var(--ring-muted-text)" fontSize="8">
         kcal comidas
       </text>
       <text x="60" y="76" textAnchor="middle" fill={pct >= 1 ? "#f97316" : "#84cc16"} fontSize="8">

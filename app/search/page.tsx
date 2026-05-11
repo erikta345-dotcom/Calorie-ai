@@ -31,7 +31,7 @@ function NumInput({ value, onChange }: { value: string; onChange: (v: string) =>
         const n = parseFloat(value);
         if (isNaN(n) || n < 0) onChange("0");
       }}
-      className="w-full bg-zinc-800 text-white text-center text-xl font-bold rounded-xl py-3 focus:outline-none focus:ring-2 focus:ring-brand-500"
+      className="w-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white text-center text-xl font-bold rounded-xl py-3 focus:outline-none focus:ring-2 focus:ring-brand-500"
     />
   );
 }
@@ -43,7 +43,6 @@ function SearchContent() {
   const [tab, setTab] = useState<Tab>("search");
   const { meal: suggestedMeal, loaded: mealLoaded } = useSuggestedMeal();
 
-  // Search tab state
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<FoodResult[]>([]);
   const [selected, setSelected] = useState<FoodResult | null>(null);
@@ -53,7 +52,6 @@ function SearchContent() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
-  // Manual tab state
   const [mName, setMName] = useState("");
   const [mCal, setMCal] = useState("");
   const [mProtein, setMProtein] = useState("");
@@ -167,22 +165,22 @@ function SearchContent() {
     : null;
 
   return (
-    <div className="min-h-screen bg-zinc-950 max-w-md mx-auto pb-32 px-4">
+    <div className="min-h-screen bg-white dark:bg-zinc-950 max-w-md mx-auto pb-32 px-4">
       <header className="pt-14 pb-4">
-        <h1 className="text-2xl font-bold text-white">🍴 Añadir comida</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">🍴 Añadir comida</h1>
       </header>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-zinc-900 rounded-xl p-1 mb-4">
+      <div className="flex gap-1 bg-gray-100 dark:bg-zinc-900 rounded-xl p-1 mb-4">
         <button
           onClick={() => setTab("search")}
-          className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors ${tab === "search" ? "bg-brand-500 text-white" : "text-zinc-400 hover:text-white"}`}
+          className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors ${tab === "search" ? "bg-brand-500 text-white" : "text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-white"}`}
         >
           🔍 Buscar
         </button>
         <button
           onClick={() => setTab("manual")}
-          className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors ${tab === "manual" ? "bg-brand-500 text-white" : "text-zinc-400 hover:text-white"}`}
+          className={`flex-1 py-2.5 rounded-lg text-sm font-semibold transition-colors ${tab === "manual" ? "bg-brand-500 text-white" : "text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-white"}`}
         >
           ✏️ Manual
         </button>
@@ -196,7 +194,7 @@ function SearchContent() {
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               placeholder="Ej: pollo a la plancha..."
-              className="flex-1 bg-zinc-900 border border-zinc-700 rounded-xl px-4 py-3 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-brand-500"
+              className="flex-1 bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-brand-500"
             />
             <button
               onClick={handleSearch}
@@ -213,12 +211,12 @@ function SearchContent() {
                 <button
                   key={food.id}
                   onClick={() => { setSelected(food); setGramsStr("100"); }}
-                  className="w-full text-left bg-zinc-900 border border-zinc-800 rounded-xl p-3 hover:border-brand-500 transition-colors"
+                  className="w-full text-left bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-3 hover:border-brand-500 transition-colors"
                 >
-                  <p className="text-sm font-medium text-white">{food.name}</p>
-                  <p className="text-xs text-zinc-400 mt-0.5">
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">{food.name}</p>
+                  <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
                     {Math.round(food.calories)} kcal · P: {Math.round(food.protein)}g · C: {Math.round(food.carbs)}g · G: {Math.round(food.fat)}g
-                    <span className="text-zinc-600"> /100g</span>
+                    <span className="text-gray-300 dark:text-zinc-600"> /100g</span>
                   </p>
                 </button>
               ))}
@@ -226,18 +224,18 @@ function SearchContent() {
           )}
 
           {results.length === 0 && !loading && query && (
-            <p className="text-center text-zinc-600 text-sm mt-8">Sin resultados para "{query}"</p>
+            <p className="text-center text-gray-300 dark:text-zinc-600 text-sm mt-8">Sin resultados para "{query}"</p>
           )}
 
           {selected && adjusted && (
             <div className="mt-4 space-y-4">
-              <button onClick={() => setSelected(null)} className="text-zinc-500 text-sm">
+              <button onClick={() => setSelected(null)} className="text-gray-400 dark:text-zinc-500 text-sm">
                 ← Volver a resultados
               </button>
-              <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-4">
-                <h2 className="font-semibold text-white">{selected.name}</h2>
+              <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4 space-y-4">
+                <h2 className="font-semibold text-gray-900 dark:text-white">{selected.name}</h2>
                 <div>
-                  <label className="text-xs text-zinc-500 block mb-2">Cantidad (gramos)</label>
+                  <label className="text-xs text-gray-400 dark:text-zinc-500 block mb-2">Cantidad (gramos)</label>
                   <input
                     type="text"
                     inputMode="decimal"
@@ -246,7 +244,7 @@ function SearchContent() {
                       if (e.target.value === "" || /^\d*\.?\d*$/.test(e.target.value)) setGramsStr(e.target.value);
                     }}
                     onBlur={() => setGramsStr(String(Math.max(1, parseFloat(gramsStr) || 1)))}
-                    className="w-full bg-zinc-800 text-white text-center text-xl font-bold rounded-xl py-3 focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white text-center text-xl font-bold rounded-xl py-3 focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
                 <div className="grid grid-cols-5 gap-1">
@@ -256,18 +254,18 @@ function SearchContent() {
                     { label: "Carb", value: adjusted.carbs, color: "text-blue-400" },
                     { label: "Gras", value: adjusted.fat, color: "text-yellow-400" },
                   ].map((m) => (
-                    <div key={m.label} className="bg-zinc-800 rounded-lg p-2 text-center">
+                    <div key={m.label} className="bg-gray-100 dark:bg-zinc-800 rounded-lg p-2 text-center">
                       <p className={`text-base font-bold ${m.color}`}>{Math.round(m.value)}</p>
-                      <p className="text-xs text-zinc-500">{m.label}</p>
+                      <p className="text-xs text-gray-400 dark:text-zinc-500">{m.label}</p>
                     </div>
                   ))}
                 </div>
               </div>
               <div>
-                <label className="text-xs text-zinc-500 block mb-2">¿En qué comida?</label>
+                <label className="text-xs text-gray-400 dark:text-zinc-500 block mb-2">¿En qué comida?</label>
                 <div className="grid grid-cols-5 gap-1">
                   {MEALS.map((m) => (
-                    <button key={m} onClick={() => setMeal(m)} className={`py-2 rounded-lg text-xs font-medium capitalize transition-colors ${meal === m ? "bg-brand-500 text-white" : "bg-zinc-800 text-zinc-400"}`}>{m}</button>
+                    <button key={m} onClick={() => setMeal(m)} className={`py-2 rounded-lg text-xs font-medium capitalize transition-colors ${meal === m ? "bg-brand-500 text-white" : "bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400"}`}>{m}</button>
                   ))}
                 </div>
               </div>
@@ -282,29 +280,29 @@ function SearchContent() {
 
       {tab === "manual" && (
         <div className="space-y-4">
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
+          <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4 space-y-3">
             <div>
-              <label className="text-xs text-zinc-500 block mb-1.5">Nombre del alimento *</label>
+              <label className="text-xs text-gray-400 dark:text-zinc-500 block mb-1.5">Nombre del alimento *</label>
               <input
                 value={mName}
                 onChange={(e) => setMName(e.target.value)}
                 placeholder="Ej: Tortilla de patatas"
-                className="w-full bg-zinc-800 border border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-white placeholder-zinc-600 focus:outline-none focus:border-brand-500"
+                className="w-full bg-gray-100 dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-2.5 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-brand-500"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs text-zinc-500 block mb-1.5">Calorías (kcal) *</label>
+                <label className="text-xs text-gray-400 dark:text-zinc-500 block mb-1.5">Calorías (kcal) *</label>
                 <NumInput value={mCal} onChange={setMCal} />
               </div>
               <div>
-                <label className="text-xs text-zinc-500 block mb-1.5">Gramos</label>
+                <label className="text-xs text-gray-400 dark:text-zinc-500 block mb-1.5">Gramos</label>
                 <NumInput value={mGrams} onChange={setMGrams} />
               </div>
             </div>
 
-            <p className="text-xs text-zinc-600">Macros opcionales</p>
+            <p className="text-xs text-gray-300 dark:text-zinc-600">Macros opcionales</p>
             <div className="grid grid-cols-3 gap-2">
               {[
                 { label: "Proteína (g)", val: mProtein, set: setMProtein },
@@ -312,7 +310,7 @@ function SearchContent() {
                 { label: "Grasas (g)", val: mFat, set: setMFat },
               ].map(({ label, val, set }) => (
                 <div key={label}>
-                  <label className="text-xs text-zinc-500 block mb-1.5">{label}</label>
+                  <label className="text-xs text-gray-400 dark:text-zinc-500 block mb-1.5">{label}</label>
                   <input
                     type="text"
                     inputMode="decimal"
@@ -321,7 +319,7 @@ function SearchContent() {
                     onChange={(e) => {
                       if (e.target.value === "" || /^\d*\.?\d*$/.test(e.target.value)) set(e.target.value);
                     }}
-                    className="w-full bg-zinc-800 text-white text-center rounded-xl py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    className="w-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white text-center rounded-xl py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
                   />
                 </div>
               ))}
@@ -329,10 +327,10 @@ function SearchContent() {
           </div>
 
           <div>
-            <label className="text-xs text-zinc-500 block mb-2">¿En qué comida?</label>
+            <label className="text-xs text-gray-400 dark:text-zinc-500 block mb-2">¿En qué comida?</label>
             <div className="grid grid-cols-5 gap-1">
               {MEALS.map((m) => (
-                <button key={m} onClick={() => setMMeal(m)} className={`py-2 rounded-lg text-xs font-medium capitalize transition-colors ${mMeal === m ? "bg-brand-500 text-white" : "bg-zinc-800 text-zinc-400"}`}>{m}</button>
+                <button key={m} onClick={() => setMMeal(m)} className={`py-2 rounded-lg text-xs font-medium capitalize transition-colors ${mMeal === m ? "bg-brand-500 text-white" : "bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400"}`}>{m}</button>
               ))}
             </div>
           </div>

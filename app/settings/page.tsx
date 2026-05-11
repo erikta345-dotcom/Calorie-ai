@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
 import BottomNav from "@/components/BottomNav";
+import ThemeToggle from "@/components/ThemeToggle";
 import type { MealTimes } from "@/hooks/useSuggestedMeal";
 import { subscribeAndSave } from "@/components/MealNotifications";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -85,7 +86,6 @@ export default function SettingsPage() {
     if ("Notification" in window) setNotifPerm(Notification.permission);
   }, []);
 
-
   useEffect(() => {
     fetch("/api/settings")
       .then((r) => r.json())
@@ -148,10 +148,10 @@ export default function SettingsPage() {
   const tdee = Math.round((10 * form.weight + 6.25 * Math.max(form.height, 100) - 5 * Math.max(form.age, 1) + sexOffset) * 1.55);
 
   const numField = (label: string, key: keyof Omit<Settings, "mealTimes" | "goal" | "gender">, unit: string) => (
-    <div className="flex items-center justify-between py-3 border-b border-zinc-800 last:border-0">
+    <div className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-zinc-800 last:border-0">
       <div>
-        <p className="text-sm text-white">{label}</p>
-        <p className="text-xs text-zinc-500">{unit}</p>
+        <p className="text-sm text-gray-900 dark:text-white">{label}</p>
+        <p className="text-xs text-gray-400 dark:text-zinc-500">{unit}</p>
       </div>
       <input
         type="number"
@@ -163,38 +163,38 @@ export default function SettingsPage() {
           else if (key === "age") handleBodyChange({ age: Math.max(1, val) });
           else setForm({ ...form, [key]: val });
         }}
-        className="w-24 bg-zinc-800 text-white text-right rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
+        className="w-24 bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white text-right rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
       />
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-zinc-950 max-w-md mx-auto pb-32 px-4">
+    <div className="min-h-screen bg-white dark:bg-zinc-950 max-w-md mx-auto pb-32 px-4">
       <header className="pt-14 pb-6 flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-white">⚙️ Configuración</h1>
-          <p className="text-zinc-500 text-sm mt-1">Ajusta tus objetivos y horarios</p>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">⚙️ Configuración</h1>
+          <p className="text-gray-400 dark:text-zinc-500 text-sm mt-1">Ajusta tus objetivos y horarios</p>
         </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <button className="rounded-full ring-2 ring-zinc-700 hover:ring-brand-500 transition-all focus:outline-none">
+            <button className="rounded-full ring-2 ring-gray-300 dark:ring-zinc-700 hover:ring-brand-500 transition-all focus:outline-none">
               <Avatar className="h-9 w-9">
                 <AvatarImage src={session?.user?.image ?? ""} alt={session?.user?.name ?? ""} />
-                <AvatarFallback className="bg-zinc-800 text-white text-sm">
+                <AvatarFallback className="bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white text-sm">
                   {session?.user?.name?.[0]?.toUpperCase() ?? "?"}
                 </AvatarFallback>
               </Avatar>
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-52 bg-zinc-900 border-zinc-800 text-white">
-            <DropdownMenuLabel className="text-zinc-400 font-normal text-xs">
-              <p className="font-semibold text-white truncate">{session?.user?.name}</p>
-              <p className="truncate text-zinc-500">{session?.user?.email}</p>
+          <DropdownMenuContent align="end" className="w-52 bg-white dark:bg-zinc-900 border-gray-200 dark:border-zinc-800 text-gray-900 dark:text-white">
+            <DropdownMenuLabel className="text-gray-400 dark:text-zinc-400 font-normal text-xs">
+              <p className="font-semibold text-gray-900 dark:text-white truncate">{session?.user?.name}</p>
+              <p className="truncate text-gray-400 dark:text-zinc-500">{session?.user?.email}</p>
             </DropdownMenuLabel>
-            <DropdownMenuSeparator className="bg-zinc-800" />
+            <DropdownMenuSeparator className="bg-gray-200 dark:bg-zinc-800" />
             <DropdownMenuItem
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="text-red-400 focus:text-red-400 focus:bg-zinc-800 cursor-pointer"
+              className="text-red-400 focus:text-red-400 focus:bg-gray-100 dark:focus:bg-zinc-800 cursor-pointer"
             >
               Cerrar sesión
             </DropdownMenuItem>
@@ -203,20 +203,26 @@ export default function SettingsPage() {
       </header>
 
       <div className="space-y-4">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-4">
-          <p className="text-xs text-zinc-500 pt-3 pb-1 font-semibold uppercase tracking-wide">Tu cuerpo</p>
+        {/* Theme toggle */}
+        <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-4">
+          <p className="text-xs text-gray-400 dark:text-zinc-500 pt-3 pb-1 font-semibold uppercase tracking-wide">Apariencia</p>
+          <ThemeToggle />
+        </div>
+
+        <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-4">
+          <p className="text-xs text-gray-400 dark:text-zinc-500 pt-3 pb-1 font-semibold uppercase tracking-wide">Tu cuerpo</p>
           {numField("Peso corporal", "weight", "kg")}
           {numField("Altura", "height", "cm")}
           {numField("Edad", "age", "años")}
-          <div className="flex items-center justify-between py-3 border-b border-zinc-800">
-            <p className="text-sm text-white">Sexo</p>
+          <div className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-zinc-800">
+            <p className="text-sm text-gray-900 dark:text-white">Sexo</p>
             <div className="flex gap-2">
               {(["male", "female"] as const).map((g) => (
                 <button
                   key={g}
                   onClick={() => handleBodyChange({ gender: g })}
                   className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                    form.gender === g ? "bg-brand-500 text-zinc-950" : "bg-zinc-800 text-zinc-400 hover:text-zinc-200"
+                    form.gender === g ? "bg-brand-500 text-zinc-950" : "bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200"
                   }`}
                 >
                   {g === "male" ? "Hombre" : "Mujer"}
@@ -225,18 +231,18 @@ export default function SettingsPage() {
             </div>
           </div>
           {bmi && (
-            <div className="flex items-center justify-between py-3 border-t border-zinc-800">
-              <p className="text-sm text-zinc-400">IMC</p>
+            <div className="flex items-center justify-between py-3 border-t border-gray-200 dark:border-zinc-800">
+              <p className="text-sm text-gray-500 dark:text-zinc-400">IMC</p>
               <div className="text-right">
-                <span className="text-sm text-white font-medium">{bmi.toFixed(1)}</span>
+                <span className="text-sm text-gray-900 dark:text-white font-medium">{bmi.toFixed(1)}</span>
                 <span className={`ml-2 text-xs ${bmi < 18.5 || bmi >= 30 ? "text-yellow-400" : "text-green-400"}`}>{bmiLabel}</span>
               </div>
             </div>
           )}
         </div>
 
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 pt-3 pb-4">
-          <p className="text-xs text-zinc-500 pb-3 font-semibold uppercase tracking-wide">Objetivo</p>
+        <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-4 pt-3 pb-4">
+          <p className="text-xs text-gray-400 dark:text-zinc-500 pb-3 font-semibold uppercase tracking-wide">Objetivo</p>
           <div className="grid grid-cols-3 gap-2">
             {PLANS.map((plan) => (
               <button
@@ -244,20 +250,20 @@ export default function SettingsPage() {
                 onClick={() => handleBodyChange({ goal: plan.id })}
                 className={`flex flex-col items-center gap-1 py-3 rounded-xl border text-center transition-colors ${
                   form.goal === plan.id
-                    ? "border-brand-500 bg-brand-500/10 text-white"
-                    : "border-zinc-800 bg-zinc-800/50 text-zinc-500 hover:text-zinc-300"
+                    ? "border-brand-500 bg-brand-500/10 text-gray-900 dark:text-white"
+                    : "border-gray-200 dark:border-zinc-800 bg-gray-100/50 dark:bg-zinc-800/50 text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300"
                 }`}
               >
                 <span className="text-xl">{plan.emoji}</span>
                 <span className="text-xs font-medium">{plan.label}</span>
-                <span className="text-[10px] text-zinc-600">{plan.desc}</span>
+                <span className="text-[10px] text-gray-300 dark:text-zinc-600">{plan.desc}</span>
               </button>
             ))}
           </div>
         </div>
 
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-4">
-          <p className="text-xs text-zinc-500 pt-3 pb-1 font-semibold uppercase tracking-wide">Macros diarios</p>
+        <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-4">
+          <p className="text-xs text-gray-400 dark:text-zinc-500 pt-3 pb-1 font-semibold uppercase tracking-wide">Macros diarios</p>
           {numField("Calorías", "goalCalories", "kcal/día")}
           {numField("Proteína", "goalProtein", "g/día")}
           {numField("Carbohidratos", "goalCarbs", "g/día")}
@@ -265,8 +271,8 @@ export default function SettingsPage() {
         </div>
 
         {/* Weight log */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-4 pt-3 pb-4">
-          <p className="text-xs text-zinc-500 pb-3 font-semibold uppercase tracking-wide">📈 Evolución de peso</p>
+        <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-4 pt-3 pb-4">
+          <p className="text-xs text-gray-400 dark:text-zinc-500 pb-3 font-semibold uppercase tracking-wide">📈 Evolución de peso</p>
           <div className="flex gap-2 mb-4">
             <input
               type="number"
@@ -274,7 +280,7 @@ export default function SettingsPage() {
               placeholder="Peso hoy (kg)"
               value={weightInput}
               onChange={(e) => setWeightInput(e.target.value)}
-              className="flex-1 bg-zinc-800 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
+              className="flex-1 bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
             />
             <button
               onClick={logWeight}
@@ -303,9 +309,9 @@ export default function SettingsPage() {
                     <circle key={e.date} cx={PAD + i * xStep} cy={H - PAD - (e.weight - min) * yScale} r="3" fill="#22c55e" />
                   ))}
                 </svg>
-                <div className="flex justify-between text-[11px] text-zinc-500 mt-1">
+                <div className="flex justify-between text-[11px] text-gray-400 dark:text-zinc-500 mt-1">
                   <span>{first.date.slice(5)}</span>
-                  <span className={diff < 0 ? "text-green-400" : diff > 0 ? "text-red-400" : "text-zinc-400"}>
+                  <span className={diff < 0 ? "text-green-400" : diff > 0 ? "text-red-400" : "text-gray-400 dark:text-zinc-400"}>
                     {diff > 0 ? "+" : ""}{diff.toFixed(1)} kg
                   </span>
                   <span>{last.date.slice(5)} · {last.weight} kg</span>
@@ -313,14 +319,14 @@ export default function SettingsPage() {
               </div>
             );
           })() : (
-            <p className="text-xs text-zinc-600 text-center py-2">Registra al menos 2 días para ver la gráfica</p>
+            <p className="text-xs text-gray-300 dark:text-zinc-600 text-center py-2">Registra al menos 2 días para ver la gráfica</p>
           )}
         </div>
 
         {/* Meal times */}
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl px-4">
+        <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-4">
           <div className="flex items-center justify-between pt-3 pb-1">
-            <p className="text-xs text-zinc-500 font-semibold uppercase tracking-wide">Horario de comidas</p>
+            <p className="text-xs text-gray-400 dark:text-zinc-500 font-semibold uppercase tracking-wide">Horario de comidas</p>
             {notifPerm !== "granted" ? (
               <button
                 onClick={async () => {
@@ -347,39 +353,39 @@ export default function SettingsPage() {
               </button>
             )}
           </div>
-          <p className="text-xs text-zinc-600 pb-2">Notificación cuando llegue la hora</p>
+          <p className="text-xs text-gray-300 dark:text-zinc-600 pb-2">Notificación cuando llegue la hora</p>
           {(Object.keys(MEAL_LABELS) as (keyof MealTimes)[]).map((meal) => (
-            <div key={meal} className="flex items-center justify-between py-3 border-b border-zinc-800 last:border-0">
-              <p className="text-sm text-white">{MEAL_LABELS[meal]}</p>
+            <div key={meal} className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-zinc-800 last:border-0">
+              <p className="text-sm text-gray-900 dark:text-white">{MEAL_LABELS[meal]}</p>
               <input
                 type="time"
                 value={form.mealTimes[meal] || DEFAULT_MEAL_TIMES[meal]}
                 onChange={(e) =>
                   setForm({ ...form, mealTimes: { ...form.mealTimes, [meal]: e.target.value } })
                 }
-                className="bg-zinc-800 text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
+                className="bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
               />
             </div>
           ))}
         </div>
 
-        <div className="bg-zinc-900/50 border border-zinc-800 rounded-xl p-4">
-          <p className="text-xs text-zinc-500 leading-relaxed">
-            {form.goal === "lose_fat" && <>💡 <span className="text-zinc-400">Déficit de ~{tdee - form.goalCalories} kcal/día</span> respecto a tu TDEE ({tdee} kcal). Alta proteína ({form.goalProtein}g) para preservar músculo.</>}
-            {form.goal === "gain_muscle" && <>💡 <span className="text-zinc-400">Superávit de ~{form.goalCalories - tdee} kcal/día</span> respecto a tu TDEE ({tdee} kcal). Alta proteína ({form.goalProtein}g) y carbos para maximizar ganancias.</>}
-            {form.goal === "maintain" && <>💡 <span className="text-zinc-400">TDEE estimado: {tdee} kcal</span> para {form.weight}kg / {form.height}cm con actividad moderada. Mantén este balance para estabilizar tu peso.</>}
+        <div className="bg-gray-50/50 dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800 rounded-xl p-4">
+          <p className="text-xs text-gray-400 dark:text-zinc-500 leading-relaxed">
+            {form.goal === "lose_fat" && <>💡 <span className="text-gray-500 dark:text-zinc-400">Déficit de ~{tdee - form.goalCalories} kcal/día</span> respecto a tu TDEE ({tdee} kcal). Alta proteína ({form.goalProtein}g) para preservar músculo.</>}
+            {form.goal === "gain_muscle" && <>💡 <span className="text-gray-500 dark:text-zinc-400">Superávit de ~{form.goalCalories - tdee} kcal/día</span> respecto a tu TDEE ({tdee} kcal). Alta proteína ({form.goalProtein}g) y carbos para maximizar ganancias.</>}
+            {form.goal === "maintain" && <>💡 <span className="text-gray-500 dark:text-zinc-400">TDEE estimado: {tdee} kcal</span> para {form.weight}kg / {form.height}cm con actividad moderada. Mantén este balance para estabilizar tu peso.</>}
           </p>
         </div>
 
         <Link
           href="/feedback"
-          className="flex items-center justify-between bg-zinc-900 border border-zinc-800 rounded-xl px-4 py-3.5 hover:border-zinc-700 transition-colors"
+          className="flex items-center justify-between bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-4 py-3.5 hover:border-gray-300 dark:hover:border-zinc-700 transition-colors"
         >
           <div>
-            <p className="text-sm text-white font-medium">💬 Comunidad</p>
-            <p className="text-xs text-zinc-500">Ver opiniones y sugerencias del grupo</p>
+            <p className="text-sm text-gray-900 dark:text-white font-medium">💬 Comunidad</p>
+            <p className="text-xs text-gray-400 dark:text-zinc-500">Ver opiniones y sugerencias del grupo</p>
           </div>
-          <span className="text-zinc-600 text-lg">›</span>
+          <span className="text-gray-300 dark:text-zinc-600 text-lg">›</span>
         </Link>
 
         <Button

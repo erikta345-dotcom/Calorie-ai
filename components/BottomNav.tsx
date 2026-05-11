@@ -32,7 +32,7 @@ export default function BottomNav() {
   const tabs = page === 0 ? PAGE_0 : PAGE_1;
 
   return (
-    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800/60 flex safe-bottom z-50">
+    <nav className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-md bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md border-t border-gray-200/60 dark:border-zinc-800/60 flex safe-bottom z-50">
       {tabs.map((tab) => {
         const active = pathname === tab.href;
         const Icon = tab.icon;
@@ -41,7 +41,7 @@ export default function BottomNav() {
             key={tab.href}
             href={tab.href}
             className={`flex-1 flex flex-col items-center gap-1 py-3 text-[10px] font-medium tracking-wide transition-colors ${
-              active ? "text-brand-400" : "text-zinc-500 hover:text-zinc-300"
+              active ? "text-brand-400" : "text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300"
             }`}
           >
             <Icon size={20} strokeWidth={active ? 2.2 : 1.8} />
@@ -51,7 +51,7 @@ export default function BottomNav() {
       })}
       <button
         onClick={() => setPage((p) => (p === 0 ? 1 : 0))}
-        className="flex-1 flex flex-col items-center gap-1 py-3 text-[10px] font-medium tracking-wide text-zinc-500 hover:text-zinc-300 transition-colors"
+        className="flex-1 flex flex-col items-center gap-1 py-3 text-[10px] font-medium tracking-wide text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-300 transition-colors"
       >
         {page === 0 ? <ChevronRight size={20} strokeWidth={1.8} /> : <ChevronLeft size={20} strokeWidth={1.8} />}
         {page === 0 ? "Más" : "Atrás"}
