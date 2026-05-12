@@ -179,12 +179,7 @@ export default function DashboardPage() {
           <p className="text-gray-400 dark:text-zinc-500 text-xs uppercase tracking-widest font-medium capitalize">
             {format(new Date(), "EEEE, d MMMM", { locale: es })}
           </p>
-          <div className="flex items-baseline gap-2.5">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mt-0.5">Hoy</h1>
-            {streaks.calories >= 1 && (
-              <span className="text-sm font-semibold text-orange-400">🔥 {streaks.calories} {streaks.calories === 1 ? "día" : "días"}</span>
-            )}
-          </div>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mt-0.5">Hoy</h1>
         </div>
         <button
           onClick={copyYesterday}
@@ -209,19 +204,20 @@ export default function DashboardPage() {
           <span>{Math.round(totals.calories)} kcal consumidas</span>
           <span>{Math.max(0, settings.goalCalories - Math.round(totals.calories))} restantes</span>
         </div>
-        {(streaks.protein >= 1 || streaks.carbs >= 1 || streaks.fat >= 1) && (
-          <div className="mt-3 flex gap-2 flex-wrap">
-            {streaks.protein >= 1 && (
-              <span className="text-xs font-medium text-orange-400 bg-orange-400/10 px-2 py-0.5 rounded-full">🥩 {streaks.protein} {streaks.protein === 1 ? "día" : "días"}</span>
-            )}
-            {streaks.carbs >= 1 && (
-              <span className="text-xs font-medium text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded-full">🍞 {streaks.carbs} {streaks.carbs === 1 ? "día" : "días"}</span>
-            )}
-            {streaks.fat >= 1 && (
-              <span className="text-xs font-medium text-yellow-400 bg-yellow-400/10 px-2 py-0.5 rounded-full">🫒 {streaks.fat} {streaks.fat === 1 ? "día" : "días"}</span>
-            )}
-          </div>
-        )}
+        <div className="mt-3 grid grid-cols-4 gap-1.5">
+          {[
+            { emoji: "🔥", label: "Kcal", value: streaks.calories, cls: "text-orange-400 bg-orange-400/10" },
+            { emoji: "🥩", label: "Prot", value: streaks.protein, cls: "text-orange-300 bg-orange-300/10" },
+            { emoji: "🍞", label: "Carbs", value: streaks.carbs, cls: "text-blue-400 bg-blue-400/10" },
+            { emoji: "🫒", label: "Gras", value: streaks.fat, cls: "text-yellow-400 bg-yellow-400/10" },
+          ].map(({ emoji, label, value, cls }) => (
+            <div key={label} className={`${cls} rounded-xl px-2 py-1.5 text-center`}>
+              <p className="text-base leading-none">{emoji}</p>
+              <p className={`text-sm font-bold mt-1 ${cls.split(" ")[0]}`}>{value}</p>
+              <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-0.5">{value === 1 ? "día" : "días"}</p>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Meal blocks */}
