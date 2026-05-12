@@ -13,6 +13,7 @@ type FoodResult = {
   protein: number;
   carbs: number;
   fat: number;
+  source?: string;
 };
 
 type Tab = "search" | "manual";
@@ -217,7 +218,10 @@ function SearchContent() {
                   onClick={() => { setSelected(food); setGramsStr("100"); }}
                   className="w-full text-left bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-3 hover:border-brand-500 transition-colors"
                 >
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">{food.name}</p>
+                  <p className="text-sm font-medium text-gray-900 dark:text-white">
+                    {food.source === "es-curado" && <span className="mr-1">🇪🇸</span>}
+                    {food.name}
+                  </p>
                   <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
                     {Math.round(food.calories)} kcal · P: {Math.round(food.protein)}g · C: {Math.round(food.carbs)}g · G: {Math.round(food.fat)}g
                     <span className="text-gray-300 dark:text-zinc-600"> /100g</span>
