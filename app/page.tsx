@@ -371,6 +371,20 @@ export default function DashboardPage() {
                 {mealEntries.length === 0 && (
                   <p className="px-4 pb-3 text-[11px] text-gray-300 dark:text-zinc-600">Sin alimentos registrados</p>
                 )}
+                {mealEntries.length > 0 && (() => {
+                  const mealProtein = mealEntries.reduce((s, e) => s + e.protein, 0);
+                  const mealCarbs = mealEntries.reduce((s, e) => s + e.carbs, 0);
+                  const mealFat = mealEntries.reduce((s, e) => s + e.fat, 0);
+                  const total = mealProtein + mealCarbs + mealFat;
+                  if (total === 0) return null;
+                  return (
+                    <div className="h-1 flex">
+                      <div className="bg-orange-400 transition-all duration-500" style={{ width: `${(mealProtein / total) * 100}%` }} />
+                      <div className="bg-blue-400 transition-all duration-500" style={{ width: `${(mealCarbs / total) * 100}%` }} />
+                      <div className="bg-yellow-400 transition-all duration-500" style={{ width: `${(mealFat / total) * 100}%` }} />
+                    </div>
+                  );
+                })()}
               </div>
             );
           })
