@@ -42,8 +42,43 @@ export default function HistoryPage() {
   const [goalProtein, setGoalProtein] = useState(150);
   const [goalCarbs, setGoalCarbs] = useState(300);
   const [goalFat, setGoalFat] = useState(80);
+  const [weekData, setWeekData] = useState<DaySummary[]>([]);
+  const [weekOpen, setWeekOpen] = useState(false);
   const { resolvedTheme } = useTheme();
   const dark = resolvedTheme === "dark";
+
+  useEffect(() => {
+    const today = new Date();
+    const to = format(today, "yyyy-MM-dd");
+    const from = format(subDays(today, 6), "yyyy-MM-dd");
+    fetch(`/api/entries?from=${from}&to=${to}`)
+      .then((r) => r.json())
+      .then((entries) => {
+        const rawEntries = Array.isArray(entries) ? entries as any[] : [];
+        const dateMap: Record<string, DaySummary> = {};
+        rawEntries.forEach((e) => {
+          if (!dateMap[e.date]) {
+            const d = parseISO(e.date);
+            dateMap[e.date] = {
+              date: e.date,
+              label: format(d, "EEE", { locale: es }),
+              calories: 0, protein: 0, carbs: 0, fat: 0,
+            };
+          }
+          dateMap[e.date].calories += e.calories;
+          dateMap[e.date].protein += e.protein;
+          dateMap[e.date].carbs += e.carbs;
+          dateMap[e.date].fat += e.fat;
+        });
+        const summaries: DaySummary[] = Array.from({ length: 7 }, (_, i) => {
+          const d = subDays(today, 6 - i);
+          const date = format(d, "yyyy-MM-dd");
+          return dateMap[date] ?? { date, label: format(d, "EEE", { locale: es }), calories: 0, protein: 0, carbs: 0, fat: 0 };
+        });
+        setWeekData(summaries);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -178,6 +213,84 @@ export default function HistoryPage() {
       <header className="pt-14 pb-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">📊 Historial</h1>
       </header>
+
+      {/* Weekly summary */}
+      <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl mb-4 overflow-hidden">
+        <button
+          onClick={() => setWeekOpen((o) => !o)}
+          className="w-full flex items-center justify-between px-4 py-3 text-left"
+        >
+          <span className="text-sm font-semibold text-gray-900 dark:text-white">📊 Resumen semanal</span>
+          <span className="text-xs text-gray-400 dark:text-zinc-500">{weekOpen ? "▲" : "▼"}</span>
+        </button>
+        {weekOpen && (
+          <div className="px-4 pb-4">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead>
+                  <tr className="text-gray-400 dark:text-zinc-500">
+                    <th className="text-left pb-2 font-medium">Fecha</th>
+                    <th className="text-right pb-2 font-medium">Kcal</th>
+                    <th className="text-right pb-2 font-medium">Prot.</th>
+                    <th className="text-right pb-2 font-medium">Carbos</th>
+                    <th className="text-right pb-2 font-medium">Grasa</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {weekData.map((day) => {
+                    const hasData = day.calories > 0;
+                    const overGoal = day.calories > goalCalories;
+                    const kcalColor = !hasData
+                      ? "text-gray-300 dark:text-zinc-600"
+                      : overGoal
+                      ? "text-orange-400"
+                      : "text-lime-500";
+                    return (
+                      <tr key={day.date} className="border-t border-gray-100 dark:border-zinc-800">
+                        <td className="py-1.5 text-gray-600 dark:text-zinc-400 capitalize">
+                          {format(parseISO(day.date + "T12:00:00"), "EEE d", { locale: es })}
+                        </td>
+                        <td className={`py-1.5 text-right font-medium ${kcalColor}`}>
+                          {hasData ? Math.round(day.calories) : "—"}
+                        </td>
+                        <td className="py-1.5 text-right text-gray-700 dark:text-zinc-300">
+                          {hasData ? Math.round(day.protein) : "—"}
+                        </td>
+                        <td className="py-1.5 text-right text-gray-700 dark:text-zinc-300">
+                          {hasData ? Math.round(day.carbs) : "—"}
+                        </td>
+                        <td className="py-1.5 text-right text-gray-700 dark:text-zinc-300">
+                          {hasData ? Math.round(day.fat) : "—"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {(() => {
+                    const active = weekData.filter((d) => d.calories > 0);
+                    if (active.length === 0) return null;
+                    const avgKcal = Math.round(active.reduce((s, d) => s + d.calories, 0) / active.length);
+                    const avgProt = Math.round(active.reduce((s, d) => s + d.protein, 0) / active.length);
+                    const avgCarbs = Math.round(active.reduce((s, d) => s + d.carbs, 0) / active.length);
+                    const avgFat = Math.round(active.reduce((s, d) => s + d.fat, 0) / active.length);
+                    const avgOverGoal = avgKcal > goalCalories;
+                    return (
+                      <tr className="border-t-2 border-gray-200 dark:border-zinc-700">
+                        <td className="pt-2 text-gray-900 dark:text-white font-semibold">Promedio</td>
+                        <td className={`pt-2 text-right font-semibold ${avgOverGoal ? "text-orange-400" : "text-lime-500"}`}>
+                          {avgKcal}
+                        </td>
+                        <td className="pt-2 text-right font-semibold text-gray-900 dark:text-white">{avgProt}</td>
+                        <td className="pt-2 text-right font-semibold text-gray-900 dark:text-white">{avgCarbs}</td>
+                        <td className="pt-2 text-right font-semibold text-gray-900 dark:text-white">{avgFat}</td>
+                      </tr>
+                    );
+                  })()}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Period toggle */}
       <div className="flex gap-2 mb-4">

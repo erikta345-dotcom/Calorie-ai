@@ -16,6 +16,15 @@ type FoodResult = {
   source?: string;
 };
 
+type RecentFood = {
+  id: string;
+  name: string;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+};
+
 type Tab = "search" | "manual";
 const MEALS = ["desayuno", "snack", "comida", "merienda", "cena", "picoteo"];
 
@@ -65,6 +74,18 @@ function SearchContent() {
   const [mError, setMError] = useState("");
   const [mNote, setMNote] = useState("");
 
+  const [recentFoods, setRecentFoods] = useState<RecentFood[]>([]);
+  const [favoriteFoods, setFavoriteFoods] = useState<RecentFood[]>([]);
+
+  useEffect(() => {
+    try {
+      const r = localStorage.getItem("recent-foods");
+      if (r) setRecentFoods(JSON.parse(r));
+      const f = localStorage.getItem("favorite-foods");
+      if (f) setFavoriteFoods(JSON.parse(f));
+    } catch {}
+  }, []);
+
   useEffect(() => {
     if (forcedMeal) {
       setMeal(forcedMeal);
@@ -74,6 +95,28 @@ function SearchContent() {
       setMMeal(suggestedMeal);
     }
   }, [forcedMeal, mealLoaded, suggestedMeal]);
+
+  function saveToRecent(food: RecentFood) {
+    setRecentFoods((prev) => {
+      const filtered = prev.filter((f) => f.id !== food.id);
+      const next = [food, ...filtered].slice(0, 10);
+      localStorage.setItem("recent-foods", JSON.stringify(next));
+      return next;
+    });
+  }
+
+  function toggleFavorite(food: RecentFood) {
+    setFavoriteFoods((prev) => {
+      const exists = prev.some((f) => f.id === food.id);
+      const next = exists ? prev.filter((f) => f.id !== food.id) : [food, ...prev];
+      localStorage.setItem("favorite-foods", JSON.stringify(next));
+      return next;
+    });
+  }
+
+  function isFavorite(id: string) {
+    return favoriteFoods.some((f) => f.id === id);
+  }
 
   async function handleSearch() {
     if (!query.trim()) return;
@@ -115,6 +158,38 @@ function SearchContent() {
         }),
       });
       if (!res.ok) throw new Error();
+      saveToRecent({ id: selected.id, name: selected.name, calories: selected.calories, protein: selected.protein, carbs: selected.carbs, fat: selected.fat });
+      router.push("/");
+    } catch {
+      setError("Error al guardar. Intenta de nuevo.");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleRecentAdd(food: RecentFood) {
+    setSaving(true);
+    setError("");
+    const today = format(new Date(), "yyyy-MM-dd");
+    try {
+      const res = await fetch("/api/entries", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: food.name,
+          calories: food.calories,
+          protein: food.protein,
+          carbs: food.carbs,
+          fat: food.fat,
+          grams: 100,
+          meal,
+          date: today,
+          source: "search",
+          createdAt: new Date().toISOString(),
+        }),
+      });
+      if (!res.ok) throw new Error();
+      saveToRecent(food);
       router.push("/");
     } catch {
       setError("Error al guardar. Intenta de nuevo.");
@@ -169,6 +244,11 @@ function SearchContent() {
       }
     : null;
 
+  const sortedRecent = [
+    ...recentFoods.filter((f) => isFavorite(f.id)),
+    ...recentFoods.filter((f) => !isFavorite(f.id)),
+  ];
+
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-950 max-w-md mx-auto pb-32 px-4">
       <header className="pt-14 pb-4">
@@ -210,23 +290,65 @@ function SearchContent() {
             </button>
           </div>
 
+          {!query && !selected && sortedRecent.length > 0 && (
+            <div className="mt-4 space-y-2">
+              <p className="text-xs text-gray-400 dark:text-zinc-500 font-medium">Recientes</p>
+              {sortedRecent.map((food) => (
+                <div
+                  key={food.id}
+                  className="flex items-center gap-2 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-3"
+                >
+                  <button
+                    onClick={() => handleRecentAdd(food)}
+                    className="flex-1 text-left"
+                  >
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      {isFavorite(food.id) && <span className="mr-1">⭐</span>}
+                      {food.name}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
+                      {Math.round(food.calories)} kcal · P: {Math.round(food.protein)}g · C: {Math.round(food.carbs)}g · G: {Math.round(food.fat)}g
+                      <span className="text-gray-300 dark:text-zinc-600"> /100g</span>
+                    </p>
+                  </button>
+                  <button
+                    onClick={() => toggleFavorite(food)}
+                    className="text-lg leading-none shrink-0"
+                  >
+                    {isFavorite(food.id) ? "❤️" : "🤍"}
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
           {results.length > 0 && !selected && (
             <div className="mt-4 space-y-2">
               {results.map((food) => (
-                <button
+                <div
                   key={food.id}
-                  onClick={() => { setSelected(food); setGramsStr("100"); }}
-                  className="w-full text-left bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-3 hover:border-brand-500 transition-colors"
+                  className="flex items-center gap-2 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-3 hover:border-brand-500 transition-colors"
                 >
-                  <p className="text-sm font-medium text-gray-900 dark:text-white">
-                    {food.source === "es-curado" && <span className="mr-1">🇪🇸</span>}
-                    {food.name}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
-                    {Math.round(food.calories)} kcal · P: {Math.round(food.protein)}g · C: {Math.round(food.carbs)}g · G: {Math.round(food.fat)}g
-                    <span className="text-gray-300 dark:text-zinc-600"> /100g</span>
-                  </p>
-                </button>
+                  <button
+                    onClick={() => { setSelected(food); setGramsStr("100"); }}
+                    className="flex-1 text-left"
+                  >
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">
+                      {food.source === "es-curado" && <span className="mr-1">🇪🇸</span>}
+                      {food.name}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">
+                      {Math.round(food.calories)} kcal · P: {Math.round(food.protein)}g · C: {Math.round(food.carbs)}g · G: {Math.round(food.fat)}g
+                      <span className="text-gray-300 dark:text-zinc-600"> /100g</span>
+                    </p>
+                  </button>
+                  <button
+                    onClick={() => toggleFavorite({ id: food.id, name: food.name, calories: food.calories, protein: food.protein, carbs: food.carbs, fat: food.fat })}
+                    className="text-lg leading-none shrink-0"
+                  >
+                    {isFavorite(food.id) ? "❤️" : "🤍"}
+                  </button>
+                </div>
               ))}
             </div>
           )}
