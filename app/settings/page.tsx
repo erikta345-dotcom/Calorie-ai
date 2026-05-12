@@ -388,6 +388,13 @@ export default function SettingsPage() {
           <span className="text-gray-300 dark:text-zinc-600 text-lg">›</span>
         </Link>
 
+        <a
+          href="/api/export"
+          className="flex items-center justify-center w-full py-3 rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-700 dark:text-zinc-300 font-semibold text-sm hover:bg-gray-200 dark:hover:bg-zinc-700 transition-colors"
+        >
+          📥 Exportar datos (CSV)
+        </a>
+
         <Button
           onClick={handleSave}
           disabled={saving}
