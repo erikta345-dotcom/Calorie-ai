@@ -408,9 +408,57 @@ export default function HistoryPage() {
         </div>
       )}
 
+      {/* Month calendar grid */}
+      {period === "month" && !loading && (() => {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = today.getMonth();
+        const firstDay = new Date(year, month, 1);
+        const totalDays = getDaysInMonth(firstDay);
+        const startDow = (firstDay.getDay() + 6) % 7;
+        const dataMap: Record<string, DaySummary> = {};
+        data.forEach((d) => { dataMap[d.date] = d; });
+        const DOW = ["L", "M", "X", "J", "V", "S", "D"];
+        const todayStr = format(today, "yyyy-MM-dd");
+        return (
+          <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4 mb-4">
+            <p className="text-xs text-gray-400 dark:text-zinc-500 mb-3 capitalize font-medium">
+              {format(firstDay, "MMMM yyyy", { locale: es })}
+            </p>
+            <div className="grid grid-cols-7 gap-1 mb-1">
+              {DOW.map((d) => <div key={d} className="text-center text-[10px] text-gray-400 dark:text-zinc-500 font-medium">{d}</div>)}
+            </div>
+            <div className="grid grid-cols-7 gap-1">
+              {Array.from({ length: startDow }).map((_, i) => <div key={`e${i}`} />)}
+              {Array.from({ length: totalDays }, (_, i) => {
+                const dayNum = i + 1;
+                const date = format(new Date(year, month, dayNum), "yyyy-MM-dd");
+                const isFuture = date > todayStr;
+                const cell = dataMap[date];
+                const hasData = !isFuture && cell && cell.calories > 0;
+                const overGoal = hasData && cell.calories > goalCalories;
+                const isToday = date === todayStr;
+                const bgClass = isFuture ? "" : hasData ? (overGoal ? "bg-orange-400/20" : "bg-lime-400/20") : "bg-gray-100 dark:bg-zinc-800/60";
+                const textClass = isFuture ? "text-gray-200 dark:text-zinc-700" : hasData ? (overGoal ? "text-orange-500" : "text-lime-600 dark:text-lime-400") : "text-gray-400 dark:text-zinc-600";
+                return (
+                  <div key={date} className={`aspect-square rounded-lg flex flex-col items-center justify-center gap-0 ${bgClass} ${isToday ? "ring-1 ring-brand-500" : ""}`}>
+                    <span className={`text-[11px] font-semibold leading-none ${textClass}`}>{dayNum}</span>
+                    {hasData && (
+                      <span className="text-[8px] leading-none mt-0.5 text-gray-400 dark:text-zinc-500">
+                        {cell.calories >= 1000 ? `${(cell.calories / 1000).toFixed(1)}k` : Math.round(cell.calories)}
+                      </span>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
+
       {/* Day/month cards */}
       <div className="space-y-2">
-        {[...data].reverse().map((day) => {
+        {[...data].reverse().filter(() => period !== "month").map((day) => {
           const calPct = Math.min((day.calories / goalCalories) * 100, 100);
           const goalPct = currentGoal > 0 ? Math.round((day[view] / currentGoal) * 100) : 0;
           const totalMacros = day.protein + day.carbs + day.fat;

@@ -16,7 +16,7 @@ export default function MacroBar({ label, consumed, goal, color, unit = "g" }: P
           {Math.round(consumed)}<span className="text-gray-400 dark:text-zinc-500 font-normal">/{goal}{unit}</span>
         </span>
       </div>
-      <div className="h-1.5 bg-gray-200 dark:bg-zinc-800 rounded-full overflow-hidden">
+      <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: color + "25" }}>
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{ width: `${pct}%`, backgroundColor: color }}
