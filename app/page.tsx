@@ -181,8 +181,8 @@ export default function DashboardPage() {
           </p>
           <div className="flex items-baseline gap-2.5">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mt-0.5">Hoy</h1>
-            {streaks.calories >= 2 && (
-              <span className="text-sm font-semibold text-orange-400">🔥 {streaks.calories}</span>
+            {streaks.calories >= 1 && (
+              <span className="text-sm font-semibold text-orange-400">🔥 {streaks.calories} {streaks.calories === 1 ? "día" : "días"}</span>
             )}
           </div>
         </div>
@@ -209,16 +209,16 @@ export default function DashboardPage() {
           <span>{Math.round(totals.calories)} kcal consumidas</span>
           <span>{Math.max(0, settings.goalCalories - Math.round(totals.calories))} restantes</span>
         </div>
-        {(streaks.protein >= 2 || streaks.carbs >= 2 || streaks.fat >= 2) && (
+        {(streaks.protein >= 1 || streaks.carbs >= 1 || streaks.fat >= 1) && (
           <div className="mt-3 flex gap-2 flex-wrap">
-            {streaks.protein >= 2 && (
-              <span className="text-xs font-medium text-orange-400 bg-orange-400/10 px-2 py-0.5 rounded-full">🥩 ×{streaks.protein}</span>
+            {streaks.protein >= 1 && (
+              <span className="text-xs font-medium text-orange-400 bg-orange-400/10 px-2 py-0.5 rounded-full">🥩 {streaks.protein} {streaks.protein === 1 ? "día" : "días"}</span>
             )}
-            {streaks.carbs >= 2 && (
-              <span className="text-xs font-medium text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded-full">🍞 ×{streaks.carbs}</span>
+            {streaks.carbs >= 1 && (
+              <span className="text-xs font-medium text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded-full">🍞 {streaks.carbs} {streaks.carbs === 1 ? "día" : "días"}</span>
             )}
-            {streaks.fat >= 2 && (
-              <span className="text-xs font-medium text-yellow-400 bg-yellow-400/10 px-2 py-0.5 rounded-full">🫒 ×{streaks.fat}</span>
+            {streaks.fat >= 1 && (
+              <span className="text-xs font-medium text-yellow-400 bg-yellow-400/10 px-2 py-0.5 rounded-full">🫒 {streaks.fat} {streaks.fat === 1 ? "día" : "días"}</span>
             )}
           </div>
         )}
