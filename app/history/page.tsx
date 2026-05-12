@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { subDays, format, parseISO } from "date-fns";
+import { subDays, format, parseISO, getDaysInMonth } from "date-fns";
 import { es } from "date-fns/locale";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine,
@@ -88,11 +88,22 @@ export default function HistoryPage() {
         const months: DaySummary[] = Array.from({ length: 12 }, (_, i) => {
           const d = new Date(today.getFullYear(), today.getMonth() - 11 + i, 1);
           const month = format(d, "yyyy-MM");
-          return monthMap[month] ?? {
-            date: month,
-            label: format(d, "MMM", { locale: es }),
-            calories: 0, protein: 0, carbs: 0, fat: 0,
-          };
+          const raw = monthMap[month];
+          // Convert totals → daily average for the month
+          const daysInMonth = getDaysInMonth(d);
+          return raw
+            ? {
+                ...raw,
+                calories: raw.calories / daysInMonth,
+                protein: raw.protein / daysInMonth,
+                carbs: raw.carbs / daysInMonth,
+                fat: raw.fat / daysInMonth,
+              }
+            : {
+                date: month,
+                label: format(d, "MMM", { locale: es }),
+                calories: 0, protein: 0, carbs: 0, fat: 0,
+              };
         });
         setData(months);
       } else {
@@ -133,14 +144,34 @@ export default function HistoryPage() {
   const currentView = VIEWS.find((v) => v.key === view)!;
   const goals = { calories: goalCalories, protein: goalProtein, carbs: goalCarbs, fat: goalFat };
   const currentGoal = goals[view];
-  const avg = data.length
-    ? Math.round(data.reduce((s, d) => s + d[view], 0) / data.length)
+
+  const activeDays = data.filter((d) => d[view] > 0);
+  const avg = activeDays.length
+    ? Math.round(activeDays.reduce((s, d) => s + d[view], 0) / activeDays.length)
     : 0;
+  const total = Math.round(data.reduce((s, d) => s + d[view], 0));
+  const daysOnTrack = data.filter((d) => d[view] > 0 && d[view] <= currentGoal).length;
+  const daysLogged = activeDays.length;
+
+  // Trend: compare avg of first half vs second half of logged days
+  const half = Math.floor(activeDays.length / 2);
+  const firstHalfAvg = half > 0
+    ? activeDays.slice(0, half).reduce((s, d) => s + d[view], 0) / half
+    : 0;
+  const secondHalfAvg = half > 0
+    ? activeDays.slice(half).reduce((s, d) => s + d[view], 0) / (activeDays.length - half)
+    : 0;
+  const trend = firstHalfAvg === 0 ? null : secondHalfAvg > firstHalfAvg * 1.03 ? "up" : secondHalfAvg < firstHalfAvg * 0.97 ? "down" : "flat";
 
   const tickColor = dark ? "#71717a" : "#9ca3af";
   const tooltipBg = dark ? "#18181b" : "#ffffff";
   const tooltipBorder = dark ? "#3f3f46" : "#e5e7eb";
   const tooltipLabelColor = dark ? "#fff" : "#111827";
+
+  const trendIcon = trend === "up" ? "↑" : trend === "down" ? "↓" : "→";
+  const trendColor = view === "calories"
+    ? (trend === "up" ? "text-red-400" : trend === "down" ? "text-lime-500" : "text-gray-400 dark:text-zinc-500")
+    : (trend === "up" ? "text-lime-500" : trend === "down" ? "text-red-400" : "text-gray-400 dark:text-zinc-500");
 
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-950 max-w-md mx-auto pb-32 px-4">
@@ -182,19 +213,50 @@ export default function HistoryPage() {
       </div>
 
       {/* Stat summary */}
-      <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4 mb-4 flex justify-between">
-        <div>
-          <p className="text-xs text-gray-400 dark:text-zinc-500">Promedio diario</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white">{avg}</p>
-          <p className="text-xs text-gray-400 dark:text-zinc-500">{view === "calories" ? "kcal" : "g"}</p>
-        </div>
-        {currentGoal && (
-          <div className="text-right">
-            <p className="text-xs text-gray-400 dark:text-zinc-500">Objetivo</p>
-            <p className="text-2xl font-bold" style={{ color: currentView.color }}>{currentGoal}</p>
+      <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4 mb-4">
+        <div className="flex justify-between mb-3">
+          <div>
+            <p className="text-xs text-gray-400 dark:text-zinc-500">Promedio diario</p>
+            <div className="flex items-baseline gap-1.5">
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">{avg}</p>
+              {trend && (
+                <span className={`text-sm font-semibold ${trendColor}`}>{trendIcon}</span>
+              )}
+            </div>
             <p className="text-xs text-gray-400 dark:text-zinc-500">{view === "calories" ? "kcal" : "g"}</p>
           </div>
-        )}
+          {currentGoal > 0 && (
+            <div className="text-right">
+              <p className="text-xs text-gray-400 dark:text-zinc-500">Objetivo</p>
+              <p className="text-2xl font-bold" style={{ color: currentView.color }}>{currentGoal}</p>
+              <p className="text-xs text-gray-400 dark:text-zinc-500">{view === "calories" ? "kcal" : "g"}</p>
+            </div>
+          )}
+        </div>
+        {/* Secondary stats row */}
+        <div className="flex gap-4 pt-3 border-t border-gray-200 dark:border-zinc-800">
+          <div>
+            <p className="text-xs text-gray-400 dark:text-zinc-500">Total</p>
+            <p className="text-sm font-semibold text-gray-900 dark:text-white">
+              {total.toLocaleString()} <span className="text-xs font-normal text-gray-400 dark:text-zinc-500">{view === "calories" ? "kcal" : "g"}</span>
+            </p>
+          </div>
+          {daysLogged > 0 && (
+            <div>
+              <p className="text-xs text-gray-400 dark:text-zinc-500">Días registrados</p>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white">{daysLogged}</p>
+            </div>
+          )}
+          {daysLogged > 0 && view === "calories" && (
+            <div>
+              <p className="text-xs text-gray-400 dark:text-zinc-500">Días en objetivo</p>
+              <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                {daysOnTrack}
+                <span className="text-xs font-normal text-gray-400 dark:text-zinc-500"> / {daysLogged}</span>
+              </p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Chart */}
@@ -202,6 +264,9 @@ export default function HistoryPage() {
         <div className="h-48 bg-gray-100 dark:bg-zinc-800 rounded-xl animate-pulse mb-4" />
       ) : (
         <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4 mb-4">
+          {period === "year" && (
+            <p className="text-xs text-gray-400 dark:text-zinc-500 mb-2">Promedio diario por mes</p>
+          )}
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={data} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
               <XAxis
@@ -218,7 +283,7 @@ export default function HistoryPage() {
                 itemStyle={{ color: currentView.color }}
                 formatter={(val: number) => [
                   `${Math.round(val)} ${view === "calories" ? "kcal" : "g"}`,
-                  currentView.label,
+                  period === "year" ? `${currentView.label} (avg/día)` : currentView.label,
                 ]}
               />
               {currentGoal && (
@@ -230,10 +295,11 @@ export default function HistoryPage() {
         </div>
       )}
 
-      {/* Day/month cards with fill */}
+      {/* Day/month cards */}
       <div className="space-y-2">
         {[...data].reverse().map((day) => {
           const calPct = Math.min((day.calories / goalCalories) * 100, 100);
+          const goalPct = currentGoal > 0 ? Math.round((day[view] / currentGoal) * 100) : 0;
           const totalMacros = day.protein + day.carbs + day.fat;
           const proteinPct = totalMacros > 0 ? (day.protein / totalMacros) * 100 : 0;
           const carbsPct = totalMacros > 0 ? (day.carbs / totalMacros) * 100 : 0;
@@ -272,11 +338,29 @@ export default function HistoryPage() {
                       : `P: ${Math.round(day.protein)}g · C: ${Math.round(day.carbs)}g · G: ${Math.round(day.fat)}g`}
                   </p>
                 </div>
-                <div className="text-right">
-                  <p className={`font-bold ${overGoal ? "text-red-400" : isEmpty ? "text-gray-300 dark:text-zinc-600" : "text-gray-900 dark:text-white"}`}>
-                    {isEmpty ? "—" : Math.round(day.calories)}
-                  </p>
-                  <p className="text-xs text-gray-400 dark:text-zinc-500">kcal</p>
+                <div className="flex items-center gap-2">
+                  {/* % of goal badge */}
+                  {!isEmpty && currentGoal > 0 && (
+                    <span
+                      className={`text-xs font-semibold px-1.5 py-0.5 rounded-md ${
+                        view === "calories"
+                          ? overGoal
+                            ? "bg-red-100 dark:bg-red-900/30 text-red-500"
+                            : "bg-lime-100 dark:bg-lime-900/30 text-lime-600 dark:text-lime-400"
+                          : goalPct >= 80
+                          ? "bg-lime-100 dark:bg-lime-900/30 text-lime-600 dark:text-lime-400"
+                          : "bg-gray-100 dark:bg-zinc-800 text-gray-400 dark:text-zinc-500"
+                      }`}
+                    >
+                      {goalPct}%
+                    </span>
+                  )}
+                  <div className="text-right">
+                    <p className={`font-bold ${overGoal ? "text-red-400" : isEmpty ? "text-gray-300 dark:text-zinc-600" : "text-gray-900 dark:text-white"}`}>
+                      {isEmpty ? "—" : Math.round(day.calories)}
+                    </p>
+                    <p className="text-xs text-gray-400 dark:text-zinc-500">kcal</p>
+                  </div>
                 </div>
               </div>
               {/* macro bar */}
