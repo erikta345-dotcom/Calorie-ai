@@ -5,42 +5,82 @@ import { authOptions } from "@/lib/auth";
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
+const fmtDate = (d: Date) =>
+  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+
+function calcStreak(
+  today: string,
+  dailyMap: Map<string, { cal: number; protein: number; carbs: number; fat: number }>,
+  check: (row: { cal: number; protein: number; carbs: number; fat: number }) => boolean
+): number {
+  const todayDate = new Date(`${today}T00:00:00`);
+  const yesterStr = fmtDate(new Date(todayDate.getTime() - 86400000));
+
+  const todayRow = dailyMap.get(today);
+  const yesterRow = dailyMap.get(yesterStr);
+
+  let cur: Date | null = todayRow && check(todayRow)
+    ? todayDate
+    : yesterRow && check(yesterRow)
+    ? new Date(todayDate.getTime() - 86400000)
+    : null;
+
+  let streak = 0;
+  while (cur) {
+    const key = fmtDate(cur);
+    const row = dailyMap.get(key);
+    if (row && check(row)) {
+      streak++;
+      cur = new Date(cur.getTime() - 86400000);
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ streak: 0 }, { status: 401 });
+  if (!session) return NextResponse.json({ calories: 0, protein: 0, carbs: 0, fat: 0 }, { status: 401 });
   const uid = (session.user as any).id as string;
 
   const today = req.nextUrl.searchParams.get("date") ?? "";
-  if (!DATE_RE.test(today)) return NextResponse.json({ streak: 0 }, { status: 400 });
+  if (!DATE_RE.test(today)) return NextResponse.json({ calories: 0, protein: 0, carbs: 0, fat: 0 }, { status: 400 });
 
   try {
-    const result = await db.execute({
-      sql: "SELECT DISTINCT date FROM FoodEntry WHERE userId = ? AND date >= date(?, '-730 days') ORDER BY date DESC",
-      args: [uid, today],
-    });
-    const dates = new Set(result.rows.map((r) => r.date as string));
+    const [settingsResult, totalsResult] = await Promise.all([
+      db.execute({ sql: "SELECT goalCalories, goalProtein, goalCarbs, goalFat FROM UserSettings WHERE id = ?", args: [uid] }),
+      db.execute({
+        sql: `SELECT date, SUM(calories) as cal, SUM(protein) as protein, SUM(carbs) as carbs, SUM(fat) as fat
+              FROM FoodEntry WHERE userId = ? AND date >= date(?, '-730 days')
+              GROUP BY date`,
+        args: [uid, today],
+      }),
+    ]);
 
-    const parseDate = (s: string) => new Date(`${s}T00:00:00`);
-    const fmtDate = (d: Date) =>
-      `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    const s = settingsResult.rows[0] as any;
+    const goalCal = Number(s?.goalCalories ?? 2800);
+    const goalProt = Number(s?.goalProtein ?? 150);
+    const goalCarbs = Number(s?.goalCarbs ?? 300);
+    const goalFat = Number(s?.goalFat ?? 80);
 
-    const todayDate = parseDate(today);
-    const yesterStr = fmtDate(new Date(todayDate.getTime() - 86400000));
-
-    let streak = 0;
-    let cur: Date | null = dates.has(today)
-      ? todayDate
-      : dates.has(yesterStr)
-      ? new Date(todayDate.getTime() - 86400000)
-      : null;
-
-    while (cur && dates.has(fmtDate(cur))) {
-      streak++;
-      cur = new Date(cur.getTime() - 86400000);
+    const dailyMap = new Map<string, { cal: number; protein: number; carbs: number; fat: number }>();
+    for (const r of totalsResult.rows as any[]) {
+      dailyMap.set(r.date as string, {
+        cal: Number(r.cal),
+        protein: Number(r.protein),
+        carbs: Number(r.carbs),
+        fat: Number(r.fat),
+      });
     }
 
-    return NextResponse.json({ streak });
+    return NextResponse.json({
+      calories: calcStreak(today, dailyMap, (r) => r.cal >= goalCal * 0.8 && r.cal <= goalCal * 1.1),
+      protein: calcStreak(today, dailyMap, (r) => r.protein >= goalProt * 0.85),
+      carbs: calcStreak(today, dailyMap, (r) => r.carbs >= goalCarbs * 0.8 && r.carbs <= goalCarbs * 1.15),
+      fat: calcStreak(today, dailyMap, (r) => r.fat >= goalFat * 0.8 && r.fat <= goalFat * 1.15),
+    });
   } catch {
-    return NextResponse.json({ streak: 0 });
+    return NextResponse.json({ calories: 0, protein: 0, carbs: 0, fat: 0 });
   }
 }

@@ -53,7 +53,7 @@ export default function DashboardPage() {
     goalCalories: 2800, goalProtein: 150, goalCarbs: 300, goalFat: 80,
   });
   const [loading, setLoading] = useState(true);
-  const [streak, setStreak] = useState(0);
+  const [streaks, setStreaks] = useState({ calories: 0, protein: 0, carbs: 0, fat: 0 });
   const [copyingYesterday, setCopyingYesterday] = useState(false);
   const [editEntry, setEditEntry] = useState<FoodEntry | null>(null);
   const [editForm, setEditForm] = useState<EditForm | null>(null);
@@ -73,7 +73,7 @@ export default function DashboardPage() {
           : undefined;
         setSettings({ ...sett, mealTimes });
       }
-      if (str?.streak) setStreak(str.streak);
+      if (str && !str.error) setStreaks({ calories: str.calories ?? 0, protein: str.protein ?? 0, carbs: str.carbs ?? 0, fat: str.fat ?? 0 });
     }).catch(() => {}).finally(() => setLoading(false));
   }, [today]);
 
@@ -181,8 +181,8 @@ export default function DashboardPage() {
           </p>
           <div className="flex items-baseline gap-2.5">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mt-0.5">Hoy</h1>
-            {streak >= 2 && (
-              <span className="text-sm font-semibold text-orange-400">🔥 {streak}</span>
+            {streaks.calories >= 2 && (
+              <span className="text-sm font-semibold text-orange-400">🔥 {streaks.calories}</span>
             )}
           </div>
         </div>
@@ -209,6 +209,19 @@ export default function DashboardPage() {
           <span>{Math.round(totals.calories)} kcal consumidas</span>
           <span>{Math.max(0, settings.goalCalories - Math.round(totals.calories))} restantes</span>
         </div>
+        {(streaks.protein >= 2 || streaks.carbs >= 2 || streaks.fat >= 2) && (
+          <div className="mt-3 flex gap-2 flex-wrap">
+            {streaks.protein >= 2 && (
+              <span className="text-xs font-medium text-orange-400 bg-orange-400/10 px-2 py-0.5 rounded-full">🥩 ×{streaks.protein}</span>
+            )}
+            {streaks.carbs >= 2 && (
+              <span className="text-xs font-medium text-blue-400 bg-blue-400/10 px-2 py-0.5 rounded-full">🍞 ×{streaks.carbs}</span>
+            )}
+            {streaks.fat >= 2 && (
+              <span className="text-xs font-medium text-yellow-400 bg-yellow-400/10 px-2 py-0.5 rounded-full">🫒 ×{streaks.fat}</span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Meal blocks */}
