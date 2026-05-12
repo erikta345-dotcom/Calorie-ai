@@ -45,6 +45,15 @@ const MEAL_COLORS: Record<string, string> = {
   picoteo: "border-l-zinc-400",
 };
 
+const MEAL_BAR_COLORS: Record<string, string> = {
+  desayuno: "bg-amber-400",
+  comida: "bg-orange-400",
+  merienda: "bg-lime-400",
+  cena: "bg-indigo-400",
+  snack: "bg-pink-400",
+  picoteo: "bg-zinc-400",
+};
+
 export default function DashboardPage() {
   const router = useRouter();
   const today = format(new Date(), "yyyy-MM-dd");
@@ -200,9 +209,16 @@ export default function DashboardPage() {
             <MacroBar label="Grasa" consumed={totals.fat} goal={settings.goalFat} color="#eab308" />
           </div>
         </div>
-        <div className="mt-4 pt-4 border-t border-gray-200/60 dark:border-zinc-800/60 flex justify-between text-xs text-gray-400 dark:text-zinc-500">
-          <span>{Math.round(totals.calories)} kcal consumidas</span>
-          <span>{Math.max(0, settings.goalCalories - Math.round(totals.calories))} restantes</span>
+        <div className="mt-4 pt-4 border-t border-gray-200/60 dark:border-zinc-800/60 flex justify-between items-center">
+          <span className="text-xs text-gray-400 dark:text-zinc-500">{Math.round(totals.calories)} consumidas</span>
+          <span className={`text-xl font-bold ${totals.calories > settings.goalCalories ? "text-orange-400" : "text-green-400"}`}>
+            {totals.calories > settings.goalCalories
+              ? `+${Math.round(totals.calories - settings.goalCalories)}`
+              : Math.max(0, settings.goalCalories - Math.round(totals.calories))}
+            <span className="text-xs font-normal text-gray-400 dark:text-zinc-500 ml-1">
+              {totals.calories > settings.goalCalories ? "exceso" : "restantes"}
+            </span>
+          </span>
         </div>
         <div className="mt-3 grid grid-cols-4 gap-1.5">
           {[
@@ -264,6 +280,14 @@ export default function DashboardPage() {
                     </button>
                   </div>
                 </div>
+                {mealCals > 0 && (
+                  <div className="h-0.5 mx-4 mb-1 bg-gray-200/60 dark:bg-zinc-800/60 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${MEAL_BAR_COLORS[meal]}`}
+                      style={{ width: `${Math.min((mealCals / settings.goalCalories) * 100, 100)}%` }}
+                    />
+                  </div>
+                )}
                 {mealEntries.length > 0 && (
                   <div className="border-t border-gray-200/60 dark:border-zinc-800/60">
                     {mealEntries.map((entry) => (

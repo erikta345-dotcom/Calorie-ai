@@ -10,10 +10,10 @@ export default function MacroBar({ label, consumed, goal, color, unit = "g" }: P
   const pct = Math.min((consumed / goal) * 100, 100);
   return (
     <div className="flex-1">
-      <div className="flex justify-between text-xs mb-1">
-        <span className="text-gray-500 dark:text-zinc-400">{label}</span>
-        <span className="text-gray-600 dark:text-zinc-300 font-medium">
-          {Math.round(consumed)}<span className="text-gray-400 dark:text-zinc-500">/{goal}{unit}</span>
+      <div className="flex justify-between items-baseline mb-1">
+        <span className="text-xs text-gray-500 dark:text-zinc-400">{label}</span>
+        <span className="text-xs font-bold text-gray-700 dark:text-zinc-200">
+          {Math.round(consumed)}<span className="text-gray-400 dark:text-zinc-500 font-normal">/{goal}{unit}</span>
         </span>
       </div>
       <div className="h-1.5 bg-gray-200 dark:bg-zinc-800 rounded-full overflow-hidden">
