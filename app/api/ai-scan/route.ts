@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
           max_tokens: 1024,
         }),
       });
-      if (response.status !== 429) break;
+      if (response.status !== 429 && response.status < 500) break;
     }
     if (response!.status === 429) {
       return NextResponse.json(

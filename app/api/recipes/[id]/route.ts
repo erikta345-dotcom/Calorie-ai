@@ -10,7 +10,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
   const userId = (session.user as any).id as string;
   if (!(await checkRateLimit(`recipes:${userId}`, 20, 60_000))) return NextResponse.json({ error: "Demasiadas peticiones." }, { status: 429 });
   try {
-    await db.execute({ sql: "DELETE FROM Recipe WHERE id = ? AND userId = ?", args: [params.id, userId] });
+    const result = await db.execute({ sql: "DELETE FROM Recipe WHERE id = ? AND userId = ?", args: [params.id, userId] });
+    if (!result.rowsAffected) return NextResponse.json({ error: "Not found" }, { status: 404 });
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ error: "Error al eliminar" }, { status: 500 });

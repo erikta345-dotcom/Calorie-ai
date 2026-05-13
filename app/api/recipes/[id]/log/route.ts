@@ -27,8 +27,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const recipe = result.rows[0] as any;
     const id = randomUUID();
     await db.execute({
-      sql: "INSERT INTO FoodEntry (id, userId, date, meal, name, calories, protein, carbs, fat, grams, source) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      args: [id, userId, date, meal, recipe.name, recipe.totalCalories * mult, recipe.totalProtein * mult, recipe.totalCarbs * mult, recipe.totalFat * mult, 100, "recipe"],
+      sql: "INSERT INTO FoodEntry (id, userId, date, meal, name, calories, protein, carbs, fat, grams, source, createdAt) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      args: [id, userId, date, meal, recipe.name, recipe.totalCalories * mult, recipe.totalProtein * mult, recipe.totalCarbs * mult, recipe.totalFat * mult, 100, "recipe", new Date().toISOString()],
     });
     return NextResponse.json({ success: true });
   } catch (e) {

@@ -57,10 +57,17 @@ export async function PUT(req: NextRequest) {
       sql: `INSERT INTO UserSettings (id, weight, height, age, gender, goal, goalCalories, goalProtein, goalCarbs, goalFat, mealTimes)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
-              weight=excluded.weight, height=excluded.height, age=excluded.age, gender=excluded.gender,
-              goal=excluded.goal, goalCalories=excluded.goalCalories, goalProtein=excluded.goalProtein,
-              goalCarbs=excluded.goalCarbs, goalFat=excluded.goalFat, mealTimes=excluded.mealTimes`,
-      args: [uid, weight, height ?? 175, age ?? 25, gender ?? "male", goal ?? "maintain", goalCalories, goalProtein, goalCarbs, goalFat, mealTimes ? JSON.stringify(mealTimes) : null],
+              weight=COALESCE(excluded.weight, weight),
+              height=COALESCE(excluded.height, height),
+              age=COALESCE(excluded.age, age),
+              gender=COALESCE(excluded.gender, gender),
+              goal=COALESCE(excluded.goal, goal),
+              goalCalories=COALESCE(excluded.goalCalories, goalCalories),
+              goalProtein=COALESCE(excluded.goalProtein, goalProtein),
+              goalCarbs=COALESCE(excluded.goalCarbs, goalCarbs),
+              goalFat=COALESCE(excluded.goalFat, goalFat),
+              mealTimes=COALESCE(excluded.mealTimes, mealTimes)`,
+      args: [uid, weight ?? null, height ?? null, age ?? null, gender ?? null, goal ?? null, goalCalories ?? null, goalProtein ?? null, goalCarbs ?? null, goalFat ?? null, mealTimes ? JSON.stringify(mealTimes) : null],
     });
     const result = await db.execute({ sql: "SELECT * FROM UserSettings WHERE id = ?", args: [uid] });
     return NextResponse.json(result.rows[0]);

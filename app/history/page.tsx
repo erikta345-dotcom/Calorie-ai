@@ -48,39 +48,6 @@ export default function HistoryPage() {
   const dark = resolvedTheme === "dark";
 
   useEffect(() => {
-    const today = new Date();
-    const to = format(today, "yyyy-MM-dd");
-    const from = format(subDays(today, 6), "yyyy-MM-dd");
-    fetch(`/api/entries?from=${from}&to=${to}`)
-      .then((r) => r.json())
-      .then((entries) => {
-        const rawEntries = Array.isArray(entries) ? entries as any[] : [];
-        const dateMap: Record<string, DaySummary> = {};
-        rawEntries.forEach((e) => {
-          if (!dateMap[e.date]) {
-            const d = parseISO(e.date);
-            dateMap[e.date] = {
-              date: e.date,
-              label: format(d, "EEE", { locale: es }),
-              calories: 0, protein: 0, carbs: 0, fat: 0,
-            };
-          }
-          dateMap[e.date].calories += e.calories;
-          dateMap[e.date].protein += e.protein;
-          dateMap[e.date].carbs += e.carbs;
-          dateMap[e.date].fat += e.fat;
-        });
-        const summaries: DaySummary[] = Array.from({ length: 7 }, (_, i) => {
-          const d = subDays(today, 6 - i);
-          const date = format(d, "yyyy-MM-dd");
-          return dateMap[date] ?? { date, label: format(d, "EEE", { locale: es }), calories: 0, protein: 0, carbs: 0, fat: 0 };
-        });
-        setWeekData(summaries);
-      })
-      .catch(() => {});
-  }, []);
-
-  useEffect(() => {
     setLoading(true);
     const today = new Date();
     const to = format(today, "yyyy-MM-dd");
@@ -173,6 +140,7 @@ export default function HistoryPage() {
             calories: 0, protein: 0, carbs: 0, fat: 0,
           };
         });
+        if (period === "week") setWeekData(summaries);
         setData(summaries);
       }
     }).catch(() => {}).finally(() => setLoading(false));
