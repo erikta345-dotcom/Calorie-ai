@@ -38,7 +38,11 @@ export const authOptions: NextAuthOptions = {
           });
           sendWelcomeEmail(email, email.split("@")[0]).catch(() => {});
         } else {
-          if (pwResult.rows.length === 0) return null; // no account
+          if (pwResult.rows.length === 0) {
+            // Always compare to prevent timing oracle (user enumeration)
+            await compare(credentials.password, "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lh6y");
+            return null;
+          }
           const valid = await compare(credentials.password, pwResult.rows[0].passwordHash as string);
           if (!valid) return null;
         }

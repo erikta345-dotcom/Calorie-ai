@@ -29,6 +29,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   if (session.user?.email !== process.env.ADMIN_EMAIL) return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   const { reply, resolved } = await req.json();
+  if (reply != null && (typeof reply !== "string" || reply.length > 500)) {
+    return NextResponse.json({ error: "Respuesta inválida" }, { status: 400 });
+  }
   await db.execute({
     sql: "UPDATE Feedback SET reply = COALESCE(?, reply), resolved = COALESCE(?, resolved) WHERE id = ?",
     args: [reply ?? null, resolved !== undefined ? (resolved ? 1 : 0) : null, params.id],

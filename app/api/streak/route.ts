@@ -52,7 +52,7 @@ export async function GET(req: NextRequest) {
       db.execute({ sql: "SELECT goalCalories, goalProtein, goalCarbs, goalFat FROM UserSettings WHERE id = ?", args: [uid] }),
       db.execute({
         sql: `SELECT date, SUM(calories) as cal, SUM(protein) as protein, SUM(carbs) as carbs, SUM(fat) as fat
-              FROM FoodEntry WHERE userId = ? AND date >= date(?, '-730 days')
+              FROM FoodEntry WHERE userId = ? AND date >= date(?, '-90 days')
               GROUP BY date`,
         args: [uid, today],
       }),

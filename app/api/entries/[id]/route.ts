@@ -30,8 +30,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (typeof name !== "string" || name.trim().length === 0 || name.length > 200) return NextResponse.json({ error: "Nombre inválido" }, { status: 400 });
     const noteVal = typeof note === "string" && note.trim().length > 0 ? note.trim().slice(0, 300) : null;
     await db.execute({
-      sql: "UPDATE FoodEntry SET name=?, calories=?, protein=?, carbs=?, fat=?, grams=?, meal=?, note=? WHERE id=? AND userId=?",
-      args: [name.trim(), cal, Math.max(0, parseFloat(protein) || 0), Math.max(0, parseFloat(carbs) || 0), Math.max(0, parseFloat(fat) || 0), Math.max(1, parseFloat(grams) || 100), meal, noteVal, params.id, uid],
+      sql: "UPDATE FoodEntry SET name=?, calories=?, protein=?, carbs=?, fat=?, grams=?, meal=COALESCE(?,meal), note=? WHERE id=? AND userId=?",
+      args: [name.trim(), cal, Math.max(0, parseFloat(protein) || 0), Math.max(0, parseFloat(carbs) || 0), Math.max(0, parseFloat(fat) || 0), Math.max(1, parseFloat(grams) || 100), meal ?? null, noteVal, params.id, uid],
     });
     const row = await db.execute({ sql: "SELECT * FROM FoodEntry WHERE id = ? AND userId = ?", args: [params.id, uid] });
     if (!row.rows.length) return NextResponse.json({ error: "Not found" }, { status: 404 });

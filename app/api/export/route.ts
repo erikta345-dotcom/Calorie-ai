@@ -10,6 +10,12 @@ function userId(session: any) {
   return (session?.user as any)?.id as string;
 }
 
+function csvCell(value: string | null | undefined): string {
+  const s = String(value ?? "");
+  const safe = /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+  return `"${safe.replace(/"/g, '""')}"`;
+}
+
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -26,7 +32,7 @@ export async function GET(req: NextRequest) {
   const header = "fecha,comida,nombre,calorias,proteina,carbohidratos,grasa,gramos,fuente,nota\n";
   const rows = result.rows
     .map((r) =>
-      [r.date, r.meal, `"${String(r.name ?? "").replace(/"/g, '""')}"`, r.calories, r.protein, r.carbs, r.fat, r.grams, r.source, `"${String(r.note ?? "").replace(/"/g, '""')}"`].join(",")
+      [r.date, r.meal, csvCell(r.name as string), r.calories, r.protein, r.carbs, r.fat, r.grams, r.source, csvCell(r.note as string)].join(",")
     )
     .join("\n");
 
