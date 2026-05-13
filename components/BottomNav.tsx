@@ -14,7 +14,7 @@ const PAGE_0 = [
 
 const PAGE_1 = [
   { href: "/recipes", icon: ChefHat, label: "Recetas" },
-  { href: "/alerts", icon: Bell, label: "Alertas" },
+  { href: "/alerts", icon: Bell, label: "Recordatorios" },
   { href: "/settings", icon: Settings, label: "Ajustes" },
   { href: "/feedback", icon: MessageCircle, label: "Feed" },
 ];

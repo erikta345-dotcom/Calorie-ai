@@ -65,7 +65,7 @@ export default function AlertsPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-zinc-950 max-w-md mx-auto pb-32 px-4">
       <header className="pt-14 pb-6">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">🔔 Alertas</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">🔔 Recordatorios</h1>
         <p className="text-gray-400 dark:text-zinc-500 text-sm mt-1">Recordatorios y avisos personalizados</p>
       </header>
 
