@@ -334,7 +334,11 @@ export default function SettingsPage() {
                   const perm = await Notification.requestPermission();
                   setNotifPerm(perm);
                   if (perm === "granted") {
-                    await subscribeAndSave();
+                    try {
+                      await subscribeAndSave();
+                    } catch (err) {
+                      console.error("subscribeAndSave failed:", err);
+                    }
                   }
                 }}
                 className="text-xs bg-brand-500 text-white px-3 py-1 rounded-lg font-medium"

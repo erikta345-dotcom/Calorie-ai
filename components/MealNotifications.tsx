@@ -30,6 +30,10 @@ async function subscribeAndSave() {
   const { key } = await vapidRes.json();
   if (!key) return false;
 
+  try {
+    await navigator.serviceWorker.register("/sw.js");
+  } catch {}
+
   const reg = await navigator.serviceWorker.ready;
 
   // Always unsubscribe and resubscribe to ensure VAPID keys are current
