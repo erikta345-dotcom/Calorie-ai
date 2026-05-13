@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
   if (message.length > 1000) return NextResponse.json({ error: "Mensaje demasiado largo" }, { status: 400 });
   const id = crypto.randomUUID();
   const author = session.user?.name || "Anónimo";
-  const rating = Math.min(5, Math.max(1, parseInt(stars) || 5));
+  const rating = Math.min(5, Math.max(0.5, Math.round((parseFloat(stars) || 5) * 2) / 2));
   await db.execute({
     sql: "INSERT INTO Feedback (id, userId, author, message, stars) VALUES (?, ?, ?, ?, ?)",
     args: [id, uid, author, message.trim(), rating],

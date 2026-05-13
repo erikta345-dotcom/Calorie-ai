@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Heart, Star, Trash2 } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 
@@ -19,23 +19,34 @@ type Feedback = {
 
 function StarPicker({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const [hover, setHover] = useState(0);
+
+  function getVal(s: number, e: React.MouseEvent<HTMLButtonElement>) {
+    const rect = e.currentTarget.getBoundingClientRect();
+    return e.clientX - rect.left < rect.width / 2 ? s - 0.5 : s;
+  }
+
   return (
     <div className="flex gap-1">
-      {[1, 2, 3, 4, 5].map((s) => (
-        <button
-          key={s}
-          type="button"
-          onClick={() => onChange(s)}
-          onMouseEnter={() => setHover(s)}
-          onMouseLeave={() => setHover(0)}
-          className="p-0.5"
-        >
-          <Star
-            size={22}
-            className={`transition-colors ${s <= (hover || value) ? "text-yellow-400 fill-yellow-400" : "text-gray-300 dark:text-zinc-600"}`}
-          />
-        </button>
-      ))}
+      {[1, 2, 3, 4, 5].map((s) => {
+        const active = hover || value;
+        const full = active >= s;
+        const half = !full && active >= s - 0.5;
+        return (
+          <button
+            key={s}
+            type="button"
+            onClick={(e) => onChange(getVal(s, e))}
+            onMouseMove={(e) => setHover(getVal(s, e))}
+            onMouseLeave={() => setHover(0)}
+            className="p-0.5 relative"
+          >
+            <Star size={22} className="text-gray-300 dark:text-zinc-600" />
+            <div className={`absolute inset-0.5 overflow-hidden transition-all ${full ? "w-[calc(100%-4px)]" : half ? "w-1/2" : "w-0"}`}>
+              <Star size={22} className="text-yellow-400 fill-yellow-400" />
+            </div>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -43,13 +54,18 @@ function StarPicker({ value, onChange }: { value: number; onChange: (v: number) 
 function StarDisplay({ value }: { value: number }) {
   return (
     <div className="flex gap-0.5">
-      {[1, 2, 3, 4, 5].map((s) => (
-        <Star
-          key={s}
-          size={12}
-          className={s <= value ? "text-yellow-400 fill-yellow-400" : "text-gray-200 dark:text-zinc-700"}
-        />
-      ))}
+      {[1, 2, 3, 4, 5].map((s) => {
+        const full = value >= s;
+        const half = !full && value >= s - 0.5;
+        return (
+          <div key={s} className="relative">
+            <Star size={12} className="text-gray-200 dark:text-zinc-700" />
+            <div className={`absolute inset-0 overflow-hidden ${full ? "w-full" : half ? "w-1/2" : "w-0"}`}>
+              <Star size={12} className="text-yellow-400 fill-yellow-400" />
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -176,7 +192,7 @@ export default function FeedbackPage() {
               ) : null}
             </div>
             {isAdmin && (
-              <div className="mt-2 space-y-1">
+              <div className="mt-3 space-y-3">
                 <div className="flex gap-2">
                   <input
                     type="text"
