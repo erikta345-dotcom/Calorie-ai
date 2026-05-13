@@ -128,6 +128,11 @@ export default function DashboardPage() {
   const [editSaving, setEditSaving] = useState(false);
   const [copyingMeal, setCopyingMeal] = useState<Record<string, boolean>>({});
 
+  async function refreshStreak() {
+    const str = await fetch(`/api/streak?date=${today}`).then((r) => r.json()).catch(() => null);
+    if (str && !str.error) setStreaks({ calories: str.calories ?? 0, protein: str.protein ?? 0, carbs: str.carbs ?? 0, fat: str.fat ?? 0 });
+  }
+
   useEffect(() => {
     Promise.all([
       fetch(`/api/entries?date=${today}`).then((r) => r.json()),
@@ -147,7 +152,10 @@ export default function DashboardPage() {
 
   async function deleteEntry(id: string) {
     const res = await fetch(`/api/entries/${id}`, { method: "DELETE" });
-    if (res.ok) setEntries((prev) => prev.filter((e) => e.id !== id));
+    if (res.ok) {
+      setEntries((prev) => prev.filter((e) => e.id !== id));
+      refreshStreak();
+    }
   }
 
   function openEdit(entry: FoodEntry) {
@@ -168,6 +176,7 @@ export default function DashboardPage() {
       setEntries((prev) => prev.map((e) => (e.id === editEntry.id ? updated : e)));
       setEditEntry(null);
       setEditForm(null);
+      refreshStreak();
     }
     setEditSaving(false);
   }
@@ -189,6 +198,7 @@ export default function DashboardPage() {
     if (res2.ok) {
       const created = await res2.json();
       setEntries((prev) => [...prev, ...created]);
+      refreshStreak();
     }
     setCopyingYesterday(false);
   }
@@ -202,6 +212,7 @@ export default function DashboardPage() {
     if (res.ok) {
       const created = await res.json();
       setEntries((prev) => [...prev, created]);
+      refreshStreak();
     }
   }
 
@@ -223,6 +234,7 @@ export default function DashboardPage() {
         if (res2.ok) {
           const created = await res2.json();
           setEntries((prev) => [...prev, ...created]);
+          refreshStreak();
         }
       }
     }
