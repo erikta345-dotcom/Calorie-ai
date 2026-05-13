@@ -9,9 +9,9 @@ function pad(n: number) { return String(n).padStart(2, "0"); }
 function capitalize(s: string) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
 export async function GET(req: NextRequest) {
-  const auth = req.headers.get("authorization");
-  const secret = process.env.CRON_SECRET || process.env.ADMIN_SECRET;
-  if (!secret || auth !== `Bearer ${secret}`) {
+  const token = req.headers.get("authorization")?.replace("Bearer ", "");
+  const valid = [process.env.CRON_SECRET, process.env.ADMIN_SECRET].filter(Boolean);
+  if (!token || !valid.includes(token)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
