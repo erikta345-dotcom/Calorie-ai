@@ -65,7 +65,7 @@ export default function SettingsPage() {
   const { data: session } = useSession();
   const [form, setForm] = useState<Settings>({
     weight: 75,
-    height: 175,
+    height: 0,
     age: 25,
     gender: "male",
     goal: "maintain",
@@ -75,7 +75,7 @@ export default function SettingsPage() {
     goalFat: 73,
     mealTimes: DEFAULT_MEAL_TIMES,
   });
-  const [rawValues, setRawValues] = useState<Record<string, string>>({});
+  const [rawValues, setRawValues] = useState<Record<string, string>>({ height: "" });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [notifPerm, setNotifPerm] = useState<string>("default");
@@ -95,7 +95,9 @@ export default function SettingsPage() {
         const mealTimes = s.mealTimes
           ? (typeof s.mealTimes === "string" ? JSON.parse(s.mealTimes) : s.mealTimes)
           : DEFAULT_MEAL_TIMES;
-        setForm({ ...s, height: s.height ?? 175, age: s.age ?? 25, gender: s.gender ?? "male", goal: s.goal ?? "maintain", mealTimes: { ...DEFAULT_MEAL_TIMES, ...mealTimes } });
+        const height = s.height || 0;
+        setForm({ ...s, height, age: s.age ?? 25, gender: s.gender ?? "male", goal: s.goal ?? "maintain", mealTimes: { ...DEFAULT_MEAL_TIMES, ...mealTimes } });
+        if (height) setRawValues((r) => { const n = { ...r }; delete n.height; return n; });
       });
     fetch("/api/weight")
       .then((r) => r.json())
@@ -135,7 +137,7 @@ export default function SettingsPage() {
     await fetch("/api/settings", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
+      body: JSON.stringify({ ...form, height: form.height || 50 }),
     });
     setSaving(false);
     setSaved(true);
