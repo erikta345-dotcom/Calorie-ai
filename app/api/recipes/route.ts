@@ -49,6 +49,14 @@ export async function POST(req: NextRequest) {
     if (!Array.isArray(items) || items.length === 0 || items.length > 50) {
       return NextResponse.json({ error: "Items inválidos" }, { status: 400 });
     }
+    const invalidItem = items.some((item: any) =>
+      !item.name || typeof item.name !== "string" || item.name.length > 100 ||
+      typeof item.calories !== "number" || item.calories < 0 || item.calories > 5000 ||
+      typeof item.protein !== "number" || item.protein < 0 || item.protein > 500 ||
+      typeof item.carbs !== "number" || item.carbs < 0 || item.carbs > 500 ||
+      typeof item.fat !== "number" || item.fat < 0 || item.fat > 500
+    );
+    if (invalidItem) return NextResponse.json({ error: "Item inválido" }, { status: 400 });
     const id = randomUUID();
     await db.execute({
       sql: "INSERT INTO Recipe (id, userId, name, items, totalCalories, totalProtein, totalCarbs, totalFat) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",

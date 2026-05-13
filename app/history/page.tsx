@@ -105,6 +105,7 @@ export default function HistoryPage() {
 
       if (period === "year") {
         const monthMap: Record<string, DaySummary> = {};
+        const monthLoggedDays: Record<string, Set<string>> = {};
         rawEntries.forEach((e) => {
           const month = (e.date as string).slice(0, 7);
           if (!monthMap[month]) {
@@ -115,6 +116,8 @@ export default function HistoryPage() {
               calories: 0, protein: 0, carbs: 0, fat: 0,
             };
           }
+          if (!monthLoggedDays[month]) monthLoggedDays[month] = new Set();
+          monthLoggedDays[month].add(e.date as string);
           monthMap[month].calories += e.calories;
           monthMap[month].protein += e.protein;
           monthMap[month].carbs += e.carbs;
@@ -124,15 +127,14 @@ export default function HistoryPage() {
           const d = new Date(today.getFullYear(), today.getMonth() - 11 + i, 1);
           const month = format(d, "yyyy-MM");
           const raw = monthMap[month];
-          // Convert totals → daily average for the month
-          const daysInMonth = getDaysInMonth(d);
+          const loggedDays = monthLoggedDays[month]?.size || 1;
           return raw
             ? {
                 ...raw,
-                calories: raw.calories / daysInMonth,
-                protein: raw.protein / daysInMonth,
-                carbs: raw.carbs / daysInMonth,
-                fat: raw.fat / daysInMonth,
+                calories: raw.calories / loggedDays,
+                protein: raw.protein / loggedDays,
+                carbs: raw.carbs / loggedDays,
+                fat: raw.fat / loggedDays,
               }
             : {
                 date: month,

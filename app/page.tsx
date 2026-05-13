@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { format, subDays } from "date-fns";
 import { es } from "date-fns/locale";
 import { useRouter } from "next/navigation";
@@ -170,7 +170,7 @@ export default function DashboardPage() {
     setCopyingMeal((prev) => ({ ...prev, [meal]: false }));
   }
 
-  const totals = entries.reduce(
+  const totals = useMemo(() => entries.reduce(
     (acc, e) => ({
       calories: acc.calories + (e.calories || 0),
       protein: acc.protein + (e.protein || 0),
@@ -178,7 +178,7 @@ export default function DashboardPage() {
       fat: acc.fat + (e.fat || 0),
     }),
     { calories: 0, protein: 0, carbs: 0, fat: 0 }
-  );
+  ), [entries]);
 
   const entriesByMeal = (meal: string) => entries.filter((e) => e.meal === meal);
 
