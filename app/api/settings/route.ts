@@ -9,21 +9,12 @@ const VALID_GOALS = ["lose_fat", "maintain", "gain_muscle"];
 
 export const dynamic = "force-dynamic";
 
-async function ensureColumns() {
-  await db.execute("ALTER TABLE UserSettings ADD COLUMN height REAL DEFAULT 175").catch(() => {});
-  await db.execute("ALTER TABLE UserSettings ADD COLUMN age INTEGER DEFAULT 25").catch(() => {});
-  await db.execute("ALTER TABLE UserSettings ADD COLUMN gender TEXT DEFAULT 'male'").catch(() => {});
-  await db.execute("ALTER TABLE UserSettings ADD COLUMN goal TEXT DEFAULT 'maintain'").catch(() => {});
-  await db.execute("ALTER TABLE UserSettings ADD COLUMN mealTimes TEXT").catch(() => {});
-}
-
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const uid = (session.user as any).id as string;
   if (!(await checkRateLimit(`settings-get:${uid}`, 30, 60_000))) return NextResponse.json({ error: "Demasiadas peticiones." }, { status: 429 });
   try {
-    await ensureColumns();
     const result = await db.execute({ sql: "SELECT * FROM UserSettings WHERE id = ?", args: [uid] });
     if (result.rows.length === 0) {
       await db.execute({ sql: "INSERT INTO UserSettings (id) VALUES (?)", args: [uid] });
@@ -62,7 +53,6 @@ export async function PUT(req: NextRequest) {
     if (macroFields.some((v) => v != null && (isNaN(parseFloat(v)) || parseFloat(v) < 0 || parseFloat(v) > 10000))) {
       return NextResponse.json({ error: "Macros inválidos" }, { status: 400 });
     }
-    await ensureColumns();
     await db.execute({
       sql: `INSERT INTO UserSettings (id, weight, height, age, gender, goal, goalCalories, goalProtein, goalCarbs, goalFat, mealTimes)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)

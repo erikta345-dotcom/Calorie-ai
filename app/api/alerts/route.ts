@@ -8,26 +8,10 @@ const VALID_TYPES = ["time", "calorie"];
 
 export const dynamic = "force-dynamic";
 
-async function ensureTable() {
-  await db.execute(`
-    CREATE TABLE IF NOT EXISTS CustomAlert (
-      id TEXT PRIMARY KEY,
-      userId TEXT NOT NULL,
-      type TEXT NOT NULL,
-      label TEXT NOT NULL,
-      time TEXT,
-      threshold REAL,
-      enabled INTEGER DEFAULT 1,
-      createdAt TEXT DEFAULT (datetime('now'))
-    )
-  `);
-}
-
 export async function GET() {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const uid = (session.user as any).id as string;
-  await ensureTable();
   const result = await db.execute({
     sql: "SELECT * FROM CustomAlert WHERE userId = ? ORDER BY createdAt DESC",
     args: [uid],
@@ -39,7 +23,6 @@ export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   const uid = (session.user as any).id as string;
-  await ensureTable();
   if (!(await checkRateLimit(`alerts:${uid}`, 20, 60_000))) {
     return NextResponse.json({ error: "Demasiadas peticiones. Espera un momento." }, { status: 429 });
   }

@@ -35,6 +35,24 @@ export async function GET(req: NextRequest) {
   const errors: string[] = [];
   const sent: string[] = [];
 
+  // Batch-load all time alerts for users in this batch (avoids N+1)
+  const userIds = subs.map((s) => s.userId as string).filter(Boolean);
+  const alertsByUser = new Map<string, typeof subs>();
+  if (userIds.length > 0) {
+    try {
+      const placeholders = userIds.map(() => "?").join(",");
+      const alertsResult = await db.execute({
+        sql: `SELECT * FROM CustomAlert WHERE userId IN (${placeholders}) AND type = 'time' AND enabled = 1`,
+        args: userIds,
+      });
+      for (const alert of alertsResult.rows) {
+        const uid = alert.userId as string;
+        if (!alertsByUser.has(uid)) alertsByUser.set(uid, []);
+        alertsByUser.get(uid)!.push(alert);
+      }
+    } catch {}
+  }
+
   const tasks = subs.map(async (sub) => {
     const utcOffset = Number(sub.utcOffset) || 0;
     const localMins = (utcMins + utcOffset + 1440) % 1440;
@@ -68,21 +86,14 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Custom time alerts
     if (sub.userId) {
-      try {
-        const alertsResult = await db.execute({
-          sql: "SELECT * FROM CustomAlert WHERE userId = ? AND type = 'time' AND enabled = 1",
-          args: [sub.userId as string],
-        });
-        for (const alert of alertsResult.rows) {
-          if (alert.time !== localTime) continue;
-          await pushTo(
-            JSON.stringify({ title: "🔔 Calorie AI", body: alert.label as string, tag: `alert-${alert.id}` }),
-            `alert:${alert.label}@${localTime}`
-          );
-        }
-      } catch {}
+      for (const alert of alertsByUser.get(sub.userId as string) ?? []) {
+        if (alert.time !== localTime) continue;
+        await pushTo(
+          JSON.stringify({ title: "🔔 Calorie AI", body: alert.label as string, tag: `alert-${alert.id}` }),
+          `alert:${alert.label}@${localTime}`
+        );
+      }
     }
   });
 
