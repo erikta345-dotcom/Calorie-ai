@@ -78,6 +78,7 @@ export default function SettingsPage() {
   const [rawValues, setRawValues] = useState<Record<string, string>>({ height: "" });
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState(false);
   const [notifPerm, setNotifPerm] = useState<string>("default");
   const [weightLog, setWeightLog] = useState<{ date: string; weight: number }[]>([]);
   const [weightInput, setWeightInput] = useState("");
@@ -134,12 +135,17 @@ export default function SettingsPage() {
 
   async function handleSave() {
     setSaving(true);
-    await fetch("/api/settings", {
+    const res = await fetch("/api/settings", {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ...form, height: form.height || 50 }),
     });
     setSaving(false);
+    if (!res.ok) {
+      setSaveError(true);
+      setTimeout(() => setSaveError(false), 3000);
+      return;
+    }
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
     window.dispatchEvent(new CustomEvent("meal-times-updated"));
@@ -412,7 +418,7 @@ export default function SettingsPage() {
           disabled={saving}
           className="w-full py-3 h-auto rounded-xl bg-brand-500 hover:bg-brand-600 text-zinc-950 font-semibold disabled:opacity-40 transition-colors text-sm"
         >
-          {saved ? "✓ Guardado" : saving ? "Guardando..." : "Guardar configuración"}
+          {saveError ? "✗ Error al guardar" : saved ? "✓ Guardado" : saving ? "Guardando..." : "Guardar configuración"}
         </Button>
       </div>
 

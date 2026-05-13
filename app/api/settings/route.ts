@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/rateLimit";
 
 const VALID_GENDERS = ["male", "female", "other"];
-const VALID_GOALS = ["lose", "maintain", "gain"];
+const VALID_GOALS = ["lose_fat", "maintain", "gain_muscle"];
 
 export const dynamic = "force-dynamic";
 
