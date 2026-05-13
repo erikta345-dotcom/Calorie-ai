@@ -75,6 +75,7 @@ export default function SettingsPage() {
     goalFat: 73,
     mealTimes: DEFAULT_MEAL_TIMES,
   });
+  const [rawValues, setRawValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [notifPerm, setNotifPerm] = useState<string>("default");
@@ -147,7 +148,7 @@ export default function SettingsPage() {
   const sexOffset = form.gender === "male" ? 5 : -161;
   const tdee = Math.round((10 * form.weight + 6.25 * Math.max(form.height, 100) - 5 * Math.max(form.age, 1) + sexOffset) * 1.55);
 
-  const numField = (label: string, key: keyof Omit<Settings, "mealTimes" | "goal" | "gender">, unit: string) => (
+  const numField = (label: string, key: keyof Omit<Settings, "mealTimes" | "goal" | "gender">, unit: string, step = "any") => (
     <div className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-zinc-800 last:border-0">
       <div>
         <p className="text-sm text-gray-900 dark:text-white">{label}</p>
@@ -155,14 +156,19 @@ export default function SettingsPage() {
       </div>
       <input
         type="number"
-        value={form[key] as number}
+        step={step}
+        value={rawValues[key] ?? String(form[key] as number)}
         onChange={(e) => {
-          const val = parseFloat(e.target.value) || 0;
+          const raw = e.target.value;
+          setRawValues((r) => ({ ...r, [key]: raw }));
+          const val = parseFloat(raw);
+          if (!Number.isFinite(val)) return;
           if (key === "weight") handleBodyChange({ weight: Math.max(1, val) });
-          else if (key === "height") handleBodyChange({ height: Math.max(50, val) });
-          else if (key === "age") handleBodyChange({ age: Math.max(1, val) });
-          else setForm({ ...form, [key]: val });
+          else if (key === "height") handleBodyChange({ height: Math.max(1, val) });
+          else if (key === "age") handleBodyChange({ age: Math.max(1, Math.round(val)) });
+          else setForm((f) => ({ ...f, [key]: val }));
         }}
+        onBlur={() => setRawValues((r) => { const n = { ...r }; delete n[key]; return n; })}
         className="w-24 bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white text-right rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
       />
     </div>
@@ -211,9 +217,9 @@ export default function SettingsPage() {
 
         <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-4">
           <p className="text-xs text-gray-400 dark:text-zinc-500 pt-3 pb-1 font-semibold uppercase tracking-wide">Tu cuerpo</p>
-          {numField("Peso corporal", "weight", "kg")}
-          {numField("Altura", "height", "cm")}
-          {numField("Edad", "age", "años")}
+          {numField("Peso corporal", "weight", "kg", "0.1")}
+          {numField("Altura", "height", "cm", "1")}
+          {numField("Edad", "age", "años", "1")}
           <div className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-zinc-800">
             <p className="text-sm text-gray-900 dark:text-white">Sexo</p>
             <div className="flex gap-2">
@@ -264,10 +270,10 @@ export default function SettingsPage() {
 
         <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-4">
           <p className="text-xs text-gray-400 dark:text-zinc-500 pt-3 pb-1 font-semibold uppercase tracking-wide">Macros diarios</p>
-          {numField("Calorías", "goalCalories", "kcal/día")}
-          {numField("Proteína", "goalProtein", "g/día")}
-          {numField("Carbohidratos", "goalCarbs", "g/día")}
-          {numField("Grasa", "goalFat", "g/día")}
+          {numField("Calorías", "goalCalories", "kcal/día", "1")}
+          {numField("Proteína", "goalProtein", "g/día", "0.1")}
+          {numField("Carbohidratos", "goalCarbs", "g/día", "0.1")}
+          {numField("Grasa", "goalFat", "g/día", "0.1")}
         </div>
 
         {/* Weight log */}
