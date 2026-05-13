@@ -54,6 +54,65 @@ const MEAL_BAR_COLORS: Record<string, string> = {
   picoteo: "bg-zinc-400",
 };
 
+function EntryRow({ entry, onDelete, onEdit, onRelog }: {
+  entry: FoodEntry;
+  onDelete: (id: string) => void;
+  onEdit: (e: FoodEntry) => void;
+  onRelog: (e: FoodEntry) => void;
+}) {
+  const [offset, setOffset] = useState(0);
+  const startX = useRef<number | undefined>();
+  return (
+    <div className="border-b border-gray-200/40 dark:border-zinc-800/40 last:border-0" style={{ position: "relative", overflow: "hidden" }}>
+      <div style={{ position: "absolute", inset: 0, backgroundColor: "#ef4444", display: "flex", alignItems: "center", justifyContent: "flex-end", paddingRight: "20px" }}>
+        <Trash2 size={18} color="white" />
+      </div>
+      <div
+        className="flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-zinc-900"
+        style={{
+          transform: `translateX(${offset}px)`,
+          transition: startX.current !== undefined ? "none" : "transform 0.3s ease",
+          touchAction: "pan-y",
+        }}
+        onTouchStart={(e) => { startX.current = e.touches[0].clientX; }}
+        onTouchMove={(e) => {
+          if (startX.current === undefined) return;
+          const delta = e.touches[0].clientX - startX.current;
+          if (delta > 0) return;
+          setOffset(delta);
+        }}
+        onTouchEnd={(e) => {
+          const rowWidth = e.currentTarget.offsetWidth;
+          startX.current = undefined;
+          if (offset < -(rowWidth * 0.6)) {
+            setOffset(-rowWidth);
+            onDelete(entry.id);
+          } else {
+            setOffset(0);
+          }
+        }}
+      >
+        <div className="min-w-0 flex-1 pr-3">
+          <p className="text-sm text-gray-700 dark:text-zinc-200 truncate cursor-pointer hover:text-gray-900 dark:hover:text-white" onClick={() => onEdit(entry)}>{entry.name}</p>
+          {entry.note && <p className="text-[11px] text-gray-400 dark:text-zinc-500 italic mt-0.5 truncate">{entry.note}</p>}
+          <p className="text-[11px] text-gray-400 dark:text-zinc-500 mt-0.5">
+            {entry.createdAt ? new Date(entry.createdAt.includes("T") || entry.createdAt.endsWith("Z") ? entry.createdAt : entry.createdAt.replace(" ", "T") + "Z").toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : ""}{entry.createdAt ? " · " : ""}{entry.grams}g · P {Math.round(entry.protein)}g · C {Math.round(entry.carbs)}g · G {Math.round(entry.fat)}g
+          </p>
+        </div>
+        <div className="flex items-center gap-2.5 shrink-0">
+          <span className="text-sm font-medium text-gray-600 dark:text-zinc-300">{Math.round(entry.calories)} kcal</span>
+          <button onClick={() => onRelog(entry)} title="Volver a añadir" className="text-gray-300 dark:text-zinc-600 hover:text-brand-500 transition-colors">
+            <RotateCcw size={13} />
+          </button>
+          <button onClick={() => onDelete(entry.id)} className="text-gray-300 dark:text-zinc-600 hover:text-red-400 transition-colors">
+            <Trash2 size={14} />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const today = format(new Date(), "yyyy-MM-dd");
@@ -68,8 +127,6 @@ export default function DashboardPage() {
   const [editForm, setEditForm] = useState<EditForm | null>(null);
   const [editSaving, setEditSaving] = useState(false);
   const [copyingMeal, setCopyingMeal] = useState<Record<string, boolean>>({});
-  const [swipeOffsets, setSwipeOffsets] = useState<Record<string, number>>({});
-  const swipeStartX = useRef<Record<string, number>>({});
 
   useEffect(() => {
     Promise.all([
@@ -122,16 +179,17 @@ export default function DashboardPage() {
     if (!res.ok) { setCopyingYesterday(false); return; }
     const yesterdayEntries: FoodEntry[] = await res.json();
     if (!yesterdayEntries.length) { setCopyingYesterday(false); return; }
-    const created = await Promise.all(
-      yesterdayEntries.map((e) =>
-        fetch("/api/entries", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ date: today, meal: e.meal, name: e.name, calories: e.calories, protein: e.protein, carbs: e.carbs, fat: e.fat, grams: e.grams, source: "manual" }),
-        }).then((r) => r.ok ? r.json() : null)
-      )
-    );
-    setEntries((prev) => [...prev, ...created.filter(Boolean)]);
+    const res2 = await fetch("/api/entries/bulk", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        entries: yesterdayEntries.map((e) => ({ date: today, meal: e.meal, name: e.name, calories: e.calories, protein: e.protein, carbs: e.carbs, fat: e.fat, grams: e.grams, source: "manual" })),
+      }),
+    });
+    if (res2.ok) {
+      const created = await res2.json();
+      setEntries((prev) => [...prev, ...created]);
+    }
     setCopyingYesterday(false);
   }
 
@@ -155,16 +213,17 @@ export default function DashboardPage() {
       const all: FoodEntry[] = await res.json();
       const mealEntries = all.filter((e) => e.meal === meal);
       if (mealEntries.length) {
-        const created = await Promise.all(
-          mealEntries.map((e) =>
-            fetch("/api/entries", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ date: today, meal: e.meal, name: e.name, calories: e.calories, protein: e.protein, carbs: e.carbs, fat: e.fat, grams: e.grams, source: "manual", createdAt: new Date().toISOString(), note: e.note }),
-            }).then((r) => r.ok ? r.json() : null)
-          )
-        );
-        setEntries((prev) => [...prev, ...created.filter(Boolean)]);
+        const res2 = await fetch("/api/entries/bulk", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            entries: mealEntries.map((e) => ({ date: today, meal: e.meal, name: e.name, calories: e.calories, protein: e.protein, carbs: e.carbs, fat: e.fat, grams: e.grams, source: "manual", note: e.note })),
+          }),
+        });
+        if (res2.ok) {
+          const created = await res2.json();
+          setEntries((prev) => [...prev, ...created]);
+        }
       }
     }
     setCopyingMeal((prev) => ({ ...prev, [meal]: false }));
@@ -293,78 +352,13 @@ export default function DashboardPage() {
                 {mealEntries.length > 0 && (
                   <div className="border-t border-gray-200/60 dark:border-zinc-800/60">
                     {mealEntries.map((entry) => (
-                      <div
+                      <EntryRow
                         key={entry.id}
-                        className="border-b border-gray-200/40 dark:border-zinc-800/40 last:border-0"
-                        style={{ position: "relative", overflow: "hidden" }}
-                      >
-                        <div
-                          style={{
-                            position: "absolute",
-                            inset: 0,
-                            backgroundColor: "#ef4444",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "flex-end",
-                            paddingRight: "20px",
-                          }}
-                        >
-                          <Trash2 size={18} color="white" />
-                        </div>
-                        <div
-                          className="flex items-center justify-between px-4 py-2.5 bg-gray-50 dark:bg-zinc-900"
-                          style={{
-                            transform: `translateX(${swipeOffsets[entry.id] ?? 0}px)`,
-                            transition: swipeStartX.current[entry.id] !== undefined ? "none" : "transform 0.3s ease",
-                            touchAction: "pan-y",
-                          }}
-                          onTouchStart={(e) => {
-                            swipeStartX.current[entry.id] = e.touches[0].clientX;
-                          }}
-                          onTouchMove={(e) => {
-                            const startX = swipeStartX.current[entry.id];
-                            if (startX === undefined) return;
-                            const delta = e.touches[0].clientX - startX;
-                            if (delta > 0) return;
-                            setSwipeOffsets((prev) => ({ ...prev, [entry.id]: delta }));
-                          }}
-                          onTouchEnd={(e) => {
-                            const rowWidth = e.currentTarget.offsetWidth;
-                            const offset = swipeOffsets[entry.id] ?? 0;
-                            delete swipeStartX.current[entry.id];
-                            if (offset < -(rowWidth * 0.6)) {
-                              setSwipeOffsets((prev) => ({ ...prev, [entry.id]: -rowWidth }));
-                              deleteEntry(entry.id);
-                            } else {
-                              setSwipeOffsets((prev) => ({ ...prev, [entry.id]: 0 }));
-                            }
-                          }}
-                        >
-                          <div className="min-w-0 flex-1 pr-3">
-                            <p className="text-sm text-gray-700 dark:text-zinc-200 truncate cursor-pointer hover:text-gray-900 dark:hover:text-white" onClick={() => openEdit(entry)}>{entry.name}</p>
-                            {entry.note && <p className="text-[11px] text-gray-400 dark:text-zinc-500 italic mt-0.5 truncate">{entry.note}</p>}
-                            <p className="text-[11px] text-gray-400 dark:text-zinc-500 mt-0.5">
-                              {entry.createdAt ? new Date(entry.createdAt.includes("T") || entry.createdAt.endsWith("Z") ? entry.createdAt : entry.createdAt.replace(" ", "T") + "Z").toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : ""}{entry.createdAt ? " · " : ""}{entry.grams}g · P {Math.round(entry.protein)}g · C {Math.round(entry.carbs)}g · G {Math.round(entry.fat)}g
-                            </p>
-                          </div>
-                          <div className="flex items-center gap-2.5 shrink-0">
-                            <span className="text-sm font-medium text-gray-600 dark:text-zinc-300">{Math.round(entry.calories)} kcal</span>
-                            <button
-                              onClick={() => relogEntry(entry)}
-                              title="Volver a añadir"
-                              className="text-gray-300 dark:text-zinc-600 hover:text-brand-500 transition-colors"
-                            >
-                              <RotateCcw size={13} />
-                            </button>
-                            <button
-                              onClick={() => deleteEntry(entry.id)}
-                              className="text-gray-300 dark:text-zinc-600 hover:text-red-400 transition-colors"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </div>
-                      </div>
+                        entry={entry}
+                        onDelete={deleteEntry}
+                        onEdit={openEdit}
+                        onRelog={relogEntry}
+                      />
                     ))}
                   </div>
                 )}

@@ -3,6 +3,7 @@ import { db } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { DATE_RE } from "@/lib/constants";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest) {
   const uid = (session.user as any).id as string;
   if (!(await checkRateLimit(`weight-post:${uid}`, 10, 60_000))) return NextResponse.json({ error: "Demasiadas peticiones." }, { status: 429 });
   const { date, weight } = await req.json();
-  if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) return NextResponse.json({ error: "Fecha inválida" }, { status: 400 });
+  if (!date || !DATE_RE.test(date)) return NextResponse.json({ error: "Fecha inválida" }, { status: 400 });
   const w = parseFloat(weight);
   if (isNaN(w) || w < 20 || w > 500) return NextResponse.json({ error: "Peso inválido" }, { status: 400 });
   const id = `${uid}_${date}`;

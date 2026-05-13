@@ -4,15 +4,11 @@ import { randomUUID } from "crypto";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/rateLimit";
-
-const VALID_MEALS = ["desayuno", "comida", "merienda", "cena", "snack", "picoteo"];
-const VALID_SOURCES = ["manual", "search", "scan", "barcode", "recipe"];
+import { VALID_MEALS, VALID_SOURCES, DATE_RE } from "@/lib/constants";
 
 function userId(session: any) {
   return (session?.user as any)?.id as string;
 }
-
-const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
 
 export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);

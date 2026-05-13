@@ -4,6 +4,7 @@ import { randomUUID } from "crypto";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { checkRateLimit } from "@/lib/rateLimit";
+import { VALID_MEALS, DATE_RE } from "@/lib/constants";
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions);
@@ -11,11 +12,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const userId = (session.user as any).id as string;
   if (!(await checkRateLimit(`recipes:${userId}`, 20, 60_000))) return NextResponse.json({ error: "Demasiadas peticiones." }, { status: 429 });
   try {
-    const VALID_MEALS = ["desayuno", "comida", "merienda", "cena", "snack", "picoteo"];
     const { meal, date, multiplier } = await req.json();
     if (!meal || !date) return NextResponse.json({ error: "Faltan campos" }, { status: 400 });
     if (!VALID_MEALS.includes(meal)) return NextResponse.json({ error: "Comida inválida" }, { status: 400 });
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return NextResponse.json({ error: "Fecha inválida" }, { status: 400 });
+    if (!DATE_RE.test(date)) return NextResponse.json({ error: "Fecha inválida" }, { status: 400 });
     const mult = typeof multiplier === "number" && multiplier > 0 && multiplier <= 5 ? multiplier : 1;
 
     const result = await db.execute({
