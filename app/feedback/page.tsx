@@ -12,6 +12,8 @@ type Feedback = {
   likes: number;
   userLiked: number;
   isOwner: number;
+  reply: string | null;
+  resolved: number;
   createdAt: string;
 };
 
@@ -54,6 +56,7 @@ function StarDisplay({ value }: { value: number }) {
 
 export default function FeedbackPage() {
   const [feedbacks, setFeedbacks] = useState<Feedback[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [message, setMessage] = useState("");
   const [stars, setStars] = useState(5);
   const [submitting, setSubmitting] = useState(false);
@@ -61,7 +64,10 @@ export default function FeedbackPage() {
   async function load() {
     const res = await fetch("/api/feedback");
     const data = await res.json();
-    if (Array.isArray(data)) setFeedbacks(data);
+    if (data && Array.isArray(data.items)) {
+      setFeedbacks(data.items);
+      setIsAdmin(!!data.isAdmin);
+    }
   }
 
   useEffect(() => { load(); }, []);
@@ -133,15 +139,23 @@ export default function FeedbackPage() {
         {feedbacks.map((fb) => (
           <div key={fb.id} className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-4 py-3">
             <div className="flex items-start justify-between gap-2 mb-1.5">
-              <div>
+              <div className="flex items-center gap-1.5 flex-wrap">
                 <span className="text-xs font-semibold text-brand-400">{fb.author}</span>
-                <span className="text-[10px] text-gray-300 dark:text-zinc-600 ml-2">
+                {!!fb.resolved && (
+                  <span className="text-[10px] text-green-500 font-medium">✅ Corregido</span>
+                )}
+                <span className="text-[10px] text-gray-300 dark:text-zinc-600">
                   {new Date(fb.createdAt).toLocaleDateString("es-ES")}
                 </span>
               </div>
               <StarDisplay value={Number(fb.stars) || 5} />
             </div>
             <p className="text-sm text-gray-600 dark:text-zinc-300 leading-relaxed mb-2">{fb.message}</p>
+            {fb.reply && (
+              <div className="mt-2 pl-3 border-l-2 border-brand-500/40 text-xs text-gray-500 dark:text-zinc-400">
+                <span className="font-semibold text-brand-400">Admin: </span>{fb.reply}
+              </div>
+            )}
             <div className="flex items-center justify-between">
               <button
                 onClick={() => handleLike(fb.id)}
@@ -152,7 +166,7 @@ export default function FeedbackPage() {
                 <Heart size={14} className={fb.userLiked ? "fill-red-400" : ""} />
                 {Number(fb.likes) > 0 && <span>{fb.likes}</span>}
               </button>
-              {fb.isOwner ? (
+              {(fb.isOwner || isAdmin) ? (
                 <button
                   onClick={() => handleDelete(fb.id)}
                   className="text-gray-200 dark:text-zinc-700 hover:text-red-400 transition-colors p-1"
@@ -161,6 +175,44 @@ export default function FeedbackPage() {
                 </button>
               ) : null}
             </div>
+            {isAdmin && (
+              <div className="mt-2 space-y-1">
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    placeholder="Responder..."
+                    className="flex-1 text-xs bg-gray-100 dark:bg-zinc-800 rounded px-2 py-1 focus:outline-none"
+                    onKeyDown={async (e) => {
+                      if (e.key !== "Enter") return;
+                      const reply = (e.target as HTMLInputElement).value.trim();
+                      if (!reply) return;
+                      await fetch(`/api/feedback/${fb.id}`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ reply }),
+                      });
+                      (e.target as HTMLInputElement).value = "";
+                      await load();
+                    }}
+                  />
+                </div>
+                <label className="flex items-center gap-1.5 text-xs text-gray-400 dark:text-zinc-500 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={!!fb.resolved}
+                    onChange={async () => {
+                      await fetch(`/api/feedback/${fb.id}`, {
+                        method: "PATCH",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ resolved: !fb.resolved }),
+                      });
+                      await load();
+                    }}
+                  />
+                  Marcar como corregido
+                </label>
+              </div>
+            )}
           </div>
         ))}
       </div>

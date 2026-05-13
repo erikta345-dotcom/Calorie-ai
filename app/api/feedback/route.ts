@@ -18,6 +18,8 @@ async function ensureTables() {
   `);
   await db.execute("ALTER TABLE Feedback ADD COLUMN stars INTEGER DEFAULT 5").catch(() => {});
   await db.execute("ALTER TABLE Feedback ADD COLUMN userId TEXT").catch(() => {});
+  await db.execute("ALTER TABLE Feedback ADD COLUMN reply TEXT").catch(() => {});
+  await db.execute("ALTER TABLE Feedback ADD COLUMN resolved INTEGER DEFAULT 0").catch(() => {});
   await db.execute(`
     CREATE TABLE IF NOT EXISTS FeedbackLike (
       id TEXT PRIMARY KEY,
@@ -32,15 +34,16 @@ export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   const uid = session ? (session.user as any).id as string : null;
   await ensureTables();
+  const isAdmin = !!(session?.user?.email && process.env.ADMIN_EMAIL && session.user.email === process.env.ADMIN_EMAIL);
   const result = await db.execute({
-    sql: `SELECT f.*,
+    sql: `SELECT f.id, f.author, f.message, f.stars, f.createdAt, f.userId, f.reply, f.resolved,
       (SELECT COUNT(*) FROM FeedbackLike WHERE feedbackId = f.id) AS likes,
       (SELECT COUNT(*) FROM FeedbackLike WHERE feedbackId = f.id AND userId = ?) AS userLiked,
       CASE WHEN f.userId = ? THEN 1 ELSE 0 END AS isOwner
     FROM Feedback f ORDER BY f.createdAt DESC`,
     args: [uid ?? "", uid ?? ""],
   });
-  return NextResponse.json(result.rows);
+  return NextResponse.json({ items: result.rows, isAdmin });
 }
 
 export async function POST(req: NextRequest) {
