@@ -55,11 +55,14 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user, account, profile }) {
       // Save email to UserSettings on Google sign-in so credentials can find it later
       if (account?.provider === "google" && token.sub && token.email) {
-        const existing = await db.execute({
-          sql: "SELECT id FROM UserSettings WHERE id = ?",
-          args: [token.sub],
-        }).catch(() => ({ rows: [1] }));
-        const isNew = existing.rows.length === 0;
+        let isNew = false;
+        try {
+          const existing = await db.execute({
+            sql: "SELECT id FROM UserSettings WHERE id = ?",
+            args: [token.sub],
+          });
+          isNew = existing.rows.length === 0;
+        } catch {}
         await db.execute({
           sql: "INSERT INTO UserSettings (id, email) VALUES (?, ?) ON CONFLICT(id) DO UPDATE SET email=excluded.email",
           args: [token.sub, token.email],

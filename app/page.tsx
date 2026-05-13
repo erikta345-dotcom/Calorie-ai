@@ -96,7 +96,7 @@ function EntryRow({ entry, onDelete, onEdit, onRelog }: {
           <p className="text-sm text-gray-700 dark:text-zinc-200 truncate cursor-pointer hover:text-gray-900 dark:hover:text-white" onClick={() => onEdit(entry)}>{entry.name}</p>
           {entry.note && <p className="text-[11px] text-gray-400 dark:text-zinc-500 italic mt-0.5 truncate">{entry.note}</p>}
           <p className="text-[11px] text-gray-400 dark:text-zinc-500 mt-0.5">
-            {entry.createdAt ? new Date(entry.createdAt.includes("T") || entry.createdAt.endsWith("Z") ? entry.createdAt : entry.createdAt.replace(" ", "T") + "Z").toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : ""}{entry.createdAt ? " · " : ""}{entry.grams}g · P {Math.round(entry.protein)}g · C {Math.round(entry.carbs)}g · G {Math.round(entry.fat)}g
+            {entry.createdAt ? new Date(entry.createdAt.endsWith("Z") ? entry.createdAt : entry.createdAt.replace(" ", "T") + "Z").toLocaleTimeString("es-ES", { hour: "2-digit", minute: "2-digit" }) : ""}{entry.createdAt ? " · " : ""}{entry.grams}g · P {Math.round(entry.protein)}g · C {Math.round(entry.carbs)}g · G {Math.round(entry.fat)}g
           </p>
         </div>
         <div className="flex items-center gap-2.5 shrink-0">

@@ -4,33 +4,34 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { DATE_RE } from "@/lib/constants";
 
-const fmtDate = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+function addDays(dateStr: string, days: number): string {
+  const [y, m, d] = dateStr.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d + days));
+  return date.toISOString().slice(0, 10);
+}
 
 function calcStreak(
   today: string,
   dailyMap: Map<string, { cal: number; protein: number; carbs: number; fat: number }>,
   check: (row: { cal: number; protein: number; carbs: number; fat: number }) => boolean
 ): number {
-  const todayDate = new Date(`${today}T00:00:00`);
-  const yesterStr = fmtDate(new Date(todayDate.getTime() - 86400000));
+  const yesterStr = addDays(today, -1);
 
   const todayRow = dailyMap.get(today);
   const yesterRow = dailyMap.get(yesterStr);
 
-  let cur: Date | null = todayRow && check(todayRow)
-    ? todayDate
+  let cur: string | null = todayRow && check(todayRow)
+    ? today
     : yesterRow && check(yesterRow)
-    ? new Date(todayDate.getTime() - 86400000)
+    ? yesterStr
     : null;
 
   let streak = 0;
   while (cur) {
-    const key = fmtDate(cur);
-    const row = dailyMap.get(key);
+    const row = dailyMap.get(cur);
     if (row && check(row)) {
       streak++;
-      cur = new Date(cur.getTime() - 86400000);
+      cur = addDays(cur, -1);
     } else {
       break;
     }

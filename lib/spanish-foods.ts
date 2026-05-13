@@ -125,7 +125,7 @@ export const SPANISH_FOODS: SpanishFood[] = [
 ];
 
 const normalize = (s: string) =>
-  s.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+  s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
 export function searchSpanishFoods(query: string): SpanishFood[] {
   const q = normalize(query);

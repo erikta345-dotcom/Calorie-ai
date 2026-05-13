@@ -66,7 +66,7 @@ export default function ScanPage() {
   const [barcodeError, setBarcodeError] = useState("");
   const [barcodeSaving, setBarcodeSaving] = useState(false);
   const [barcodeSavingRecipe, setBarcodeSavingRecipe] = useState(false);
-  const [lastCode, setLastCode] = useState("");
+  const lastCodeRef = useRef("");
   const [activeTab, setActiveTab] = useState<Tab>("ai");
   const [manualCode, setManualCode] = useState("");
 
@@ -219,7 +219,7 @@ export default function ScanPage() {
       zxingControlsRef.current = null;
     }
     setBarcodeActive(false);
-    setLastCode("");
+    lastCodeRef.current = "";
   }, []);
 
   async function fetchBarcodeProduct(code: string) {
@@ -262,7 +262,7 @@ export default function ScanPage() {
             const barcodes = await detector.detect(videoRef.current);
             if (barcodes.length > 0) {
               const code = barcodes[0].rawValue;
-              if (code && code !== lastCode) {
+              if (code && code !== lastCodeRef.current) {
                 if (pendingCodeRef.current.code === code) {
                   pendingCodeRef.current.count++;
                 } else {
@@ -270,7 +270,7 @@ export default function ScanPage() {
                 }
                 if (pendingCodeRef.current.count >= 8) {
                   pendingCodeRef.current = { code: "", count: 0 };
-                  setLastCode(code);
+                  lastCodeRef.current = code;
                   stopBarcode();
                   setBarcodeActive(false);
                   await fetchBarcodeProduct(code);

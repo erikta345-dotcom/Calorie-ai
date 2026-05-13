@@ -68,6 +68,17 @@ export async function POST(req: NextRequest) {
   const isHttpsUrl = /^https:\/\//.test(image);
   if (!isDataUri && !isHttpsUrl) return NextResponse.json({ error: "Formato de imagen inválido" }, { status: 400 });
   if (isDataUri && image.length > 10 * 1024 * 1024) return NextResponse.json({ error: "Imagen demasiado grande" }, { status: 400 });
+  if (isHttpsUrl) {
+    try {
+      const host = new URL(image).hostname;
+      if (/^(localhost|127\.|10\.|192\.168\.|172\.(1[6-9]|2\d|3[01])\.)/.test(host) || host === "::1") {
+        return NextResponse.json({ error: "URL no permitida" }, { status: 400 });
+      }
+    } catch {
+      return NextResponse.json({ error: "URL inválida" }, { status: 400 });
+    }
+    if (image.length > 2048) return NextResponse.json({ error: "URL demasiado larga" }, { status: 400 });
+  }
   if (description && typeof description === "string" && description.length > 200) {
     return NextResponse.json({ error: "Descripción demasiado larga" }, { status: 400 });
   }
