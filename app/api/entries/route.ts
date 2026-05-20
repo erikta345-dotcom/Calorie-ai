@@ -1,22 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
 import { randomUUID } from "crypto";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { checkRateLimit } from "@/lib/rateLimit";
+import { requireAuth } from "@/lib/api-auth";
 import { VALID_MEALS, VALID_SOURCES, DATE_RE } from "@/lib/constants";
 
-function userId(session: any) {
-  return (session?.user as any)?.id as string;
-}
-
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const uid = userId(session);
-  if (!(await checkRateLimit(`entries-get:${uid}`, 60, 60_000))) {
-    return NextResponse.json({ error: "Demasiadas peticiones." }, { status: 429 });
-  }
+  const { uid, error } = await requireAuth("entries-get", 60);
+  if (error) return error;
   const date = req.nextUrl.searchParams.get("date");
   const from = req.nextUrl.searchParams.get("from");
   const to = req.nextUrl.searchParams.get("to");
@@ -38,12 +28,8 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const uid = userId(session);
-  if (!(await checkRateLimit(`entries:${uid}`, 60, 60_000))) {
-    return NextResponse.json({ error: "Demasiadas peticiones. Espera un momento." }, { status: 429 });
-  }
+  const { uid, error } = await requireAuth("entries", 60);
+  if (error) return error;
   try {
     const { date, meal, name, calories, protein, carbs, fat, grams, source, createdAt, note } = await req.json();
     if (!date || !meal || !name || calories == null) {

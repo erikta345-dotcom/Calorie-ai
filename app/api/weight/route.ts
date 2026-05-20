@@ -1,15 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { checkRateLimit } from "@/lib/rateLimit";
+import { requireAuth } from "@/lib/api-auth";
 import { DATE_RE } from "@/lib/constants";
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const uid = (session.user as any).id as string;
-  if (!(await checkRateLimit(`weight-get:${uid}`, 30, 60_000))) return NextResponse.json({ error: "Demasiadas peticiones." }, { status: 429 });
+  const { uid, error } = await requireAuth("weight-get", 30);
+  if (error) return error;
   const result = await db.execute({
     sql: "SELECT date, weight FROM WeightLog WHERE userId = ? ORDER BY date ASC LIMIT 90",
     args: [uid],
@@ -18,10 +14,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const uid = (session.user as any).id as string;
-  if (!(await checkRateLimit(`weight-post:${uid}`, 10, 60_000))) return NextResponse.json({ error: "Demasiadas peticiones." }, { status: 429 });
+  const { uid, error } = await requireAuth("weight-post", 10);
+  if (error) return error;
   const { date, weight } = await req.json();
   if (!date || !DATE_RE.test(date)) return NextResponse.json({ error: "Fecha inválida" }, { status: 400 });
   const w = parseFloat(weight);

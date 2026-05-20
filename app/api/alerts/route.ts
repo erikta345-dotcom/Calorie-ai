@@ -1,17 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { checkRateLimit } from "@/lib/rateLimit";
+import { requireAuth, requireAuthOnly } from "@/lib/api-auth";
 
 const VALID_TYPES = ["time", "calorie"];
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const uid = (session.user as any).id as string;
+  const { uid, error } = await requireAuthOnly();
+  if (error) return error;
   const result = await db.execute({
     sql: "SELECT * FROM CustomAlert WHERE userId = ? ORDER BY createdAt DESC",
     args: [uid],
@@ -20,12 +17,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const uid = (session.user as any).id as string;
-  if (!(await checkRateLimit(`alerts:${uid}`, 20, 60_000))) {
-    return NextResponse.json({ error: "Demasiadas peticiones. Espera un momento." }, { status: 429 });
-  }
+  const { uid, error } = await requireAuth("alerts", 20);
+  if (error) return error;
   const { type, label, time, threshold } = await req.json();
   if (!type || !VALID_TYPES.includes(type)) {
     return NextResponse.json({ error: "Tipo inválido" }, { status: 400 });

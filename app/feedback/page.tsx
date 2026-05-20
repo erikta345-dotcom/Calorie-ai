@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { Heart, Star, Trash2 } from "lucide-react";
-import BottomNav from "@/components/BottomNav";
+import PageShell from "@/components/PageShell";
+import EmptyState from "@/components/EmptyState";
 
 type Feedback = {
   id: string;
@@ -121,7 +122,7 @@ export default function FeedbackPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-zinc-950 max-w-md mx-auto pb-32 px-4">
+    <PageShell className="px-4">
       <header className="pt-14 pb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">💬 Comunidad</h1>
         <p className="text-gray-400 dark:text-zinc-500 text-sm mt-1">Opiniones y sugerencias del grupo</p>
@@ -149,9 +150,7 @@ export default function FeedbackPage() {
 
       {/* Feedback list */}
       <div className="space-y-3">
-        {feedbacks.length === 0 && (
-          <p className="text-gray-300 dark:text-zinc-600 text-sm text-center py-10">Sin opiniones todavía. ¡Sé el primero!</p>
-        )}
+        {feedbacks.length === 0 && <EmptyState message="Sin opiniones todavía. ¡Sé el primero!" />}
         {feedbacks.map((fb) => (
           <div key={fb.id} className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-4 py-3">
             <div className="flex items-start justify-between gap-2 mb-1.5">
@@ -233,7 +232,6 @@ export default function FeedbackPage() {
         ))}
       </div>
 
-      <BottomNav />
-    </div>
+    </PageShell>
   );
 }

@@ -3,7 +3,8 @@
 import { useRef, useState, useMemo, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
-import BottomNav from "@/components/BottomNav";
+import PageShell from "@/components/PageShell";
+import { calcMacros } from "@/lib/macros";
 import { useSuggestedMeal } from "@/hooks/useSuggestedMeal";
 import ScanTabs from "@/components/scan/ScanTabs";
 import ImagePicker from "@/components/scan/ImagePicker";
@@ -27,16 +28,6 @@ async function compressImage(dataUrl: string): Promise<string> {
     };
     img.src = dataUrl;
   });
-}
-
-function macros(item: FoodItem, portionMult: number) {
-  const f = (item.grams * portionMult) / 100;
-  return {
-    calories: Math.round(item.caloriesPer100g * f),
-    protein: Math.round(item.proteinPer100g * f * 10) / 10,
-    carbs: Math.round(item.carbsPer100g * f * 10) / 10,
-    fat: Math.round(item.fatPer100g * f * 10) / 10,
-  };
 }
 
 export default function ScanPage() {
@@ -137,7 +128,7 @@ export default function ScanPage() {
       .filter((i) => i.enabled)
       .reduce(
         (acc, item) => {
-          const m = macros(item, portion);
+          const m = calcMacros(item.caloriesPer100g, item.proteinPer100g, item.carbsPer100g, item.fatPer100g, item.grams * portion);
           return {
             calories: acc.calories + m.calories,
             protein: Math.round((acc.protein + m.protein) * 10) / 10,
@@ -191,7 +182,7 @@ export default function ScanPage() {
       const recipeItems = result.items
         .filter((i) => i.enabled)
         .map((item) => {
-          const m = macros(item, portion);
+          const m = calcMacros(item.caloriesPer100g, item.proteinPer100g, item.carbsPer100g, item.fatPer100g, item.grams * portion);
           return { name: item.name, calories: m.calories, protein: m.protein, carbs: m.carbs, fat: m.fat, grams: Math.round(item.grams * portion) };
         });
       const res = await fetch("/api/recipes", {
@@ -334,12 +325,7 @@ export default function ScanPage() {
   const barcodeGrams = Math.max(1, parseFloat(barcodeGramsStr) || 1);
 
   const barcodeTotal = barcodeProduct
-    ? {
-        calories: Math.round((barcodeProduct.calories * barcodeGrams) / 100),
-        protein: Math.round((barcodeProduct.protein * barcodeGrams) / 100 * 10) / 10,
-        carbs: Math.round((barcodeProduct.carbs * barcodeGrams) / 100 * 10) / 10,
-        fat: Math.round((barcodeProduct.fat * barcodeGrams) / 100 * 10) / 10,
-      }
+    ? calcMacros(barcodeProduct.calories, barcodeProduct.protein, barcodeProduct.carbs, barcodeProduct.fat, barcodeGrams)
     : null;
 
   async function handleBarcodeSave() {
@@ -398,7 +384,7 @@ export default function ScanPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-zinc-950 max-w-md mx-auto pb-32 px-4">
+    <PageShell className="px-4">
       <header className="pt-14 pb-5">
         <p className="text-gray-400 dark:text-zinc-500 text-xs uppercase tracking-widest font-medium">Registro</p>
         <h1 className="text-3xl font-bold text-gray-900 dark:text-white mt-0.5">Escanear</h1>
@@ -471,7 +457,6 @@ export default function ScanPage() {
         />
       )}
 
-      <BottomNav />
-    </div>
+    </PageShell>
   );
 }

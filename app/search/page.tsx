@@ -3,7 +3,8 @@
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { format } from "date-fns";
-import BottomNav from "@/components/BottomNav";
+import PageShell from "@/components/PageShell";
+import MealPicker from "@/components/MealPicker";
 import { useSuggestedMeal } from "@/hooks/useSuggestedMeal";
 
 type FoodResult = {
@@ -26,7 +27,6 @@ type RecentFood = {
 };
 
 type Tab = "search" | "manual";
-const MEALS = ["desayuno", "snack", "comida", "merienda", "cena", "picoteo"];
 
 function NumInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
@@ -250,7 +250,7 @@ function SearchContent() {
   ];
 
   return (
-    <div className="min-h-screen bg-white dark:bg-zinc-950 max-w-md mx-auto pb-32 px-4">
+    <PageShell className="px-4">
       <header className="pt-14 pb-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">🍴 Añadir comida</h1>
       </header>
@@ -393,11 +393,7 @@ function SearchContent() {
               </div>
               <div>
                 <label className="text-xs text-gray-400 dark:text-zinc-500 block mb-2">¿En qué comida?</label>
-                <div className="grid grid-cols-5 gap-1">
-                  {MEALS.map((m) => (
-                    <button key={m} onClick={() => setMeal(m)} className={`py-2 rounded-lg text-xs font-medium capitalize transition-colors ${meal === m ? "bg-brand-500 text-white" : "bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400"}`}>{m}</button>
-                  ))}
-                </div>
+                <MealPicker value={meal} onChange={setMeal} />
               </div>
               <div>
                 <label className="text-xs text-gray-400 dark:text-zinc-500 block mb-2">Nota (opcional)</label>
@@ -468,11 +464,7 @@ function SearchContent() {
 
           <div>
             <label className="text-xs text-gray-400 dark:text-zinc-500 block mb-2">¿En qué comida?</label>
-            <div className="grid grid-cols-5 gap-1">
-              {MEALS.map((m) => (
-                <button key={m} onClick={() => setMMeal(m)} className={`py-2 rounded-lg text-xs font-medium capitalize transition-colors ${mMeal === m ? "bg-brand-500 text-white" : "bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400"}`}>{m}</button>
-              ))}
-            </div>
+            <MealPicker value={mMeal} onChange={setMMeal} />
           </div>
 
           <div>
@@ -497,8 +489,7 @@ function SearchContent() {
         </div>
       )}
 
-      <BottomNav />
-    </div>
+    </PageShell>
   );
 }
 

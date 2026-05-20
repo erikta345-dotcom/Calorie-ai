@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Trash2, Plus } from "lucide-react";
-import BottomNav from "@/components/BottomNav";
+import PageShell from "@/components/PageShell";
+import EmptyState from "@/components/EmptyState";
 
 type Alert = {
   id: string;
@@ -63,16 +64,14 @@ export default function AlertsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-zinc-950 max-w-md mx-auto pb-32 px-4">
+    <PageShell className="px-4">
       <header className="pt-14 pb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">🔔 Recordatorios</h1>
         <p className="text-gray-400 dark:text-zinc-500 text-sm mt-1">Recordatorios y avisos personalizados</p>
       </header>
 
       <div className="space-y-2">
-        {alerts.length === 0 && !adding && (
-          <p className="text-gray-300 dark:text-zinc-600 text-sm text-center py-10">Sin alertas. ¡Añade una!</p>
-        )}
+        {alerts.length === 0 && !adding && <EmptyState message="Sin alertas. ¡Añade una!" />}
 
         {alerts.map((alert) => (
           <div
@@ -184,7 +183,6 @@ export default function AlertsPage() {
         </button>
       )}
 
-      <BottomNav />
-    </div>
+    </PageShell>
   );
 }

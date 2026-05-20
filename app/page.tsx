@@ -4,7 +4,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { format, subDays } from "date-fns";
 import { es } from "date-fns/locale";
 import { useRouter } from "next/navigation";
-import BottomNav from "@/components/BottomNav";
+import PageShell from "@/components/PageShell";
+import { VALID_MEALS } from "@/lib/constants";
 import CalorieRing from "@/components/CalorieRing";
 import MacroBar from "@/components/MacroBar";
 import { Plus, Trash2, RotateCcw, Copy } from "lucide-react";
@@ -32,7 +33,6 @@ type Settings = {
   mealTimes?: { desayuno?: string; comida?: string; merienda?: string; cena?: string; snack?: string };
 };
 
-const MEALS = ["desayuno", "snack", "comida", "merienda", "cena", "picoteo"];
 const MEAL_ICONS: Record<string, string> = {
   desayuno: "🌅", comida: "☀️", merienda: "🍊", cena: "🌙", snack: "🍎", picoteo: "🫙",
 };
@@ -254,7 +254,7 @@ export default function DashboardPage() {
   const entriesByMeal = (meal: string) => entries.filter((e) => e.meal === meal);
 
   return (
-    <div className="min-h-screen bg-white dark:bg-zinc-950 max-w-md mx-auto pb-32">
+    <PageShell>
       {/* Header */}
       <header className="px-4 pt-14 pb-5 flex items-end justify-between">
         <div>
@@ -318,7 +318,7 @@ export default function DashboardPage() {
             ))}
           </div>
         ) : (
-          MEALS.map((meal) => {
+          VALID_MEALS.map((meal) => {
             const mealEntries = entriesByMeal(meal);
             const mealCals = mealEntries.reduce((s, e) => s + e.calories, 0);
             return (
@@ -413,7 +413,7 @@ export default function DashboardPage() {
               <div>
                 <p className="text-xs text-gray-400 dark:text-zinc-500 mb-1">Comida</p>
                 <select className="w-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm" value={editForm.meal} onChange={(e) => setEditForm({ ...editForm, meal: e.target.value })}>
-                  {MEALS.map((m) => <option key={m} value={m}>{m}</option>)}
+                  {VALID_MEALS.map((m) => <option key={m} value={m}>{m}</option>)}
                 </select>
               </div>
             </div>
@@ -424,7 +424,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <BottomNav />
-    </div>
+    </PageShell>
   );
 }

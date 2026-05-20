@@ -1,21 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
 import { randomUUID } from "crypto";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { checkRateLimit } from "@/lib/rateLimit";
-
-function uid(session: any) {
-  return (session?.user as any)?.id as string;
-}
+import { requireAuth, requireAuthOnly } from "@/lib/api-auth";
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  const { uid, error } = await requireAuthOnly();
+  if (error) return error;
   try {
     const result = await db.execute({
       sql: "SELECT * FROM Recipe WHERE userId = ? ORDER BY createdAt DESC",
-      args: [uid(session)],
+      args: [uid],
     });
     const rows = result.rows.map((r: any) => ({
       id: r.id,
@@ -35,12 +29,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const userId = uid(session);
-  if (!(await checkRateLimit(`recipes:${userId}`, 20, 60_000))) {
-    return NextResponse.json({ error: "Demasiadas peticiones. Espera un momento." }, { status: 429 });
-  }
+  const { uid: userId, error } = await requireAuth("recipes", 20);
+  if (error) return error;
   try {
     const { name, items, totalCalories, totalProtein, totalCarbs, totalFat } = await req.json();
     if (!name || typeof name !== "string" || name.trim().length === 0 || name.length > 100) {

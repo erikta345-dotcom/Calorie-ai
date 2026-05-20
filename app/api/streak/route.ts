@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireAuthOnly } from "@/lib/api-auth";
 import { DATE_RE } from "@/lib/constants";
 
 function addDays(dateStr: string, days: number): string {
@@ -40,9 +39,8 @@ function calcStreak(
 }
 
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ calories: 0, protein: 0, carbs: 0, fat: 0 }, { status: 401 });
-  const uid = (session.user as any).id as string;
+  const { uid, error } = await requireAuthOnly();
+  if (error) return error;
 
   const today = req.nextUrl.searchParams.get("date") ?? "";
   if (!DATE_RE.test(today)) return NextResponse.json({ calories: 0, protein: 0, carbs: 0, fat: 0 }, { status: 400 });

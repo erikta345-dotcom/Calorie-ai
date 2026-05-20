@@ -1,16 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkRateLimit } from "@/lib/rateLimit";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireAuth } from "@/lib/api-auth";
 import { searchSpanishFoods } from "@/lib/spanish-foods";
 
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const uid = (session.user as any).id as string;
-  if (!(await checkRateLimit(`search:${uid}`, 30, 60_000))) {
-    return NextResponse.json({ error: "Demasiadas peticiones. Espera un momento." }, { status: 429 });
-  }
+  const { error } = await requireAuth("search", 30);
+  if (error) return error;
   const q = req.nextUrl.searchParams.get("q");
   if (!q || typeof q !== "string" || q.trim().length === 0 || q.length > 100) {
     return NextResponse.json([], { status: 400 });

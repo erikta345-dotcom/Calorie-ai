@@ -1,16 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { checkRateLimit } from "@/lib/rateLimit";
+import { requireAuth, requireAuthOnly } from "@/lib/api-auth";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const uid = (session.user as any).id as string;
-  if (!(await checkRateLimit(`push:${uid}`, 10, 60_000))) return NextResponse.json({ error: "Demasiadas peticiones." }, { status: 429 });
+  const { uid, error } = await requireAuth("push", 10);
+  if (error) return error;
   const { subscription, mealTimes, utcOffset } = await req.json();
   if (!subscription?.endpoint || !subscription?.keys) {
     return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
@@ -39,9 +35,8 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const uid = (session.user as any).id as string;
+  const { uid, error } = await requireAuthOnly();
+  if (error) return error;
   const { endpoint } = await req.json();
   if (!endpoint) return NextResponse.json({ error: "Missing endpoint" }, { status: 400 });
   await db.execute({

@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { checkRateLimit } from "@/lib/rateLimit";
+import { requireAuth } from "@/lib/api-auth";
 
 const BASE_PROMPT = `You are a registered dietitian with expert food recognition skills. Analyze this food image with maximum precision.
 
@@ -54,13 +52,8 @@ RULES:
 - If image is unclear or not food, still return your best estimate`;
 
 export async function POST(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const uid = (session.user as any).id as string;
-  if (!(await checkRateLimit(`ai-scan:${uid}`, 10, 60_000))) {
-    return NextResponse.json({ error: "Demasiadas peticiones. Espera un momento." }, { status: 429 });
-  }
+  const { error } = await requireAuth("ai-scan", 10);
+  if (error) return error;
 
   const { image, description } = await req.json();
   if (!image || typeof image !== "string") return NextResponse.json({ error: "Imagen requerida" }, { status: 400 });

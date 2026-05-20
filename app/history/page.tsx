@@ -6,7 +6,7 @@ import { es } from "date-fns/locale";
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine,
 } from "recharts";
-import BottomNav from "@/components/BottomNav";
+import PageShell from "@/components/PageShell";
 import { useTheme } from "next-themes";
 
 type Period = "week" | "month" | "year";
@@ -179,7 +179,7 @@ export default function HistoryPage() {
     : (trend === "up" ? "text-lime-500" : trend === "down" ? "text-red-400" : "text-gray-400 dark:text-zinc-500");
 
   return (
-    <div className="min-h-screen bg-white dark:bg-zinc-950 max-w-md mx-auto pb-32 px-4">
+    <PageShell className="px-4">
       <header className="pt-14 pb-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">📊 Historial</h1>
       </header>
@@ -507,7 +507,6 @@ export default function HistoryPage() {
         })}
       </div>
 
-      <BottomNav />
-    </div>
+    </PageShell>
   );
 }

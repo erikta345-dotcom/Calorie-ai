@@ -1,13 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireAuthOnly } from "@/lib/api-auth";
 import { VALID_MEALS } from "@/lib/constants";
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const uid = (session.user as any).id as string;
+  const { uid, error } = await requireAuthOnly();
+  if (error) return error;
   try {
     const result = await db.execute({ sql: "DELETE FROM FoodEntry WHERE id = ? AND userId = ?", args: [params.id, uid] });
     if (!result.rowsAffected) return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -18,9 +16,8 @@ export async function DELETE(_req: NextRequest, { params }: { params: { id: stri
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const uid = (session.user as any).id as string;
+  const { uid, error } = await requireAuthOnly();
+  if (error) return error;
   try {
     const { name, calories, protein, carbs, fat, grams, meal, note } = await req.json();
     if (meal && !VALID_MEALS.includes(meal)) return NextResponse.json({ error: "Comida inválida" }, { status: 400 });

@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import Link from "next/link";
-import BottomNav from "@/components/BottomNav";
+import PageShell from "@/components/PageShell";
 import ThemeToggle from "@/components/ThemeToggle";
 import type { MealTimes } from "@/hooks/useSuggestedMeal";
 import { subscribeAndSave } from "@/components/MealNotifications";
@@ -183,7 +183,7 @@ export default function SettingsPage() {
   );
 
   return (
-    <div className="min-h-screen bg-white dark:bg-zinc-950 max-w-md mx-auto pb-32 px-4">
+    <PageShell className="px-4">
       <header className="pt-14 pb-6 flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">⚙️ Configuración</h1>
@@ -422,7 +422,6 @@ export default function SettingsPage() {
         </Button>
       </div>
 
-      <BottomNav />
-    </div>
+    </PageShell>
   );
 }

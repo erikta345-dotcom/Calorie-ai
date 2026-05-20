@@ -1,7 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { checkRateLimit } from "@/lib/rateLimit";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { requireAuth } from "@/lib/api-auth";
 
 async function fetchOpenFoodFacts(code: string) {
   const headers = { "User-Agent": "CalorieAI/1.0 (personal app)" };
@@ -99,12 +97,8 @@ async function fetchFatSecret(code: string) {
 }
 
 export async function GET(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const uid = (session.user as any).id as string;
-  if (!(await checkRateLimit(`barcode:${uid}`, 30, 60_000))) {
-    return NextResponse.json({ error: "Demasiadas peticiones. Espera un momento." }, { status: 429 });
-  }
+  const { error } = await requireAuth("barcode", 30);
+  if (error) return error;
   const code = req.nextUrl.searchParams.get("code");
   if (!code || typeof code !== "string" || code.length > 50 || !/^[\w-]+$/.test(code)) {
     return NextResponse.json({ error: "Código inválido" }, { status: 400 });

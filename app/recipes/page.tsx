@@ -3,7 +3,9 @@
 import { useState, useEffect } from "react";
 import { format } from "date-fns";
 import { Trash2 } from "lucide-react";
-import BottomNav from "@/components/BottomNav";
+import PageShell from "@/components/PageShell";
+import MealPicker from "@/components/MealPicker";
+import MacroRow from "@/components/MacroRow";
 
 type RecipeItem = {
   name: string;
@@ -33,18 +35,6 @@ type FoodResult = {
   fat: number;
 };
 
-const MEALS = ["desayuno", "snack", "comida", "merienda", "cena", "picoteo"];
-
-function MacroRow({ cal, prot, carbs, fat }: { cal: number; prot: number; carbs: number; fat: number }) {
-  return (
-    <div className="flex gap-3 text-xs mt-1">
-      <span className="text-brand-400 font-semibold">{Math.round(cal)} kcal</span>
-      <span className="text-orange-400">P {Math.round(prot)}g</span>
-      <span className="text-blue-400">C {Math.round(carbs)}g</span>
-      <span className="text-yellow-400">G {Math.round(fat)}g</span>
-    </div>
-  );
-}
 
 export default function RecipesPage() {
   const [view, setView] = useState<"list" | "create">("list");
@@ -210,7 +200,7 @@ export default function RecipesPage() {
       : null;
 
     return (
-      <div className="min-h-screen bg-white dark:bg-zinc-950 max-w-md mx-auto pb-32 px-4">
+      <PageShell className="px-4">
         <header className="pt-14 pb-4 flex items-center gap-3">
           <button onClick={() => { setView("list"); setItems([]); setRecipeName(""); }} className="text-gray-400 dark:text-zinc-400 text-sm">
             ← Recetas
@@ -396,13 +386,12 @@ export default function RecipesPage() {
           {saving ? "Guardando..." : "💾 Guardar receta"}
         </button>
 
-        <BottomNav />
-      </div>
+      </PageShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white dark:bg-zinc-950 max-w-md mx-auto pb-32 px-4">
+    <PageShell className="px-4">
       <header className="pt-14 pb-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">🍳 Recetas</h1>
         <button
@@ -462,17 +451,7 @@ export default function RecipesPage() {
                   ))}
                 </div>
                 <p className="text-xs text-gray-400 dark:text-zinc-500">¿En qué comida?</p>
-                <div className="grid grid-cols-5 gap-1">
-                  {MEALS.map((m) => (
-                    <button
-                      key={m}
-                      onClick={() => setLogMeal(m)}
-                      className={`py-2 rounded-lg text-xs font-medium capitalize transition-colors ${logMeal === m ? "bg-brand-500 text-white" : "bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400"}`}
-                    >
-                      {m}
-                    </button>
-                  ))}
-                </div>
+                <MealPicker value={logMeal} onChange={setLogMeal} />
                 <div className="flex gap-2">
                   <button onClick={() => setLoggingId(null)} className="flex-1 py-2.5 rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 text-sm font-semibold">
                     Cancelar
@@ -498,7 +477,6 @@ export default function RecipesPage() {
         ))}
       </div>
 
-      <BottomNav />
-    </div>
+    </PageShell>
   );
 }

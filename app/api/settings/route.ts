@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import { checkRateLimit } from "@/lib/rateLimit";
+import { requireAuth } from "@/lib/api-auth";
 
 const VALID_GENDERS = ["male", "female", "other"];
 const VALID_GOALS = ["lose_fat", "maintain", "gain_muscle"];
@@ -10,10 +8,8 @@ const VALID_GOALS = ["lose_fat", "maintain", "gain_muscle"];
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const uid = (session.user as any).id as string;
-  if (!(await checkRateLimit(`settings-get:${uid}`, 30, 60_000))) return NextResponse.json({ error: "Demasiadas peticiones." }, { status: 429 });
+  const { uid, error } = await requireAuth("settings-get", 30);
+  if (error) return error;
   try {
     const result = await db.execute({ sql: "SELECT * FROM UserSettings WHERE id = ?", args: [uid] });
     if (result.rows.length === 0) {
@@ -28,10 +24,8 @@ export async function GET() {
 }
 
 export async function PUT(req: NextRequest) {
-  const session = await getServerSession(authOptions);
-  if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  const uid = (session.user as any).id as string;
-  if (!(await checkRateLimit(`settings-put:${uid}`, 10, 60_000))) return NextResponse.json({ error: "Demasiadas peticiones." }, { status: 429 });
+  const { uid, error } = await requireAuth("settings-put", 10);
+  if (error) return error;
   try {
     const { weight, height, age, gender, goal, goalCalories, goalProtein, goalCarbs, goalFat, mealTimes } = await req.json();
     if (weight != null && (isNaN(parseFloat(weight)) || parseFloat(weight) < 20 || parseFloat(weight) > 500)) {
