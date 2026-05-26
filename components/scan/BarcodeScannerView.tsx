@@ -20,6 +20,7 @@ interface BarcodeScannerViewProps {
   manualCode: string;
   onStartScanner: () => void;
   onStopScanner: () => void;
+  onTakePhoto: () => void;
   onManualCodeChange: (val: string) => void;
   onManualBarcode: () => void;
   onBarcodeGramsStrChange: (val: string) => void;
@@ -44,6 +45,7 @@ export default function BarcodeScannerView({
   manualCode,
   onStartScanner,
   onStopScanner,
+  onTakePhoto,
   onManualCodeChange,
   onManualBarcode,
   onBarcodeGramsStrChange,
@@ -68,7 +70,13 @@ export default function BarcodeScannerView({
             onClick={onStartScanner}
             className="w-full py-3 rounded-xl border border-gray-300 dark:border-zinc-700 text-gray-600 dark:text-zinc-300 font-semibold hover:border-brand-500 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center justify-center gap-2"
           >
-            📷 Escanear código de barras
+            🎥 Escanear en vivo
+          </button>
+          <button
+            onClick={onTakePhoto}
+            className="w-full py-3 rounded-xl border border-gray-300 dark:border-zinc-700 text-gray-600 dark:text-zinc-300 font-semibold hover:border-brand-500 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center justify-center gap-2"
+          >
+            📷 Hacer foto del código
           </button>
           <div className="flex gap-2">
             <input

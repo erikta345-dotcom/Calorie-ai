@@ -35,6 +35,7 @@ export default function ScanPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const barcodePhotoRef = useRef<HTMLInputElement>(null);
   const { meal: suggestedMeal, loaded: mealLoaded } = useSuggestedMeal();
 
   const [preview, setPreview] = useState<string | null>(null);
@@ -340,6 +341,42 @@ export default function ScanPage() {
     setManualCode("");
   }
 
+  async function handleBarcodePhotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    setBarcodeProduct(null);
+    setBarcodeError("");
+    setBarcodeLoading(true);
+    try {
+      let code: string | null = null;
+      if ("BarcodeDetector" in window) {
+        const detector = new (window as any).BarcodeDetector({
+          formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39", "qr_code"],
+        });
+        const bitmap = await createImageBitmap(file);
+        const barcodes = await detector.detect(bitmap);
+        if (barcodes.length > 0) code = barcodes[0].rawValue;
+      }
+      if (!code) {
+        const { BrowserMultiFormatReader } = await import("@zxing/browser");
+        const reader = new BrowserMultiFormatReader();
+        const url = URL.createObjectURL(file);
+        try {
+          const result = await reader.decodeFromImageUrl(url);
+          code = result.getText();
+        } finally {
+          URL.revokeObjectURL(url);
+        }
+      }
+      if (!code) throw new Error("No se detectó ningún código en la foto.");
+      await fetchBarcodeProduct(code);
+    } catch (err: any) {
+      setBarcodeError(err?.message || "No se detectó ningún código en la foto.");
+      setBarcodeLoading(false);
+    }
+  }
+
   const barcodeGrams = Math.max(1, parseFloat(barcodeGramsStr) || 1);
 
   const barcodeTotal = barcodeProduct
@@ -450,29 +487,40 @@ export default function ScanPage() {
       )}
 
       {activeTab === "barcode" && (
-        <BarcodeScannerView
-          videoRef={videoRef}
-          barcodeActive={barcodeActive}
-          barcodeLoading={barcodeLoading}
-          barcodeProduct={barcodeProduct}
-          barcodeTotal={barcodeTotal}
-          barcodeGrams={barcodeGrams}
-          barcodeGramsStr={barcodeGramsStr}
-          barcodeMeal={barcodeMeal}
-          barcodeError={barcodeError}
-          barcodeSaving={barcodeSaving}
-          barcodeSavingRecipe={barcodeSavingRecipe}
-          manualCode={manualCode}
-          onStartScanner={startBarcodeScanner}
-          onStopScanner={stopBarcode}
-          onManualCodeChange={setManualCode}
-          onManualBarcode={handleManualBarcode}
-          onBarcodeGramsStrChange={setBarcodeGramsStr}
-          onBarcodeMealChange={setBarcodeMeal}
-          onBarcodeSave={handleBarcodeSave}
-          onBarcodeSaveToRecipe={handleBarcodeSaveToRecipe}
-          onScanAnother={() => { setBarcodeProduct(null); setBarcodeError(""); startBarcodeScanner(); }}
-        />
+        <>
+          <input
+            ref={barcodePhotoRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={handleBarcodePhotoChange}
+          />
+          <BarcodeScannerView
+            videoRef={videoRef}
+            barcodeActive={barcodeActive}
+            barcodeLoading={barcodeLoading}
+            barcodeProduct={barcodeProduct}
+            barcodeTotal={barcodeTotal}
+            barcodeGrams={barcodeGrams}
+            barcodeGramsStr={barcodeGramsStr}
+            barcodeMeal={barcodeMeal}
+            barcodeError={barcodeError}
+            barcodeSaving={barcodeSaving}
+            barcodeSavingRecipe={barcodeSavingRecipe}
+            manualCode={manualCode}
+            onStartScanner={startBarcodeScanner}
+            onStopScanner={stopBarcode}
+            onTakePhoto={() => barcodePhotoRef.current?.click()}
+            onManualCodeChange={setManualCode}
+            onManualBarcode={handleManualBarcode}
+            onBarcodeGramsStrChange={setBarcodeGramsStr}
+            onBarcodeMealChange={setBarcodeMeal}
+            onBarcodeSave={handleBarcodeSave}
+            onBarcodeSaveToRecipe={handleBarcodeSaveToRecipe}
+            onScanAnother={() => { setBarcodeProduct(null); setBarcodeError(""); startBarcodeScanner(); }}
+          />
+        </>
       )}
 
     </PageShell>
