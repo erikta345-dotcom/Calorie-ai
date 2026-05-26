@@ -275,8 +275,17 @@ export default function ScanPage() {
           animFrameRef.current = requestAnimationFrame(scan);
         };
         animFrameRef.current = requestAnimationFrame(scan);
-      } catch {
-        setBarcodeError("No se pudo acceder a la cámara.");
+      } catch (err: any) {
+        const name = err?.name ?? "";
+        setBarcodeError(
+          name === "NotAllowedError"
+            ? "Permiso de cámara denegado. Actívalo en los ajustes del navegador."
+            : name === "NotFoundError"
+            ? "No se encontró ninguna cámara en este dispositivo."
+            : name === "NotReadableError"
+            ? "La cámara está siendo usada por otra aplicación."
+            : `No se pudo acceder a la cámara. (${name || err?.message || "error desconocido"})`
+        );
         setBarcodeActive(false);
       }
     } else {
@@ -307,8 +316,17 @@ export default function ScanPage() {
           }
         );
         zxingControlsRef.current = controls;
-      } catch {
-        setBarcodeError("No se pudo acceder a la cámara.");
+      } catch (err: any) {
+        const name = err?.name ?? "";
+        setBarcodeError(
+          name === "NotAllowedError"
+            ? "Permiso de cámara denegado. Actívalo en los ajustes del navegador."
+            : name === "NotFoundError"
+            ? "No se encontró ninguna cámara en este dispositivo."
+            : name === "NotReadableError"
+            ? "La cámara está siendo usada por otra aplicación."
+            : `No se pudo acceder a la cámara. (${name || err?.message || "error desconocido"})`
+        );
         setBarcodeActive(false);
       }
     }
