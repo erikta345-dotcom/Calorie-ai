@@ -246,7 +246,7 @@ export default function ScanPage() {
         streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
-          await videoRef.current.play();
+          try { await videoRef.current.play(); } catch {}
         }
         const detector = new (window as any).BarcodeDetector({
           formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39", "qr_code"],
