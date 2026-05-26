@@ -282,7 +282,13 @@ export default function ScanPage() {
       } catch (err: any) {
         const name = err?.name ?? "";
         setBarcodeError(
-          `Error cámara: ${name || "?"} — ${err?.message || "sin mensaje"}`
+          name === "NotAllowedError"
+            ? "Sin permiso de cámara. Si usas la app instalada: Ajustes Android → Aplicaciones → [nombre app] → Permisos → Cámara → Permitir."
+            : name === "NotFoundError"
+            ? "No se encontró ninguna cámara en este dispositivo."
+            : name === "NotReadableError"
+            ? "La cámara está siendo usada por otra aplicación."
+            : `No se pudo acceder a la cámara. (${name || err?.message || "error desconocido"})`
         );
         setBarcodeActive(false);
       }
@@ -317,7 +323,13 @@ export default function ScanPage() {
       } catch (err: any) {
         const name = err?.name ?? "";
         setBarcodeError(
-          `Error cámara: ${name || "?"} — ${err?.message || "sin mensaje"}`
+          name === "NotAllowedError"
+            ? "Sin permiso de cámara. Si usas la app instalada: Ajustes Android → Aplicaciones → [nombre app] → Permisos → Cámara → Permitir."
+            : name === "NotFoundError"
+            ? "No se encontró ninguna cámara en este dispositivo."
+            : name === "NotReadableError"
+            ? "La cámara está siendo usada por otra aplicación."
+            : `No se pudo acceder a la cámara. (${name || err?.message || "error desconocido"})`
         );
         setBarcodeActive(false);
       }
