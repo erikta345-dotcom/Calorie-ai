@@ -237,9 +237,7 @@ export default function ScanPage() {
 
     if ("BarcodeDetector" in window) {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } }).catch(() =>
-          navigator.mediaDevices.getUserMedia({ video: true })
-        );
+        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
         streamRef.current = stream;
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
@@ -295,7 +293,7 @@ export default function ScanPage() {
         const reader = new BrowserMultiFormatReader();
         let stopped = false;
         const controls = await reader.decodeFromConstraints(
-          { video: { facingMode: "environment" } },
+          { video: true },
           videoRef.current!,
           (result, _err, ctrl) => {
             if (stopped || !result) return;
