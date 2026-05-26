@@ -280,7 +280,7 @@ export default function ScanPage() {
         const name = err?.name ?? "";
         setBarcodeError(
           name === "NotAllowedError"
-            ? "Permiso de cámara denegado. Actívalo en los ajustes del navegador."
+            ? "Cámara bloqueada por el navegador. En Chrome: toca el icono 🔒 en la barra de dirección → Permisos → Cámara → Permitir, luego recarga."
             : name === "NotFoundError"
             ? "No se encontró ninguna cámara en este dispositivo."
             : name === "NotReadableError"
@@ -321,7 +321,7 @@ export default function ScanPage() {
         const name = err?.name ?? "";
         setBarcodeError(
           name === "NotAllowedError"
-            ? "Permiso de cámara denegado. Actívalo en los ajustes del navegador."
+            ? "Cámara bloqueada por el navegador. En Chrome: toca el icono 🔒 en la barra de dirección → Permisos → Cámara → Permitir, luego recarga."
             : name === "NotFoundError"
             ? "No se encontró ninguna cámara en este dispositivo."
             : name === "NotReadableError"
