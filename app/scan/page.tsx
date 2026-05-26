@@ -237,10 +237,18 @@ export default function ScanPage() {
 
     if ("BarcodeDetector" in window) {
       try {
+        if (!navigator.mediaDevices?.getUserMedia) {
+          setBarcodeError("DEBUG: navigator.mediaDevices no disponible");
+          setBarcodeActive(false);
+          return;
+        }
         let stream: MediaStream;
         try {
           stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-        } catch {
+        } catch (e1: any) {
+          setBarcodeError(`DEBUG env fail: ${e1?.name} ${e1?.message} — intentando sin facingMode`);
+          await new Promise(r => setTimeout(r, 2000));
+          setBarcodeError("");
           stream = await navigator.mediaDevices.getUserMedia({ video: true });
         }
         streamRef.current = stream;
