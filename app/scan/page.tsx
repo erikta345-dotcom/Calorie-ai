@@ -34,7 +34,6 @@ export default function ScanPage() {
   const router = useRouter();
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
   const barcodePhotoRef = useRef<HTMLInputElement>(null);
   const { meal: suggestedMeal, loaded: mealLoaded } = useSuggestedMeal();
 
@@ -50,7 +49,6 @@ export default function ScanPage() {
   const [description, setDescription] = useState("");
   const [itemGramsStr, setItemGramsStr] = useState<Record<number, string>>({});
 
-  const [barcodeActive, setBarcodeActive] = useState(false);
   const [barcodeLoading, setBarcodeLoading] = useState(false);
   const [barcodeProduct, setBarcodeProduct] = useState<BarcodeProduct | null>(null);
   const [barcodeGramsStr, setBarcodeGramsStr] = useState("100");
@@ -58,14 +56,8 @@ export default function ScanPage() {
   const [barcodeError, setBarcodeError] = useState("");
   const [barcodeSaving, setBarcodeSaving] = useState(false);
   const [barcodeSavingRecipe, setBarcodeSavingRecipe] = useState(false);
-  const lastCodeRef = useRef("");
   const [activeTab, setActiveTab] = useState<Tab>("ai");
   const [manualCode, setManualCode] = useState("");
-
-  const streamRef = useRef<MediaStream | null>(null);
-  const animFrameRef = useRef<number>(0);
-  const pendingCodeRef = useRef<{ code: string; count: number }>({ code: "", count: 0 });
-  const zxingControlsRef = useRef<{ stop: () => void } | null>(null);
 
   useEffect(() => {
     if (mealLoaded) {
@@ -200,20 +192,6 @@ export default function ScanPage() {
     }
   }
 
-  const stopBarcode = useCallback(() => {
-    cancelAnimationFrame(animFrameRef.current);
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((t) => t.stop());
-      streamRef.current = null;
-    }
-    if (zxingControlsRef.current) {
-      try { zxingControlsRef.current.stop(); } catch {}
-      zxingControlsRef.current = null;
-    }
-    setBarcodeActive(false);
-    lastCodeRef.current = "";
-  }, []);
-
   async function fetchBarcodeProduct(code: string) {
     setBarcodeLoading(true);
     try {
@@ -226,108 +204,6 @@ export default function ScanPage() {
       setBarcodeError(e.message || "Producto no encontrado");
     } finally {
       setBarcodeLoading(false);
-    }
-  }
-
-  async function startBarcodeScanner() {
-    setBarcodeProduct(null);
-    setBarcodeError("");
-    setBarcodeActive(true);
-    setBarcodeGramsStr("100");
-
-    if ("BarcodeDetector" in window) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-        streamRef.current = stream;
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-          try { await videoRef.current.play(); } catch {}
-        }
-        const detector = new (window as any).BarcodeDetector({
-          formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39", "qr_code"],
-        });
-        const scan = async () => {
-          if (!videoRef.current || !streamRef.current) return;
-          try {
-            const barcodes = await detector.detect(videoRef.current);
-            if (barcodes.length > 0) {
-              const code = barcodes[0].rawValue;
-              if (code && code !== lastCodeRef.current) {
-                if (pendingCodeRef.current.code === code) {
-                  pendingCodeRef.current.count++;
-                } else {
-                  pendingCodeRef.current = { code, count: 1 };
-                }
-                if (pendingCodeRef.current.count >= 8) {
-                  pendingCodeRef.current = { code: "", count: 0 };
-                  lastCodeRef.current = code;
-                  stopBarcode();
-                  setBarcodeActive(false);
-                  await fetchBarcodeProduct(code);
-                  return;
-                }
-              } else {
-                pendingCodeRef.current = { code: "", count: 0 };
-              }
-            }
-          } catch {}
-          animFrameRef.current = requestAnimationFrame(scan);
-        };
-        animFrameRef.current = requestAnimationFrame(scan);
-      } catch (err: any) {
-        const name = err?.name ?? "";
-        setBarcodeError(
-          name === "NotAllowedError"
-            ? "Sin permiso de cámara. Si usas la app instalada: Ajustes Android → Aplicaciones → [nombre app] → Permisos → Cámara → Permitir."
-            : name === "NotFoundError"
-            ? "No se encontró ninguna cámara en este dispositivo."
-            : name === "NotReadableError"
-            ? "La cámara está siendo usada por otra aplicación."
-            : `No se pudo acceder a la cámara. (${name || err?.message || "error desconocido"})`
-        );
-        setBarcodeActive(false);
-      }
-    } else {
-      try {
-        const { BrowserMultiFormatReader } = await import("@zxing/browser");
-        const reader = new BrowserMultiFormatReader();
-        let stopped = false;
-        const controls = await reader.decodeFromConstraints(
-          { video: true },
-          videoRef.current!,
-          (result, _err, ctrl) => {
-            if (stopped || !result) return;
-            const code = result.getText();
-            if (!code) return;
-            if (pendingCodeRef.current.code === code) {
-              pendingCodeRef.current.count++;
-            } else {
-              pendingCodeRef.current = { code, count: 1 };
-            }
-            if (pendingCodeRef.current.count >= 3) {
-              stopped = true;
-              pendingCodeRef.current = { code: "", count: 0 };
-              ctrl.stop();
-              zxingControlsRef.current = null;
-              setBarcodeActive(false);
-              fetchBarcodeProduct(code);
-            }
-          }
-        );
-        zxingControlsRef.current = controls;
-      } catch (err: any) {
-        const name = err?.name ?? "";
-        setBarcodeError(
-          name === "NotAllowedError"
-            ? "Sin permiso de cámara. Si usas la app instalada: Ajustes Android → Aplicaciones → [nombre app] → Permisos → Cámara → Permitir."
-            : name === "NotFoundError"
-            ? "No se encontró ninguna cámara en este dispositivo."
-            : name === "NotReadableError"
-            ? "La cámara está siendo usada por otra aplicación."
-            : `No se pudo acceder a la cámara. (${name || err?.message || "error desconocido"})`
-        );
-        setBarcodeActive(false);
-      }
     }
   }
 
@@ -432,7 +308,6 @@ export default function ScanPage() {
   }
 
   function handleTabChange(tab: Tab) {
-    if (barcodeActive) stopBarcode();
     setActiveTab(tab);
   }
 
@@ -495,8 +370,6 @@ export default function ScanPage() {
             onChange={handleBarcodePhotoChange}
           />
           <BarcodeScannerView
-            videoRef={videoRef}
-            barcodeActive={barcodeActive}
             barcodeLoading={barcodeLoading}
             barcodeProduct={barcodeProduct}
             barcodeTotal={barcodeTotal}
@@ -507,8 +380,6 @@ export default function ScanPage() {
             barcodeSaving={barcodeSaving}
             barcodeSavingRecipe={barcodeSavingRecipe}
             manualCode={manualCode}
-            onStartScanner={startBarcodeScanner}
-            onStopScanner={stopBarcode}
             onTakePhoto={() => barcodePhotoRef.current?.click()}
             onManualCodeChange={setManualCode}
             onManualBarcode={handleManualBarcode}
@@ -516,7 +387,7 @@ export default function ScanPage() {
             onBarcodeMealChange={setBarcodeMeal}
             onBarcodeSave={handleBarcodeSave}
             onBarcodeSaveToRecipe={handleBarcodeSaveToRecipe}
-            onScanAnother={() => { setBarcodeProduct(null); setBarcodeError(""); startBarcodeScanner(); }}
+            onScanAnother={() => { setBarcodeProduct(null); setBarcodeError(""); }}
           />
         </>
       )}

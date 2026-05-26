@@ -1,13 +1,10 @@
 "use client";
 
-import { type RefObject } from "react";
 import { type BarcodeProduct, type MacroTotal } from "./types";
 
 const MEALS = ["desayuno", "snack", "comida", "merienda", "cena", "picoteo"];
 
 interface BarcodeScannerViewProps {
-  videoRef: RefObject<HTMLVideoElement>;
-  barcodeActive: boolean;
   barcodeLoading: boolean;
   barcodeProduct: BarcodeProduct | null;
   barcodeTotal: MacroTotal | null;
@@ -18,8 +15,6 @@ interface BarcodeScannerViewProps {
   barcodeSaving: boolean;
   barcodeSavingRecipe: boolean;
   manualCode: string;
-  onStartScanner: () => void;
-  onStopScanner: () => void;
   onTakePhoto: () => void;
   onManualCodeChange: (val: string) => void;
   onManualBarcode: () => void;
@@ -31,8 +26,6 @@ interface BarcodeScannerViewProps {
 }
 
 export default function BarcodeScannerView({
-  videoRef,
-  barcodeActive,
   barcodeLoading,
   barcodeProduct,
   barcodeTotal,
@@ -43,8 +36,6 @@ export default function BarcodeScannerView({
   barcodeSaving,
   barcodeSavingRecipe,
   manualCode,
-  onStartScanner,
-  onStopScanner,
   onTakePhoto,
   onManualCodeChange,
   onManualBarcode,
@@ -64,19 +55,13 @@ export default function BarcodeScannerView({
         </div>
       </div>
 
-      {!barcodeActive && !barcodeProduct && !barcodeLoading && (
+      {!barcodeProduct && !barcodeLoading && (
         <div className="space-y-2">
-          <button
-            onClick={onStartScanner}
-            className="w-full py-3 rounded-xl border border-gray-300 dark:border-zinc-700 text-gray-600 dark:text-zinc-300 font-semibold hover:border-brand-500 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center justify-center gap-2"
-          >
-            🎥 Escanear en vivo
-          </button>
           <button
             onClick={onTakePhoto}
             className="w-full py-3 rounded-xl border border-gray-300 dark:border-zinc-700 text-gray-600 dark:text-zinc-300 font-semibold hover:border-brand-500 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center justify-center gap-2"
           >
-            📷 Hacer foto del código
+            📷 Escanear código de barras
           </button>
           <div className="flex gap-2">
             <input
@@ -98,19 +83,6 @@ export default function BarcodeScannerView({
         </div>
       )}
 
-      <div className={`relative rounded-2xl overflow-hidden bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700${barcodeActive ? "" : " hidden"}`}>
-        <video ref={videoRef} className="w-full aspect-square object-cover" />
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <div className="w-48 h-48 border-2 border-brand-500 rounded-xl relative">
-            <div className="absolute inset-x-0 top-1/2 h-0.5 bg-brand-500 opacity-70 animate-pulse" />
-          </div>
-          <p className="text-white text-xs mt-3 bg-black/50 px-3 py-1 rounded-full">Apunta al código de barras</p>
-        </div>
-        <button onClick={onStopScanner} className="absolute top-3 right-3 bg-gray-900/80 text-zinc-300 text-xs px-3 py-1.5 rounded-full">
-          Cancelar
-        </button>
-      </div>
-
       {barcodeLoading && (
         <div className="flex items-center justify-center gap-2 py-6 text-gray-400 dark:text-zinc-400 text-sm">
           <span className="animate-spin inline-block">⚙️</span> Buscando producto...
@@ -120,7 +92,7 @@ export default function BarcodeScannerView({
       {barcodeError && (
         <div className="space-y-2">
           <p className="text-red-400 text-sm text-center">{barcodeError}</p>
-          <button onClick={onStartScanner} className="w-full py-2.5 rounded-xl border border-gray-300 dark:border-zinc-700 text-gray-400 dark:text-zinc-400 text-sm hover:border-brand-500 transition-colors">
+          <button onClick={onTakePhoto} className="w-full py-2.5 rounded-xl border border-gray-300 dark:border-zinc-700 text-gray-400 dark:text-zinc-400 text-sm hover:border-brand-500 transition-colors">
             Intentar de nuevo
           </button>
         </div>
