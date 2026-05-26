@@ -90,20 +90,18 @@ export default function BarcodeScannerView({
         </div>
       )}
 
-      {barcodeActive && (
-        <div className="relative rounded-2xl overflow-hidden bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700">
-          <video ref={videoRef} className="w-full aspect-square object-cover" />
-          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <div className="w-48 h-48 border-2 border-brand-500 rounded-xl relative">
-              <div className="absolute inset-x-0 top-1/2 h-0.5 bg-brand-500 opacity-70 animate-pulse" />
-            </div>
-            <p className="text-white text-xs mt-3 bg-black/50 px-3 py-1 rounded-full">Apunta al código de barras</p>
+      <div className={`relative rounded-2xl overflow-hidden bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700${barcodeActive ? "" : " hidden"}`}>
+        <video ref={videoRef} className="w-full aspect-square object-cover" />
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+          <div className="w-48 h-48 border-2 border-brand-500 rounded-xl relative">
+            <div className="absolute inset-x-0 top-1/2 h-0.5 bg-brand-500 opacity-70 animate-pulse" />
           </div>
-          <button onClick={onStopScanner} className="absolute top-3 right-3 bg-gray-900/80 text-zinc-300 text-xs px-3 py-1.5 rounded-full">
-            Cancelar
-          </button>
+          <p className="text-white text-xs mt-3 bg-black/50 px-3 py-1 rounded-full">Apunta al código de barras</p>
         </div>
-      )}
+        <button onClick={onStopScanner} className="absolute top-3 right-3 bg-gray-900/80 text-zinc-300 text-xs px-3 py-1.5 rounded-full">
+          Cancelar
+        </button>
+      </div>
 
       {barcodeLoading && (
         <div className="flex items-center justify-center gap-2 py-6 text-gray-400 dark:text-zinc-400 text-sm">
