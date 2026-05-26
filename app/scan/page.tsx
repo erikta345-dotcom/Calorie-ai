@@ -279,13 +279,7 @@ export default function ScanPage() {
       } catch (err: any) {
         const name = err?.name ?? "";
         setBarcodeError(
-          name === "NotAllowedError"
-            ? "Cámara bloqueada por el navegador. En Chrome: toca el icono 🔒 en la barra de dirección → Permisos → Cámara → Permitir, luego recarga."
-            : name === "NotFoundError"
-            ? "No se encontró ninguna cámara en este dispositivo."
-            : name === "NotReadableError"
-            ? "La cámara está siendo usada por otra aplicación."
-            : `No se pudo acceder a la cámara. (${name || err?.message || "error desconocido"})`
+          `Error cámara: ${name || "?"} — ${err?.message || "sin mensaje"}`
         );
         setBarcodeActive(false);
       }
@@ -320,13 +314,7 @@ export default function ScanPage() {
       } catch (err: any) {
         const name = err?.name ?? "";
         setBarcodeError(
-          name === "NotAllowedError"
-            ? "Cámara bloqueada por el navegador. En Chrome: toca el icono 🔒 en la barra de dirección → Permisos → Cámara → Permitir, luego recarga."
-            : name === "NotFoundError"
-            ? "No se encontró ninguna cámara en este dispositivo."
-            : name === "NotReadableError"
-            ? "La cámara está siendo usada por otra aplicación."
-            : `No se pudo acceder a la cámara. (${name || err?.message || "error desconocido"})`
+          `Error cámara: ${name || "?"} — ${err?.message || "sin mensaje"}`
         );
         setBarcodeActive(false);
       }
