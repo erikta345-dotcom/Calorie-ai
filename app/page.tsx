@@ -20,10 +20,11 @@ type FoodEntry = {
   fat: number;
   grams: number;
   createdAt: string;
+  date?: string;
   note?: string;
 };
 
-type EditForm = { name: string; calories: string; protein: string; carbs: string; fat: string; grams: string; meal: string; note: string; time: string };
+type EditForm = { name: string; calories: string; protein: string; carbs: string; fat: string; grams: string; meal: string; note: string; time: string; date: string };
 
 type Settings = {
   goalCalories: number;
@@ -162,7 +163,7 @@ export default function DashboardPage() {
     setEditEntry(entry);
     const d = new Date(entry.createdAt.endsWith("Z") ? entry.createdAt : entry.createdAt.replace(" ", "T") + "Z");
     const timeStr = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-    setEditForm({ name: entry.name, calories: String(entry.calories), protein: String(entry.protein), carbs: String(entry.carbs), fat: String(entry.fat), grams: String(entry.grams), meal: entry.meal, note: entry.note || "", time: timeStr });
+    setEditForm({ name: entry.name, calories: String(entry.calories), protein: String(entry.protein), carbs: String(entry.carbs), fat: String(entry.fat), grams: String(entry.grams), meal: entry.meal, note: entry.note || "", time: timeStr, date: entry.date ?? today });
   }
 
   async function saveEdit() {
@@ -171,11 +172,15 @@ export default function DashboardPage() {
     const res = await fetch(`/api/entries/${editEntry.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...editForm, calories: parseFloat(editForm.calories), protein: parseFloat(editForm.protein), carbs: parseFloat(editForm.carbs), fat: parseFloat(editForm.fat), grams: parseFloat(editForm.grams), createdAt: new Date(`${today}T${editForm.time}:00`).toISOString() }),
+      body: JSON.stringify({ ...editForm, calories: parseFloat(editForm.calories), protein: parseFloat(editForm.protein), carbs: parseFloat(editForm.carbs), fat: parseFloat(editForm.fat), grams: parseFloat(editForm.grams), createdAt: new Date(`${editForm.date}T${editForm.time}:00`).toISOString() }),
     });
     if (res.ok) {
       const updated = await res.json();
-      setEntries((prev) => prev.map((e) => (e.id === editEntry.id ? updated : e)));
+      if (editForm.date !== today) {
+        setEntries((prev) => prev.filter((e) => e.id !== editEntry.id));
+      } else {
+        setEntries((prev) => prev.map((e) => (e.id === editEntry.id ? updated : e)));
+      }
       setEditEntry(null);
       setEditForm(null);
       refreshStreak();
@@ -421,6 +426,10 @@ export default function DashboardPage() {
               <div>
                 <p className="text-xs text-gray-400 dark:text-zinc-500 mb-1">Hora</p>
                 <input type="time" className="w-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm" value={editForm.time} onChange={(e) => setEditForm({ ...editForm, time: e.target.value })} />
+              </div>
+              <div className="col-span-2">
+                <p className="text-xs text-gray-400 dark:text-zinc-500 mb-1">Fecha</p>
+                <input type="date" className="w-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm" value={editForm.date} onChange={(e) => setEditForm({ ...editForm, date: e.target.value })} />
               </div>
             </div>
             <button onClick={saveEdit} disabled={editSaving} className="w-full py-3 rounded-xl bg-brand-500 text-white font-semibold disabled:opacity-40">

@@ -19,7 +19,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const { uid, error } = await requireAuthOnly();
   if (error) return error;
   try {
-    const { name, calories, protein, carbs, fat, grams, meal, note, createdAt } = await req.json();
+    const { name, calories, protein, carbs, fat, grams, meal, note, createdAt, date } = await req.json();
     if (meal && !VALID_MEALS.includes(meal)) return NextResponse.json({ error: "Comida inválida" }, { status: 400 });
     const cal = parseFloat(calories);
     if (isNaN(cal) || cal < 0 || cal > 10000) return NextResponse.json({ error: "Calorías inválidas" }, { status: 400 });
@@ -31,9 +31,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       if (isNaN(d.getTime())) return NextResponse.json({ error: "Hora inválida" }, { status: 400 });
       createdAtVal = d.toISOString();
     }
+    let dateVal: string | null = null;
+    if (date) {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return NextResponse.json({ error: "Fecha inválida" }, { status: 400 });
+      dateVal = date;
+    }
     await db.execute({
-      sql: "UPDATE FoodEntry SET name=?, calories=?, protein=?, carbs=?, fat=?, grams=?, meal=COALESCE(?,meal), note=?, createdAt=COALESCE(?,createdAt) WHERE id=? AND userId=?",
-      args: [name.trim(), cal, Math.max(0, parseFloat(protein) || 0), Math.max(0, parseFloat(carbs) || 0), Math.max(0, parseFloat(fat) || 0), Math.max(1, parseFloat(grams) || 100), meal ?? null, noteVal, createdAtVal, params.id, uid],
+      sql: "UPDATE FoodEntry SET name=?, calories=?, protein=?, carbs=?, fat=?, grams=?, meal=COALESCE(?,meal), note=?, createdAt=COALESCE(?,createdAt), date=COALESCE(?,date) WHERE id=? AND userId=?",
+      args: [name.trim(), cal, Math.max(0, parseFloat(protein) || 0), Math.max(0, parseFloat(carbs) || 0), Math.max(0, parseFloat(fat) || 0), Math.max(1, parseFloat(grams) || 100), meal ?? null, noteVal, createdAtVal, dateVal, params.id, uid],
     });
     const row = await db.execute({ sql: "SELECT * FROM FoodEntry WHERE id = ? AND userId = ?", args: [params.id, uid] });
     if (!row.rows.length) return NextResponse.json({ error: "Not found" }, { status: 404 });
