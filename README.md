@@ -1,106 +1,82 @@
-# Calorie AI 🥗✨
+# Calorie AI
 
-Tracker de calorías y macros con IA. PWA mobile-first, 100% gratuito.
-Diseñado para **ganar músculo** — trackea calorías, proteína, carbos y grasa.
+**Track food with your camera. No subscriptions. No bullshit.**
+
+Snap a photo of your meal — Gemini Vision reads the macros. Or scan a barcode. Or search 3M+ foods. Everything stored locally, works offline, installs as an app.
+
+---
+
+## Screenshots
+
+| Dashboard | Scan | Recipes | History |
+|-----------|------|---------|---------|
+| ![](docs/screenshots/dashboard.png) | ![](docs/screenshots/scan.png) | ![](docs/screenshots/recipes.png) | ![](docs/screenshots/history.png) |
+
+---
+
+## What it does
+
+| Feature | Detail |
+|---------|--------|
+| **AI photo scan** | Point camera at food → Gemini Vision returns calories + macros instantly |
+| **Barcode scanner** | Scan packaged food with your camera |
+| **Food search** | 3M+ products from Open Food Facts |
+| **Recipes** | Save custom meals, log them in one tap |
+| **Daily ring** | Calorie + macro progress at a glance |
+| **Weekly charts** | Trends over time |
+| **Weight tracking** | Log weight, see progress |
+| **Streaks** | Consecutive days logged |
+| **Push notifications** | Meal reminders |
+| **Export** | Download your data |
+| **PWA** | Installs on iOS and Android, works offline |
+| **Free** | No account required, data stays on your device |
+
+---
 
 ## Stack
+
 - **Next.js 14** + TypeScript
-- **SQLite** + Prisma (BD local, sin coste)
-- **Gemini Flash Vision** (IA gratuita — analiza fotos de comida)
-- **Open Food Facts** (base de datos de alimentos, gratis)
-- **Recharts** (gráficas semanales)
-- **PWA** — instalable en iOS y Android
+- **SQLite** + Prisma (local) / **Turso** (cloud)
+- **Gemini Flash Vision** — free AI tier
+- **Open Food Facts** — free food database
+- **shadcn/ui** + Tailwind
+- **Recharts** — weekly charts
+- **ZXing** — barcode scanning
+- **Web Push** — notifications
+- **NextAuth** — optional login
 
 ---
 
-## 🚀 Setup en 5 pasos
+## Self-host
 
-### 1. Instalar dependencias
 ```bash
+git clone https://github.com/erikta345-dotcom/Calorie-ai
+cd Calorie-ai
 npm install
-```
-
-### 2. Configurar variables de entorno
-```bash
 cp .env.example .env
-```
-Edita `.env` con tu API key de Gemini:
-→ Consíguela gratis en https://aistudio.google.com/app/apikey
-
-### 3. Crear la base de datos
-```bash
 npm run db:push
-```
-
-### 4. Arrancar
-```bash
 npm run dev
 ```
-→ http://localhost:3000
 
-### 5. Deploy en Vercel (opcional, gratis)
-```bash
-npx vercel
-```
-> Para producción cambia SQLite por **Turso** (SQLite en la nube, gratis).
-> Añade las variables de entorno en el dashboard de Vercel.
+Open [http://localhost:3000](http://localhost:3000)
 
----
+**Gemini API key** (free): [aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
 
-## 📱 Instalar como app en el móvil
+### Deploy to Vercel
 
-**iOS (Safari):** Compartir → Añadir a pantalla de inicio  
-**Android (Chrome):** Menú → Instalar app
+1. Swap `DATABASE_URL` for a [Turso](https://turso.tech) connection string (free tier)
+2. Add env vars in Vercel dashboard
+3. `npx vercel --prod`
 
 ---
 
-## 🗂️ Estructura del proyecto
+## Install as mobile app
 
-```
-app/
-├── page.tsx                  # Dashboard diario (anillo + macros + comidas)
-├── scan/page.tsx             # Escanear foto con Gemini Vision
-├── search/page.tsx           # Buscar en Open Food Facts
-├── history/page.tsx          # Gráficas semanales
-├── settings/page.tsx         # Objetivos personales
-└── api/
-    ├── ai-scan/route.ts      # Gemini Vision → macros estimados
-    ├── search/route.ts       # Proxy Open Food Facts
-    ├── entries/
-    │   ├── route.ts          # GET (listar) / POST (crear)
-    │   └── [id]/route.ts     # DELETE
-    └── settings/
-        └── route.ts          # GET / PUT objetivos
-components/
-├── BottomNav.tsx             # Navegación inferior
-├── CalorieRing.tsx           # Anillo SVG de calorías
-└── MacroBar.tsx              # Barra de progreso de macros
-lib/
-├── prisma.ts                 # Cliente BD
-└── utils.ts                  # Helpers
-prisma/
-└── schema.prisma             # Modelos: FoodEntry, UserSettings
-```
+**iOS** → Safari → Share → Add to Home Screen  
+**Android** → Chrome → Menu → Install app
 
 ---
 
-## 🎯 Objetivos por defecto (ganar músculo)
+## License
 
-| Macro | Cálculo | Ejemplo 75kg |
-|-------|---------|-------------|
-| Calorías | peso × 33 kcal | 2,475 kcal |
-| Proteína | peso × 2g | 150g |
-| Carbos | 45% calorías | ~278g |
-| Grasa | 25% calorías | ~69g |
-
-Configura los tuyos en ⚙️ Ajustes.
-
----
-
-## 🔮 Ideas para extender
-
-- [ ] Escáner de código de barras
-- [ ] Recetas guardadas
-- [ ] Exportar datos a CSV
-- [ ] Widget para iOS
-- [ ] Notificaciones recordatorio
+MIT

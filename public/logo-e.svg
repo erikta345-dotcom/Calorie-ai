@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <filter id="glowG" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="9" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glowC" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="9" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="glowO" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="9" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="scanGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="berryFilter" color-interpolation-filters="sRGB">
+      <!-- 1. Invert: black strawberry→white, white bg→black -->
+      <feComponentTransfer>
+        <feFuncR type="linear" slope="-1" intercept="1"/>
+        <feFuncG type="linear" slope="-1" intercept="1"/>
+        <feFuncB type="linear" slope="-1" intercept="1"/>
+      </feComponentTransfer>
+      <!-- 2. Alpha from brightness: white areas opaque, black areas transparent -->
+      <feColorMatrix type="matrix" values="
+        1    0    0    0    0
+        0    1    0    0    0
+        0    0    1    0    0
+        0.33 0.33 0.33 0   -0.01"/>
+      <!-- 3. Colorize white→red -->
+      <feColorMatrix type="matrix" values="
+        0.94 0    0    0    0
+        0.27 0    0    0    0
+        0.27 0    0    0    0
+        0    0    0    1    0"/>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="100" fill="#09090b"/>
+
+  <!-- Ring track -->
+  <circle cx="256" cy="256" r="200" fill="none" stroke="#1a1a22" stroke-width="22"/>
+
+  <!-- Segment 1: lime, -90° → -20° -->
+  <path d="M 256 56 A 200 200 0 0 1 444 188"
+    fill="none" stroke="#84cc16" stroke-width="22" stroke-linecap="round"
+    filter="url(#glowG)"/>
+
+  <!-- Segment 2: cyan, -18° → 52° -->
+  <path d="M 446 194 A 200 200 0 0 1 379 414"
+    fill="none" stroke="#22d3ee" stroke-width="22" stroke-linecap="round"
+    filter="url(#glowC)"/>
+
+  <!-- Segment 3: orange, 54° → 124° -->
+  <path d="M 374 418 A 200 200 0 0 1 144 422"
+    fill="none" stroke="#f97316" stroke-width="22" stroke-linecap="round"
+    filter="url(#glowO)"/>
+
+  <!-- Scan brackets -->
+  <g fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="8" stroke-linecap="round">
+    <path d="M 138 172 L 138 138 L 172 138"/>
+    <path d="M 340 138 L 374 138 L 374 172"/>
+    <path d="M 138 340 L 138 374 L 172 374"/>
+    <path d="M 340 374 L 374 374 L 374 340"/>
+  </g>
+
+  <!-- Clip hides watermark text at bottom of stock image -->
+  <clipPath id="berryCrop">
+    <rect x="156" y="146" width="200" height="168"/>
+  </clipPath>
+
+  <!-- Strawberry: black silhouette inverted→red, white bg→transparent via SVG filter -->
+  <image href="./strawberry.webp" x="156" y="146" width="200" height="200"
+    preserveAspectRatio="xMidYMid meet"
+    clip-path="url(#berryCrop)"
+    filter="url(#berryFilter)"/>
+
+  <!-- Scan line -->
+  <line x1="158" y1="256" x2="354" y2="256"
+    stroke="#84cc16" stroke-width="2.5" stroke-linecap="round" opacity="0.65"
+    filter="url(#scanGlow)"/>
+
+  <!-- Arc end dot -->
+  <circle cx="144" cy="422" r="6" fill="#f97316" filter="url(#glowO)"/>
+</svg>
