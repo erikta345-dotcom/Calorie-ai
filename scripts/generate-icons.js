@@ -2,7 +2,7 @@ const { Resvg } = require('@resvg/resvg-js');
 const fs = require('fs');
 const path = require('path');
 
-const svgPath = path.join(__dirname, '../public/logo.svg');
+const svgPath = path.join(__dirname, '../public/logo-nutrisnap.svg');
 const outDir = path.join(__dirname, '../public/icons');
 const svg = fs.readFileSync(svgPath, 'utf-8');
 
