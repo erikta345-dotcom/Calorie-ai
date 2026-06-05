@@ -81,7 +81,7 @@ export async function GET(req: NextRequest) {
     for (const [meal, time] of Object.entries(mealTimes)) {
       if (time !== localTime) continue;
       await pushTo(
-        JSON.stringify({ title: "⏰ Calorie AI", body: `Son las ${localTime}, ¡es la hora de ${capitalize(meal)}!`, tag: `meal-${meal}` }),
+        JSON.stringify({ title: "⏰ NutriSnap", body: `Son las ${localTime}, ¡es la hora de ${capitalize(meal)}!`, tag: `meal-${meal}` }),
         `${meal}@${localTime}`
       );
     }
@@ -90,7 +90,7 @@ export async function GET(req: NextRequest) {
       for (const alert of alertsByUser.get(sub.userId as string) ?? []) {
         if (alert.time !== localTime) continue;
         await pushTo(
-          JSON.stringify({ title: "🔔 Calorie AI", body: alert.label as string, tag: `alert-${alert.id}` }),
+          JSON.stringify({ title: "🔔 NutriSnap", body: alert.label as string, tag: `alert-${alert.id}` }),
           `alert:${alert.label}@${localTime}`
         );
       }

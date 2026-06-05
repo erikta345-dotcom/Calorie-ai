@@ -5,7 +5,7 @@ self.addEventListener("push", (event) => {
   let data = {};
   try { data = event.data?.json() || {}; } catch {}
   event.waitUntil(
-    self.registration.showNotification(data.title || "⏰ Calorie AI", {
+    self.registration.showNotification(data.title || "⏰ NutriSnap", {
       body: data.body || "Es la hora de comer",
       icon: "/icons/icon-192.png",
       badge: "/icons/icon-192.png",

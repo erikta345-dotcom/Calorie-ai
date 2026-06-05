@@ -1,4 +1,4 @@
-# Calorie AI
+# NutriSnap
 
 **Track food with your camera. No subscriptions. No bullshit.**
 

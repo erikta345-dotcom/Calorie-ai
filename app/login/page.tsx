@@ -39,7 +39,7 @@ function LoginForm() {
       <div className="w-full max-w-sm space-y-6 text-center">
         <div className="space-y-2">
           <p className="text-6xl">🥗</p>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Calorie AI</h1>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">NutriSnap</h1>
           <p className="text-gray-500 dark:text-zinc-400 text-sm">Registra tu comida con inteligencia artificial</p>
         </div>
 

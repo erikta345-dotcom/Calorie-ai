@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/api-auth";
 
 async function fetchOpenFoodFacts(code: string) {
-  const headers = { "User-Agent": "CalorieAI/1.0 (personal app)" };
+  const headers = { "User-Agent": "NutriSnap/1.0 (personal app)" };
   const url = (host: string) => `https://${host}/api/v0/product/${encodeURIComponent(code)}.json`;
 
   let data = await fetch(url("es.openfoodfacts.org"), { headers }).then((r) => r.json());

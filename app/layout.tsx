@@ -11,10 +11,10 @@ import { cn } from "@/lib/utils";
 const geist = Inter({subsets:['latin'],variable:'--font-sans'});
 
 export const metadata: Metadata = {
-  title: "Calorie AI",
+  title: "NutriSnap",
   description: "Tracker de calorías con IA",
   manifest: "/manifest.json",
-  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "Calorie AI" },
+  appleWebApp: { capable: true, statusBarStyle: "black-translucent", title: "NutriSnap" },
 };
 
 export const viewport: Viewport = {

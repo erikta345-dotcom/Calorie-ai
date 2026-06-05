@@ -16,9 +16,9 @@ export async function sendWelcomeEmail(to: string, name: string) {
 
   console.log("[email] Sending welcome email");
   await transporter.sendMail({
-    from: `"Calorie AI" <${process.env.GMAIL_USER}>`,
+    from: `"NutriSnap" <${process.env.GMAIL_USER}>`,
     to,
-    subject: "¡Bienvenido a Calorie AI! 🥗",
+    subject: "¡Bienvenido a NutriSnap! 🥗",
     html: `<!DOCTYPE html>
 <html lang="es">
 <head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
@@ -29,14 +29,14 @@ export async function sendWelcomeEmail(to: string, name: string) {
         <tr>
           <td style="background:#09090b;padding:32px;text-align:center;border-bottom:1px solid #27272a">
             <p style="margin:0;font-size:32px">🥗</p>
-            <h1 style="margin:12px 0 0;color:#ffffff;font-size:22px;font-weight:700">Calorie AI</h1>
+            <h1 style="margin:12px 0 0;color:#ffffff;font-size:22px;font-weight:700">NutriSnap</h1>
           </td>
         </tr>
         <tr>
           <td style="padding:32px">
             <h2 style="margin:0 0 12px;color:#ffffff;font-size:18px;font-weight:600">Hola, ${name} 👋</h2>
             <p style="margin:0 0 16px;color:#a1a1aa;font-size:15px;line-height:1.6">
-              ¡Bienvenido a <strong style="color:#ffffff">Calorie AI</strong>! Ya puedes empezar a registrar tus comidas, escanear fotos de tus platos y alcanzar tus objetivos.
+              ¡Bienvenido a <strong style="color:#ffffff">NutriSnap</strong>! Ya puedes empezar a registrar tus comidas, escanear fotos de tus platos y alcanzar tus objetivos.
             </p>
             <table cellpadding="0" cellspacing="0" style="margin:24px 0;width:100%">
               <tr>
@@ -63,7 +63,7 @@ export async function sendWelcomeEmail(to: string, name: string) {
         </tr>
         <tr>
           <td style="padding:20px 32px;border-top:1px solid #27272a;text-align:center">
-            <p style="margin:0;color:#52525b;font-size:12px">Has recibido este correo porque creaste una cuenta en Calorie AI.</p>
+            <p style="margin:0;color:#52525b;font-size:12px">Has recibido este correo porque creaste una cuenta en NutriSnap.</p>
           </td>
         </tr>
       </table>

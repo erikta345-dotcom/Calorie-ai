@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
   try {
     const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(q)}&search_simple=1&action=process&json=1&page_size=10&fields=id,product_name,nutriments`;
     const res = await fetch(url, {
-      headers: { "User-Agent": "CalorieAI/1.0 (personal app)" },
+      headers: { "User-Agent": "NutriSnap/1.0 (personal app)" },
     });
     const data = await res.json();
 

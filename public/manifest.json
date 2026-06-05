@@ -1,6 +1,6 @@
 {
-  "name": "Calorie AI",
-  "short_name": "Calorie AI",
+  "name": "NutriSnap",
+  "short_name": "NutriSnap",
   "description": "Tracker de calorías con IA para ganar músculo",
   "start_url": "/",
   "display": "standalone",

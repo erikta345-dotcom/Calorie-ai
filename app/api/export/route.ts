@@ -29,7 +29,7 @@ export async function GET(_req: NextRequest) {
   return new NextResponse(header + rows, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="calorie-ai-export.csv"`,
+      "Content-Disposition": `attachment; filename="nutrisnap-export.csv"`,
     },
   });
 }
