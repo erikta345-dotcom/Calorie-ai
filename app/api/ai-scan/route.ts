@@ -52,8 +52,28 @@ RULES:
 - If image is unclear or not food, still return your best estimate`;
 
 export async function POST(req: NextRequest) {
-  const { error } = await requireAuth("ai-scan", 10);
+  const { uid, error } = await requireAuth("ai-scan", 10);
   if (error) return error;
+
+  const { getUserTier, maxAiScansPerDay } = await import("@/lib/subscription");
+  const tier = await getUserTier(uid!);
+  const dailyLimit = maxAiScansPerDay(tier);
+  if (isFinite(dailyLimit)) {
+    const today = new Date().toISOString().slice(0, 10);
+    const countResult = await import("@/lib/prisma").then(({ db }) =>
+      db.execute({
+        sql: "SELECT COUNT(*) as n FROM FoodEntry WHERE userId = ? AND date = ? AND source = 'scan'",
+        args: [uid!, today],
+      })
+    );
+    const used = Number((countResult.rows[0] as any).n ?? 0);
+    if (used >= dailyLimit) {
+      return NextResponse.json(
+        { error: `Límite diario de ${dailyLimit} escaneos IA alcanzado. Actualiza a Pro para scans ilimitados.`, upgradeRequired: true },
+        { status: 429 }
+      );
+    }
+  }
 
   const { image, description } = await req.json();
   if (!image || typeof image !== "string") return NextResponse.json({ error: "Imagen requerida" }, { status: 400 });

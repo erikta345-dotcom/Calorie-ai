@@ -3,16 +3,26 @@ import { db } from "@/lib/prisma";
 import { randomUUID } from "crypto";
 import { requireAuth } from "@/lib/api-auth";
 import { VALID_MEALS, VALID_SOURCES, DATE_RE } from "@/lib/constants";
+import { getUserTier, maxHistoryDays } from "@/lib/subscription";
+import { subDays, format } from "date-fns";
 
 export async function GET(req: NextRequest) {
   const { uid, error } = await requireAuth("entries-get", 60);
   if (error) return error;
   const date = req.nextUrl.searchParams.get("date");
-  const from = req.nextUrl.searchParams.get("from");
+  let from = req.nextUrl.searchParams.get("from");
   const to = req.nextUrl.searchParams.get("to");
   if (date && !DATE_RE.test(date)) return NextResponse.json({ error: "Fecha inválida" }, { status: 400 });
   if ((from && !DATE_RE.test(from)) || (to && !DATE_RE.test(to))) return NextResponse.json({ error: "Fecha inválida" }, { status: 400 });
   try {
+    // Enforce history limit based on tier
+    if (from) {
+      const tier = await getUserTier(uid);
+      const limit = maxHistoryDays(tier);
+      const minAllowed = format(subDays(new Date(), limit - 1), "yyyy-MM-dd");
+      if (from < minAllowed) from = minAllowed;
+    }
+
     let result;
     if (from && to) {
       result = await db.execute({ sql: "SELECT * FROM FoodEntry WHERE userId = ? AND date >= ? AND date <= ? ORDER BY date ASC, createdAt ASC", args: [uid, from, to] });

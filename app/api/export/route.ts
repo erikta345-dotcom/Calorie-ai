@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
 import { requireAuth } from "@/lib/api-auth";
+import { getUserTier, tierGte } from "@/lib/subscription";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,9 @@ function csvCell(value: string | null | undefined): string {
 export async function GET(_req: NextRequest) {
   const { uid, error } = await requireAuth("export", 5);
   if (error) return error;
+  if (!tierGte(await getUserTier(uid), "pro")) {
+    return NextResponse.json({ error: "Exportar datos requiere plan Pro.", upgradeRequired: true }, { status: 403 });
+  }
 
   const result = await db.execute({
     sql: "SELECT date, meal, name, calories, protein, carbs, fat, grams, source, note FROM FoodEntry WHERE userId = ? ORDER BY date ASC, createdAt ASC",

@@ -88,6 +88,10 @@ export async function GET(req: NextRequest) {
     `ALTER TABLE Feedback ADD COLUMN userId TEXT`,
     `ALTER TABLE Feedback ADD COLUMN reply TEXT`,
     `ALTER TABLE Feedback ADD COLUMN resolved INTEGER DEFAULT 0`,
+    `ALTER TABLE UserSettings ADD COLUMN tier TEXT DEFAULT 'free'`,
+    `ALTER TABLE UserSettings ADD COLUMN stripeCustomerId TEXT`,
+    `ALTER TABLE UserSettings ADD COLUMN stripeSubscriptionId TEXT`,
+    `ALTER TABLE UserSettings ADD COLUMN tierExpiresAt TEXT`,
   ];
   for (const sql of alters) {
     await db.execute(sql).catch(() => {});
@@ -99,6 +103,17 @@ export async function GET(req: NextRequest) {
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_alert_user_type ON CustomAlert(userId, type, enabled)`);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_feedback_like ON FeedbackLike(feedbackId, userId)`);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_weight_user ON WeightLog(userId)`);
+
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS PromoCodes (
+      code TEXT PRIMARY KEY,
+      tier TEXT NOT NULL DEFAULT 'pro',
+      maxUses INTEGER DEFAULT 1,
+      uses INTEGER DEFAULT 0,
+      tierExpiresAt TEXT,
+      createdAt TEXT DEFAULT (datetime('now'))
+    )
+  `);
 
   return NextResponse.json({ ok: true });
 }

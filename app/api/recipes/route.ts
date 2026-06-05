@@ -2,10 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
 import { randomUUID } from "crypto";
 import { requireAuth, requireAuthOnly } from "@/lib/api-auth";
+import { getUserTier, tierGte } from "@/lib/subscription";
 
 export async function GET() {
   const { uid, error } = await requireAuthOnly();
   if (error) return error;
+  if (!tierGte(await getUserTier(uid), "pro")) {
+    return NextResponse.json({ error: "Recetas requiere plan Pro.", upgradeRequired: true }, { status: 403 });
+  }
   try {
     const result = await db.execute({
       sql: "SELECT * FROM Recipe WHERE userId = ? ORDER BY createdAt DESC",

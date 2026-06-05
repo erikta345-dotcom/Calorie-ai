@@ -7,6 +7,7 @@ import PageShell from "@/components/PageShell";
 import ThemeToggle from "@/components/ThemeToggle";
 import type { MealTimes } from "@/hooks/useSuggestedMeal";
 import { subscribeAndSave } from "@/components/MealNotifications";
+import { useSubscription } from "@/hooks/useSubscription";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
@@ -83,6 +84,10 @@ export default function SettingsPage() {
   const [weightLog, setWeightLog] = useState<{ date: string; weight: number }[]>([]);
   const [weightInput, setWeightInput] = useState("");
   const [weightSaving, setWeightSaving] = useState(false);
+  const { tier } = useSubscription();
+  const [promoCode, setPromoCode] = useState("");
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoMsg, setPromoMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => {
     if ("Notification" in window) setNotifPerm(Notification.permission);
@@ -217,6 +222,63 @@ export default function SettingsPage() {
       </header>
 
       <div className="space-y-4">
+        {/* Subscription */}
+        <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-4 py-3">
+          <p className="text-xs text-gray-400 dark:text-zinc-500 pb-2 font-semibold uppercase tracking-wide">Plan</p>
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold capitalize" style={{
+                color: tier === "elite" ? "#f97316" : tier === "pro" ? "#84cc16" : "#71717a"
+              }}>{tier ?? "free"}</span>
+              {tier === "elite" && <span className="text-xs bg-orange-500/10 text-orange-400 px-2 py-0.5 rounded-full font-semibold">Elite</span>}
+              {tier === "pro" && <span className="text-xs bg-lime-500/10 text-lime-500 px-2 py-0.5 rounded-full font-semibold">Pro</span>}
+            </div>
+            <Link href="/pricing" className="text-xs font-semibold text-lime-500 hover:text-lime-400">
+              {tier === "free" ? "Actualizar →" : "Ver planes →"}
+            </Link>
+          </div>
+          {/* Promo code */}
+          <div className="flex gap-2">
+            <input
+              value={promoCode}
+              onChange={(e) => setPromoCode(e.target.value.toUpperCase())}
+              placeholder="Código de acceso"
+              maxLength={16}
+              className="flex-1 bg-white dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-300 dark:placeholder-zinc-600 focus:outline-none focus:ring-1 focus:ring-lime-500"
+            />
+            <button
+              onClick={async () => {
+                if (!promoCode.trim()) return;
+                setPromoLoading(true);
+                setPromoMsg(null);
+                try {
+                  const res = await fetch("/api/subscription/redeem", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ code: promoCode }),
+                  });
+                  const data = await res.json();
+                  if (res.ok) {
+                    setPromoMsg({ ok: true, text: `✓ Activado plan ${data.tier}` });
+                    setPromoCode("");
+                  } else {
+                    setPromoMsg({ ok: false, text: data.error ?? "Error al canjear" });
+                  }
+                } finally {
+                  setPromoLoading(false);
+                }
+              }}
+              disabled={promoLoading || !promoCode.trim()}
+              className="px-4 py-2 bg-lime-500 text-black text-sm font-bold rounded-lg disabled:opacity-50"
+            >
+              {promoLoading ? "..." : "Canjear"}
+            </button>
+          </div>
+          {promoMsg && (
+            <p className={`text-xs mt-2 ${promoMsg.ok ? "text-lime-500" : "text-red-400"}`}>{promoMsg.text}</p>
+          )}
+        </div>
+
         {/* Theme toggle */}
         <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-4">
           <p className="text-xs text-gray-400 dark:text-zinc-500 pt-3 pb-1 font-semibold uppercase tracking-wide">Apariencia</p>
