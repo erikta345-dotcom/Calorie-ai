@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
+import { getUserTier, tierGte } from "@/lib/subscription";
 import webpush from "web-push";
 
 export const dynamic = "force-dynamic";
@@ -54,6 +55,7 @@ export async function GET(req: NextRequest) {
   }
 
   const tasks = subs.map(async (sub) => {
+    if (!sub.userId || !tierGte(await getUserTier(sub.userId as string), "elite")) return;
     const utcOffset = Number(sub.utcOffset) || 0;
     const localMins = (utcMins + utcOffset + 1440) % 1440;
     const localTime = `${pad(Math.floor(localMins / 60))}:${pad(localMins % 60)}`;

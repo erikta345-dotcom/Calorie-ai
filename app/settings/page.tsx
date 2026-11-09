@@ -105,10 +105,14 @@ export default function SettingsPage() {
         setForm({ ...s, height, age: s.age ?? 25, gender: s.gender ?? "male", goal: s.goal ?? "maintain", mealTimes: { ...DEFAULT_MEAL_TIMES, ...mealTimes } });
         if (height) setRawValues((r) => { const n = { ...r }; delete n.height; return n; });
       });
-    fetch("/api/weight")
-      .then((r) => r.json())
-      .then((data) => { if (Array.isArray(data)) setWeightLog(data); });
-  }, []);
+    if (tier === "elite") {
+      fetch("/api/weight")
+        .then((r) => r.json())
+        .then((data) => { if (Array.isArray(data)) setWeightLog(data); });
+    } else {
+      setWeightLog([]);
+    }
+  }, [tier]);
 
   function handleBodyChange(patch: Partial<Pick<Settings, "weight" | "height" | "age" | "gender" | "goal">>) {
     setForm((f) => {
@@ -346,8 +350,8 @@ export default function SettingsPage() {
           {numField("Grasa", "goalFat", "g/día", "0.1")}
         </div>
 
-        {/* Weight log */}
-        <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-4 pt-3 pb-4">
+        {/* Weight log is an Elite feature */}
+        {tier === "elite" ? <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-4 pt-3 pb-4">
           <p className="text-xs text-gray-400 dark:text-zinc-500 pb-3 font-semibold uppercase tracking-wide">📈 Evolución de peso</p>
           <div className="flex gap-2 mb-4">
             <input
@@ -397,13 +401,19 @@ export default function SettingsPage() {
           })() : (
             <p className="text-xs text-gray-300 dark:text-zinc-600 text-center py-2">Registra al menos 2 días para ver la gráfica</p>
           )}
-        </div>
+        </div> : (
+          <Link href="/pricing" className="block bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-4 py-4 text-center text-sm text-gray-500 dark:text-zinc-400">
+            🔒 Seguimiento de peso · Disponible en Elite
+          </Link>
+        )}
 
         {/* Meal times */}
         <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-4">
           <div className="flex items-center justify-between pt-3 pb-1">
             <p className="text-xs text-gray-400 dark:text-zinc-500 font-semibold uppercase tracking-wide">Horario de comidas</p>
-            {notifPerm !== "granted" ? (
+            {tier !== "elite" ? (
+              <Link href="/pricing" className="text-xs text-orange-400 underline">🔒 Avisos · Elite</Link>
+            ) : notifPerm !== "granted" ? (
               <button
                 onClick={async () => {
                   if (!("Notification" in window)) return;
@@ -411,7 +421,7 @@ export default function SettingsPage() {
                   setNotifPerm(perm);
                   if (perm === "granted") {
                     try {
-                      await subscribeAndSave();
+                      if (!(await subscribeAndSave())) setNotifPerm("default");
                     } catch (err) {
                       console.error("subscribeAndSave failed:", err);
                     }
@@ -433,7 +443,7 @@ export default function SettingsPage() {
               </button>
             )}
           </div>
-          <p className="text-xs text-gray-300 dark:text-zinc-600 pb-2">Notificación cuando llegue la hora</p>
+          <p className="text-xs text-gray-300 dark:text-zinc-600 pb-2">{tier === "elite" ? "Notificación cuando llegue la hora" : "Las notificaciones push están incluidas en Elite"}</p>
           {(Object.keys(MEAL_LABELS) as (keyof MealTimes)[]).map((meal) => (
             <div key={meal} className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-zinc-800 last:border-0">
               <p className="text-sm text-gray-900 dark:text-white">{MEAL_LABELS[meal]}</p>

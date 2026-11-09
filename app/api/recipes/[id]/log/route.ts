@@ -3,10 +3,14 @@ import { db } from "@/lib/prisma";
 import { randomUUID } from "crypto";
 import { requireAuth } from "@/lib/api-auth";
 import { VALID_MEALS, DATE_RE } from "@/lib/constants";
+import { getUserTier, tierGte } from "@/lib/subscription";
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   const { uid: userId, error } = await requireAuth("recipes", 20);
   if (error) return error;
+  if (!tierGte(await getUserTier(userId), "pro")) {
+    return NextResponse.json({ error: "Recetas requiere plan Pro.", upgradeRequired: true }, { status: 403 });
+  }
   try {
     const { meal, date, multiplier } = await req.json();
     if (!meal || !date) return NextResponse.json({ error: "Faltan campos" }, { status: 400 });

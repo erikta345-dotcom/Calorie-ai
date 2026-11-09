@@ -8,6 +8,7 @@ import {
 } from "recharts";
 import PageShell from "@/components/PageShell";
 import { useTheme } from "next-themes";
+import { useSubscription } from "@/hooks/useSubscription";
 
 type Period = "week" | "month" | "year";
 type Metric = "calories" | "protein" | "carbs" | "fat";
@@ -40,9 +41,18 @@ export default function HistoryPage() {
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<Metric>("calories");
   const [goals, setGoals] = useState({ calories: 2800, protein: 150, carbs: 300, fat: 80 });
+  const [loggedStreak, setLoggedStreak] = useState(0);
   const [tableOpen, setTableOpen] = useState(false);
   const { resolvedTheme } = useTheme();
   const dark = resolvedTheme === "dark";
+  const { tier } = useSubscription();
+  const hasPro = tier === "pro" || tier === "elite";
+  const hasElite = tier === "elite";
+
+  useEffect(() => {
+    if (period === "year" && !hasElite) setPeriod(hasPro ? "month" : "week");
+    else if (period === "month" && !hasPro) setPeriod("week");
+  }, [period, hasElite, hasPro]);
 
   useEffect(() => {
     setLoading(true);
@@ -54,7 +64,9 @@ export default function HistoryPage() {
     Promise.all([
       fetch(`/api/entries?from=${from}&to=${to}`).then((r) => r.json()),
       fetch("/api/settings").then((r) => r.json()),
-    ]).then(([entries, settings]) => {
+      fetch(`/api/streak?date=${to}`).then((r) => r.ok ? r.json() : null),
+    ]).then(([entries, settings, streak]) => {
+      setLoggedStreak(streak?.logging ?? 0);
       if (settings && !settings.error) {
         setGoals({
           calories: settings.goalCalories,
@@ -118,7 +130,7 @@ export default function HistoryPage() {
         }));
       }
     }).catch(() => {}).finally(() => setLoading(false));
-  }, [period]);
+  }, [period, tier]);
 
   const currentView = VIEWS.find((v) => v.key === view)!;
   const currentGoal = goals[view];
@@ -133,14 +145,6 @@ export default function HistoryPage() {
     const daysOnTrack = currentGoal > 0 ? active.filter((d) => d[view] <= currentGoal).length : active.length;
     const goalPct = currentGoal > 0 ? Math.round((daysOnTrack / active.length) * 100) : 100;
 
-    const loggedSet = new Set(data.filter((d) => d.calories > 0).map((d) => d.date));
-    const today = new Date();
-    let streak = 0;
-    for (let i = 0; i < 365; i++) {
-      if (loggedSet.has(format(subDays(today, i), "yyyy-MM-dd"))) streak++;
-      else break;
-    }
-
     const half = Math.floor(active.length / 2);
     const firstAvg = half > 0 ? active.slice(0, half).reduce((s, d) => s + d[view], 0) / half : 0;
     const secondAvg = half > 0 ? active.slice(half).reduce((s, d) => s + d[view], 0) / (active.length - half) : 0;
@@ -149,7 +153,7 @@ export default function HistoryPage() {
       : secondAvg < firstAvg * 0.97 ? "down"
       : "flat";
 
-    return { avg, max, min, daysOnTrack, daysLogged: active.length, goalPct, streak, trend };
+    return { avg, max, min, daysOnTrack, daysLogged: active.length, goalPct, trend };
   }, [data, view, currentGoal]);
 
   const tickColor = dark ? "#52525b" : "#9ca3af";
@@ -167,10 +171,10 @@ export default function HistoryPage() {
     <PageShell className="px-4">
       <header className="pt-14 pb-4 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Historial</h1>
-        {(stats?.streak ?? 0) > 0 && (
+        {hasPro && loggedStreak > 0 && (
           <div className="flex items-center gap-1 bg-orange-500/10 px-3 py-1.5 rounded-full">
             <span className="text-base">🔥</span>
-            <span className="text-sm font-bold text-orange-400">{stats!.streak}</span>
+            <span className="text-sm font-bold text-orange-400">{loggedStreak}</span>
             <span className="text-xs text-orange-400/70">días</span>
           </div>
         )}
@@ -178,19 +182,23 @@ export default function HistoryPage() {
 
       {/* Period selector */}
       <div className="flex gap-1 mb-4 p-1 bg-gray-100 dark:bg-zinc-800/60 rounded-xl">
-        {PERIODS.map((p) => (
+        {PERIODS.map((p) => {
+          const locked = p.key === "month" ? !hasPro : p.key === "year" ? !hasElite : false;
+          return (
           <button
             key={p.key}
+            disabled={locked}
             onClick={() => setPeriod(p.key)}
+            title={locked ? `${p.label} requiere ${p.key === "year" ? "Elite" : "Pro"}` : undefined}
             className={`flex-1 py-1.5 rounded-lg text-sm font-medium transition-all ${
               period === p.key
                 ? "bg-white dark:bg-zinc-700 text-gray-900 dark:text-white shadow-sm"
-                : "text-gray-500 dark:text-zinc-500"
+                : locked ? "text-gray-300 dark:text-zinc-700 cursor-not-allowed" : "text-gray-500 dark:text-zinc-500"
             }`}
           >
-            {p.label}
+            {locked ? `🔒 ${p.label}` : p.label}
           </button>
-        ))}
+        );})}
       </div>
 
       {/* Metric selector */}
@@ -209,7 +217,14 @@ export default function HistoryPage() {
         ))}
       </div>
 
-      {/* Stats grid */}
+      {!hasPro && tier === "free" && (
+        <a href="/pricing" className="mb-5 block rounded-xl border border-lime-500/20 bg-lime-500/5 p-4 text-center text-sm text-lime-700 dark:text-lime-400">
+          🔒 Las rachas y estadísticas están incluidas en Pro
+        </a>
+      )}
+
+      {/* Pro statistics */}
+      {hasPro && <>
       {loading ? (
         <div className="grid grid-cols-2 gap-3 mb-5">
           {[0, 1, 2, 3].map((i) => (
@@ -282,9 +297,10 @@ export default function HistoryPage() {
           <p className="text-sm text-gray-400 dark:text-zinc-500">Sin datos en este período</p>
         </div>
       ) : null}
+      </>}
 
-      {/* Chart */}
-      {loading ? (
+      {/* Pro chart */}
+      {hasPro && (loading ? (
         <div className="h-52 bg-gray-100 dark:bg-zinc-800 rounded-xl animate-pulse mb-5" />
       ) : data.length > 0 && (
         <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-4 mb-5">
@@ -323,10 +339,10 @@ export default function HistoryPage() {
             </BarChart>
           </ResponsiveContainer>
         </div>
-      )}
+      ))}
 
-      {/* Summary table */}
-      {!loading && data.some((d) => d.calories > 0) && (
+      {/* Pro summary table */}
+      {hasPro && !loading && data.some((d) => d.calories > 0) && (
         <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl mb-5 overflow-hidden">
           <button
             onClick={() => setTableOpen((o) => !o)}

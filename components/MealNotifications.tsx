@@ -48,11 +48,15 @@ async function subscribeAndSave() {
   const mealTimes = await getMealTimes();
   const utcOffset = -new Date().getTimezoneOffset();
 
-  await fetch("/api/push/subscribe", {
+  const saveRes = await fetch("/api/push/subscribe", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ subscription: sub.toJSON(), mealTimes, utcOffset }),
   });
+  if (!saveRes.ok) {
+    await sub.unsubscribe();
+    return false;
+  }
 
   return true;
 }

@@ -35,6 +35,9 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const { uid: userId, error } = await requireAuth("recipes", 20);
   if (error) return error;
+  if (!tierGte(await getUserTier(userId), "pro")) {
+    return NextResponse.json({ error: "Recetas requiere plan Pro.", upgradeRequired: true }, { status: 403 });
+  }
   try {
     const { name, items, totalCalories, totalProtein, totalCarbs, totalFat } = await req.json();
     if (!name || typeof name !== "string" || name.trim().length === 0 || name.length > 100) {

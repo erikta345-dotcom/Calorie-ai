@@ -11,17 +11,19 @@ export async function GET(req: NextRequest) {
   if (error) return error;
   const date = req.nextUrl.searchParams.get("date");
   let from = req.nextUrl.searchParams.get("from");
-  const to = req.nextUrl.searchParams.get("to");
+  let to = req.nextUrl.searchParams.get("to");
   if (date && !DATE_RE.test(date)) return NextResponse.json({ error: "Fecha inválida" }, { status: 400 });
   if ((from && !DATE_RE.test(from)) || (to && !DATE_RE.test(to))) return NextResponse.json({ error: "Fecha inválida" }, { status: 400 });
   try {
-    // Enforce history limit based on tier
-    if (from) {
-      const tier = await getUserTier(uid);
-      const limit = maxHistoryDays(tier);
-      const minAllowed = format(subDays(new Date(), limit - 1), "yyyy-MM-dd");
-      if (from < minAllowed) from = minAllowed;
-    }
+    // Enforce history limits for every query shape, including unfiltered and single-date requests.
+    const tier = await getUserTier(uid);
+    const limit = maxHistoryDays(tier);
+    const minAllowed = format(subDays(new Date(), limit - 1), "yyyy-MM-dd");
+    if (date && date < minAllowed) return NextResponse.json([]);
+    if (from && from < minAllowed) from = minAllowed;
+    if (!date && !from) from = minAllowed;
+    if (!date && !to) to = format(new Date(), "yyyy-MM-dd");
+    if (from && to && to < from) return NextResponse.json([]);
 
     let result;
     if (from && to) {

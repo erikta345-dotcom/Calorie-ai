@@ -20,6 +20,9 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   const { uid, error } = await requireAuth("weight-post", 10);
   if (error) return error;
+  if (!tierGte(await getUserTier(uid), "elite")) {
+    return NextResponse.json({ error: "Seguimiento de peso requiere plan Elite.", upgradeRequired: true }, { status: 403 });
+  }
   const { date, weight } = await req.json();
   if (!date || !DATE_RE.test(date)) return NextResponse.json({ error: "Fecha inválida" }, { status: 400 });
   const w = parseFloat(weight);

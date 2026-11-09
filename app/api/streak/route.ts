@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
 import { requireAuthOnly } from "@/lib/api-auth";
 import { DATE_RE } from "@/lib/constants";
+import { getUserTier, tierGte } from "@/lib/subscription";
 
 function addDays(dateStr: string, days: number): string {
   const [y, m, d] = dateStr.split("-").map(Number);
@@ -41,6 +42,9 @@ function calcStreak(
 export async function GET(req: NextRequest) {
   const { uid, error } = await requireAuthOnly();
   if (error) return error;
+  if (!tierGte(await getUserTier(uid), "pro")) {
+    return NextResponse.json({ error: "Rachas y estadísticas requieren plan Pro.", upgradeRequired: true }, { status: 403 });
+  }
 
   const today = req.nextUrl.searchParams.get("date") ?? "";
   if (!DATE_RE.test(today)) return NextResponse.json({ calories: 0, protein: 0, carbs: 0, fat: 0 }, { status: 400 });
@@ -50,7 +54,7 @@ export async function GET(req: NextRequest) {
       db.execute({ sql: "SELECT goalCalories, goalProtein, goalCarbs, goalFat FROM UserSettings WHERE id = ?", args: [uid] }),
       db.execute({
         sql: `SELECT date, SUM(calories) as cal, SUM(protein) as protein, SUM(carbs) as carbs, SUM(fat) as fat
-              FROM FoodEntry WHERE userId = ? AND date >= date(?, '-90 days')
+              FROM FoodEntry WHERE userId = ? AND date <= ?
               GROUP BY date`,
         args: [uid, today],
       }),
@@ -73,6 +77,7 @@ export async function GET(req: NextRequest) {
     }
 
     return NextResponse.json({
+      logging: calcStreak(today, dailyMap, (r) => r.cal > 0),
       calories: calcStreak(today, dailyMap, (r) => r.cal >= goalCal * 0.8 && r.cal <= goalCal * 1.1),
       protein: calcStreak(today, dailyMap, (r) => r.protein >= goalProt * 0.85),
       carbs: calcStreak(today, dailyMap, (r) => r.carbs >= goalCarbs * 0.8 && r.carbs <= goalCarbs * 1.15),

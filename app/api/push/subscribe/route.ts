@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
 import { requireAuth, requireAuthOnly } from "@/lib/api-auth";
+import { getUserTier, tierGte } from "@/lib/subscription";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   const { uid, error } = await requireAuth("push", 10);
   if (error) return error;
+  if (!tierGte(await getUserTier(uid), "elite")) {
+    return NextResponse.json({ error: "Las notificaciones push requieren plan Elite.", upgradeRequired: true }, { status: 403 });
+  }
   const { subscription, mealTimes, utcOffset } = await req.json();
   if (!subscription?.endpoint || !subscription?.keys) {
     return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });

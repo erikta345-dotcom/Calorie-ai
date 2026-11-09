@@ -8,6 +8,7 @@ import PageShell from "@/components/PageShell";
 import { VALID_MEALS } from "@/lib/constants";
 import CalorieRing from "@/components/CalorieRing";
 import MacroBar from "@/components/MacroBar";
+import { useSubscription } from "@/hooks/useSubscription";
 import { Plus, Trash2, RotateCcw, Copy } from "lucide-react";
 
 type FoodEntry = {
@@ -128,6 +129,8 @@ export default function DashboardPage() {
   const [editForm, setEditForm] = useState<EditForm | null>(null);
   const [editSaving, setEditSaving] = useState(false);
   const [copyingMeal, setCopyingMeal] = useState<Record<string, boolean>>({});
+  const { tier } = useSubscription();
+  const hasPro = tier === "pro" || tier === "elite";
 
   async function refreshStreak() {
     const str = await fetch(`/api/streak?date=${today}`).then((r) => r.json()).catch(() => null);
@@ -300,7 +303,7 @@ export default function DashboardPage() {
             </span>
           </span>
         </div>
-        <div className="mt-3 grid grid-cols-4 gap-1.5">
+        {hasPro ? <div className="mt-3 grid grid-cols-4 gap-1.5">
           {[
             { emoji: "🔥", label: "Kcal", value: streaks.calories, cls: "text-orange-400 bg-orange-400/10" },
             { emoji: "🥩", label: "Prot", value: streaks.protein, cls: "text-orange-300 bg-orange-300/10" },
@@ -313,7 +316,11 @@ export default function DashboardPage() {
               <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-0.5">{value === 1 ? "día" : "días"}</p>
             </div>
           ))}
-        </div>
+        </div> : tier === "free" ? (
+          <a href="/pricing" className="mt-3 block rounded-xl border border-lime-500/20 bg-lime-500/5 px-3 py-2 text-center text-xs text-lime-600 dark:text-lime-400">
+            🔒 Rachas y estadísticas diarias · Ver Pro
+          </a>
+        ) : null}
       </div>
 
       {/* Meal blocks */}
