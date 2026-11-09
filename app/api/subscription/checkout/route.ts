@@ -10,8 +10,13 @@ export async function POST(req: NextRequest) {
   if (error) return error;
 
   const { plan } = await req.json();
+  if (typeof plan !== "string" || !Object.prototype.hasOwnProperty.call(PRICE_IDS, plan)) {
+    return NextResponse.json({ error: "Plan inválido" }, { status: 400 });
+  }
   const priceId = PRICE_IDS[plan as keyof typeof PRICE_IDS];
-  if (!priceId) return NextResponse.json({ error: "Plan inválido" }, { status: 400 });
+  if (!priceId) {
+    return NextResponse.json({ error: `Falta configurar STRIPE_${plan.toUpperCase()}_PRICE_ID en Vercel.` }, { status: 503 });
+  }
 
   const result = await db.execute({
     sql: "SELECT stripeCustomerId, email FROM UserSettings WHERE id = ?",
@@ -31,15 +36,19 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  const checkout = await stripe.checkout.sessions.create({
-    customer: customerId,
-    mode: "subscription",
-    payment_method_types: ["card"],
-    line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${process.env.NEXTAUTH_URL}/settings?upgraded=1`,
-    cancel_url: `${process.env.NEXTAUTH_URL}/pricing`,
-    subscription_data: { metadata: { uid, plan } },
-  });
-
-  return NextResponse.json({ url: checkout.url });
+  try {
+    const checkout = await stripe.checkout.sessions.create({
+      customer: customerId,
+      mode: "subscription",
+      payment_method_types: ["card"],
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: new URL("/settings?upgraded=1", req.url).toString(),
+      cancel_url: new URL("/pricing", req.url).toString(),
+      subscription_data: { metadata: { uid, plan } },
+    });
+    return NextResponse.json({ url: checkout.url });
+  } catch (error) {
+    console.error("Stripe checkout session creation failed", error);
+    return NextResponse.json({ error: "Stripe no pudo iniciar el checkout. Revisa el precio configurado." }, { status: 502 });
+  }
 }

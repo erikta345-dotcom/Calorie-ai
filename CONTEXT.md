@@ -98,7 +98,7 @@ POST /api/admin/codes           Crear promo code (solo owner)
 | Tier | Historial | AI scans/día | Recetas | Export | Peso | Push |
 |------|-----------|--------------|---------|--------|------|------|
 | Free | 7 días | 3 | ✕ | ✕ | ✕ | ✕ |
-| Pro €4.99/mes · €29.99/año | 30 días | ∞ | ✓ | ✓ | ✕ | ✕ |
+| Pro €4.99/mes · €29.99/año | 30 días | ∞ | ✓ | ✓ | ✕ | ✓ |
 | Elite €9.99/mes · €59.99/año | 365 días | ∞ | ✓ | ✓ | ✓ | ✓ |
 
 **Owner**: `interns@oroi.eu` → siempre Elite, hardcodeado en `lib/subscription.ts`.
@@ -128,10 +128,11 @@ public/sw.js            Service Worker (push notifications)
 ```
 
 ## Estado actual (pendiente)
-- **Stripe en modo test** — price IDs añadidos en Vercel pero el checkout devolvía 400 (posiblemente price IDs incorrectos, pendiente verificar que sean `price_...` no `prod_...`)
+- **Stripe** — Vercel Production tiene configurado `STRIPE_PRO_MONTHLY_PRICE_ID`; faltan `STRIPE_ELITE_MONTHLY_PRICE_ID` y `STRIPE_ELITE_ANNUAL_PRICE_ID`. El checkout devuelve un error visible cuando falta el ID.
 - Migración DB ya ejecutada exitosamente
 - Webhook de Stripe configurado apuntando a `/api/subscription/webhook`
 - Todo desplegado en producción en `https://calorie-ai-jbrl.vercel.app`
+- Push y recordatorios incluidos desde Pro; horarios guardados con zona IANA para ajustes DST. Vercel Schedules ejecuta el job cada 15 minutos en `Europe/Madrid`.
 
 ## Convenciones
 - DB: raw SQL con `db.execute({ sql, args })` — sin Prisma ORM

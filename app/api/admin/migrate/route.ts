@@ -100,6 +100,7 @@ export async function GET(req: NextRequest) {
   // Indexes
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_food_user_date ON FoodEntry(userId, date)`);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_push_user ON PushSubscription(userId)`);
+  await db.execute(`CREATE TABLE IF NOT EXISTS PushDelivery (deliveryKey TEXT PRIMARY KEY, createdAt TEXT DEFAULT (datetime('now')))`);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_alert_user_type ON CustomAlert(userId, type, enabled)`);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_feedback_like ON FeedbackLike(feedbackId, userId)`);
   await db.execute(`CREATE INDEX IF NOT EXISTS idx_weight_user ON WeightLog(userId)`);

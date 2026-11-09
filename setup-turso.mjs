@@ -59,6 +59,13 @@ try {
   try { await db.execute(`ALTER TABLE PushSubscription ADD COLUMN userId TEXT`); } catch {}
 
   await db.execute(`
+    CREATE TABLE IF NOT EXISTS PushDelivery (
+      deliveryKey TEXT PRIMARY KEY,
+      createdAt TEXT DEFAULT (datetime('now'))
+    )
+  `);
+
+  await db.execute(`
     CREATE TABLE IF NOT EXISTS UserPasswords (
       id TEXT PRIMARY KEY,
       passwordHash TEXT NOT NULL,

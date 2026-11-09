@@ -1,8 +1,11 @@
 {
-  "crons": [
-    {
+  "schedules": {
+    "meal-notifications": {
+      "schedule": "*/15 * * * *",
+      "timezone": "Europe/Madrid",
       "path": "/api/cron/meal-notifications",
-      "schedule": "0 8 * * *"
+      "requestMethod": "GET",
+      "jitter": 15
     }
-  ]
+  }
 }

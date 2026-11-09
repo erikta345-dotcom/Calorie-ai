@@ -6,8 +6,36 @@ import webpush from "web-push";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-function pad(n: number) { return String(n).padStart(2, "0"); }
 function capitalize(s: string) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+function recentLocalSlots(now: Date, timezone: string | null, utcOffset: number) {
+  const slots = new Set<string>();
+  for (let minute = 0; minute <= 30; minute++) {
+    const date = new Date(now.getTime() - minute * 60_000);
+    let local: string;
+    const parts = timezone ? (() => {
+      try {
+        return new Intl.DateTimeFormat("en-GB", {
+          timeZone: timezone,
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          hourCycle: "h23",
+        }).formatToParts(date);
+      } catch { return null; }
+    })() : null;
+    if (parts) {
+      const value = (type: string) => parts.find((part) => part.type === type)?.value ?? "00";
+      local = `${value("year")}-${value("month")}-${value("day")} ${value("hour")}:${value("minute")}`;
+    } else {
+      local = new Date(date.getTime() + utcOffset * 60_000).toISOString().slice(0, 16).replace("T", " ");
+    }
+    slots.add(local);
+  }
+  return slots;
+}
 
 export async function GET(req: NextRequest) {
   const token = req.headers.get("authorization")?.replace("Bearer ", "");
@@ -31,7 +59,7 @@ export async function GET(req: NextRequest) {
   const subs = result.rows;
 
   const now = new Date();
-  const utcMins = now.getUTCHours() * 60 + now.getUTCMinutes();
+  await db.execute("DELETE FROM PushDelivery WHERE createdAt < datetime('now', '-30 days')").catch(() => {});
 
   const errors: string[] = [];
   const sent: string[] = [];
@@ -55,15 +83,26 @@ export async function GET(req: NextRequest) {
   }
 
   const tasks = subs.map(async (sub) => {
-    if (!sub.userId || !tierGte(await getUserTier(sub.userId as string), "elite")) return;
+    if (!sub.userId || !tierGte(await getUserTier(sub.userId as string), "pro")) return;
     const utcOffset = Number(sub.utcOffset) || 0;
-    const localMins = (utcMins + utcOffset + 1440) % 1440;
-    const localTime = `${pad(Math.floor(localMins / 60))}:${pad(localMins % 60)}`;
 
     let mealTimes: Record<string, string> = {};
-    try { mealTimes = JSON.parse(sub.mealTimes as string); } catch {}
+    let timezone: string | null = null;
+    try {
+      const stored = JSON.parse(sub.mealTimes as string);
+      if (stored?.times && typeof stored.times === "object") {
+        mealTimes = stored.times;
+        timezone = typeof stored.timezone === "string" ? stored.timezone : null;
+      } else mealTimes = stored;
+    } catch {}
+    const recentSlots = recentLocalSlots(now, timezone, utcOffset);
 
-    async function pushTo(payload: string, tag: string) {
+    async function pushTo(payload: string, tag: string, deliveryKey: string) {
+      const claim = await db.execute({
+        sql: "INSERT OR IGNORE INTO PushDelivery (deliveryKey) VALUES (?)",
+        args: [deliveryKey],
+      });
+      if (!claim.rowsAffected) return;
       try {
         await webpush.sendNotification(
           { endpoint: sub.endpoint as string, keys: { p256dh: sub.p256dh as string, auth: sub.auth as string } },
@@ -71,6 +110,7 @@ export async function GET(req: NextRequest) {
         );
         sent.push(tag);
       } catch (e: any) {
+        await db.execute({ sql: "DELETE FROM PushDelivery WHERE deliveryKey = ?", args: [deliveryKey] }).catch(() => {});
         if (e.statusCode === 410 || e.statusCode === 404) {
           await db.execute({ sql: "DELETE FROM PushSubscription WHERE endpoint = ?", args: [sub.endpoint as string] });
           errors.push(`${tag}: expired (${e.statusCode})`);
@@ -81,19 +121,27 @@ export async function GET(req: NextRequest) {
     }
 
     for (const [meal, time] of Object.entries(mealTimes)) {
-      if (time !== localTime) continue;
+      if (!/^\d{2}:\d{2}$/.test(time)) continue;
+      const slot = Array.from(recentSlots).find((value) => value.endsWith(` ${time}`));
+      if (!slot) continue;
+      const [localDate] = slot.split(" ");
       await pushTo(
-        JSON.stringify({ title: "⏰ NutriSnap", body: `Son las ${localTime}, ¡es la hora de ${capitalize(meal)}!`, tag: `meal-${meal}` }),
-        `${meal}@${localTime}`
+        JSON.stringify({ title: "⏰ NutriSnap", body: `Son las ${time}, ¡es la hora de ${capitalize(meal)}!`, tag: `meal-${meal}` }),
+        `${meal}@${localDate}T${time}`,
+        `${sub.id}:meal:${meal}:${localDate}:${time}`
       );
     }
 
     if (sub.userId) {
       for (const alert of alertsByUser.get(sub.userId as string) ?? []) {
-        if (alert.time !== localTime) continue;
+        if (typeof alert.time !== "string" || !/^\d{2}:\d{2}$/.test(alert.time)) continue;
+        const slot = Array.from(recentSlots).find((value) => value.endsWith(` ${alert.time as string}`));
+        if (!slot) continue;
+        const [localDate] = slot.split(" ");
         await pushTo(
           JSON.stringify({ title: "🔔 NutriSnap", body: alert.label as string, tag: `alert-${alert.id}` }),
-          `alert:${alert.label}@${localTime}`
+          `alert:${alert.label}@${localDate}T${alert.time}`,
+          `${sub.id}:alert:${alert.id}:${localDate}:${alert.time}`
         );
       }
     }

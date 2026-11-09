@@ -44,7 +44,7 @@ const TIERS = [
       { label: "Exportar datos CSV", ok: true },
       { label: "Streaks y estadísticas", ok: true },
       { label: "Seguimiento de peso", ok: false },
-      { label: "Push notifications", ok: false },
+      { label: "Recordatorios y notificaciones push", ok: true },
     ],
   },
   {
@@ -57,7 +57,6 @@ const TIERS = [
       { label: "Todo lo de Pro", ok: true },
       { label: "Historial 1 año", ok: true },
       { label: "Seguimiento de peso", ok: true },
-      { label: "Push notifications", ok: true },
       { label: "Exportar datos CSV", ok: true },
       { label: "Estadísticas avanzadas", ok: true },
       { label: "Soporte prioritario", ok: true },
@@ -71,11 +70,13 @@ export default function PricingPage() {
   const { tier: currentTier } = useSubscription();
   const [billing, setBilling] = useState<"monthly" | "annual">("monthly");
   const [loading, setLoading] = useState<string | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const router = useRouter();
 
   async function checkout(plan: Plan) {
     if (!session) { router.push("/login"); return; }
     setLoading(plan);
+    setCheckoutError(null);
     try {
       const res = await fetch("/api/subscription/checkout", {
         method: "POST",
@@ -84,6 +85,9 @@ export default function PricingPage() {
       });
       const data = await res.json();
       if (data.url) window.location.href = data.url;
+      else setCheckoutError(data.error ?? "No se pudo iniciar el pago. Inténtalo de nuevo.");
+    } catch {
+      setCheckoutError("No se pudo conectar con Stripe. Inténtalo de nuevo.");
     } finally {
       setLoading(null);
     }
@@ -95,6 +99,12 @@ export default function PricingPage() {
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Planes</h1>
         <p className="text-sm text-gray-400 dark:text-zinc-500">Sin compromisos. Cancela cuando quieras.</p>
       </header>
+
+      {checkoutError && (
+        <div role="alert" className="mb-5 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          {checkoutError}
+        </div>
+      )}
 
       {/* Billing toggle */}
       <div className="flex justify-center mb-8">

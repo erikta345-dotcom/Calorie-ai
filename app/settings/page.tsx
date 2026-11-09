@@ -85,6 +85,7 @@ export default function SettingsPage() {
   const [weightInput, setWeightInput] = useState("");
   const [weightSaving, setWeightSaving] = useState(false);
   const { tier } = useSubscription();
+  const hasPro = tier === "pro" || tier === "elite";
   const [promoCode, setPromoCode] = useState("");
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoMsg, setPromoMsg] = useState<{ ok: boolean; text: string } | null>(null);
@@ -411,8 +412,8 @@ export default function SettingsPage() {
         <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-4">
           <div className="flex items-center justify-between pt-3 pb-1">
             <p className="text-xs text-gray-400 dark:text-zinc-500 font-semibold uppercase tracking-wide">Horario de comidas</p>
-            {tier !== "elite" ? (
-              <Link href="/pricing" className="text-xs text-orange-400 underline">🔒 Avisos · Elite</Link>
+            {!hasPro ? (
+              <Link href="/pricing" className="text-xs text-lime-500 underline">🔒 Avisos · Pro</Link>
             ) : notifPerm !== "granted" ? (
               <button
                 onClick={async () => {
@@ -443,7 +444,7 @@ export default function SettingsPage() {
               </button>
             )}
           </div>
-          <p className="text-xs text-gray-300 dark:text-zinc-600 pb-2">{tier === "elite" ? "Notificación cuando llegue la hora" : "Las notificaciones push están incluidas en Elite"}</p>
+          <p className="text-xs text-gray-300 dark:text-zinc-600 pb-2">{hasPro ? "Recordatorio push cuando llegue la hora" : "Los recordatorios y notificaciones push están incluidos en Pro"}</p>
           {(Object.keys(MEAL_LABELS) as (keyof MealTimes)[]).map((meal) => (
             <div key={meal} className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-zinc-800 last:border-0">
               <p className="text-sm text-gray-900 dark:text-white">{MEAL_LABELS[meal]}</p>

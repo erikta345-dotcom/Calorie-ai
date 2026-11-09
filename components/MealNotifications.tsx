@@ -22,6 +22,10 @@ async function getMealTimes(): Promise<Record<string, string>> {
   } catch { return {}; }
 }
 
+function getTimezone() {
+  try { return Intl.DateTimeFormat().resolvedOptions().timeZone; } catch { return ""; }
+}
+
 async function subscribeAndSave() {
   if (!("serviceWorker" in navigator) || !("PushManager" in window)) return false;
 
@@ -47,11 +51,12 @@ async function subscribeAndSave() {
 
   const mealTimes = await getMealTimes();
   const utcOffset = -new Date().getTimezoneOffset();
+  const timezone = getTimezone();
 
   const saveRes = await fetch("/api/push/subscribe", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ subscription: sub.toJSON(), mealTimes, utcOffset }),
+    body: JSON.stringify({ subscription: sub.toJSON(), mealTimes, utcOffset, timezone }),
   });
   if (!saveRes.ok) {
     await sub.unsubscribe();
@@ -69,11 +74,12 @@ async function updateSubscription() {
 
   const mealTimes = await getMealTimes();
   const utcOffset = -new Date().getTimezoneOffset();
+  const timezone = getTimezone();
 
   await fetch("/api/push/subscribe", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ subscription: sub.toJSON(), mealTimes, utcOffset }),
+    body: JSON.stringify({ subscription: sub.toJSON(), mealTimes, utcOffset, timezone }),
   });
 }
 

@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { Trash2, Plus } from "lucide-react";
 import PageShell from "@/components/PageShell";
 import EmptyState from "@/components/EmptyState";
+import Link from "next/link";
+import { useSubscription } from "@/hooks/useSubscription";
 
 type Alert = {
   id: string;
@@ -15,10 +17,16 @@ type Alert = {
 };
 
 export default function AlertsPage() {
+  const { tier } = useSubscription();
+  const hasPro = tier === "pro" || tier === "elite";
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [adding, setAdding] = useState(false);
-  const [form, setForm] = useState({ type: "time", label: "", time: "18:00", threshold: "2500" });
+  const [form, setForm] = useState({ type: "calorie", label: "", time: "18:00", threshold: "2500" });
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (tier) setForm((current) => ({ ...current, type: tier === "free" ? "calorie" : "time" }));
+  }, [tier]);
 
   useEffect(() => {
     fetch("/api/alerts").then((r) => r.json()).then((data) => {
@@ -111,17 +119,25 @@ export default function AlertsPage() {
               {(["time", "calorie"] as const).map((t) => (
                 <button
                   key={t}
+                  disabled={t === "time" && !hasPro}
                   onClick={() => setForm({ ...form, type: t })}
                   className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    form.type === t
+                    t === "time" && !hasPro ? "bg-gray-100 dark:bg-zinc-800 text-gray-300 dark:text-zinc-600 cursor-not-allowed"
+                    : form.type === t
                       ? "bg-brand-500 text-zinc-950"
                       : "bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400 hover:text-gray-700 dark:hover:text-zinc-200"
                   }`}
                 >
-                  {t === "time" ? "⏰ Hora" : "🔥 Calorías"}
+                  {t === "time" ? `⏰ Hora${hasPro ? "" : " · Pro"}` : "🔥 Calorías"}
                 </button>
               ))}
             </div>
+
+            {!hasPro && (
+              <p className="text-xs text-lime-600 dark:text-lime-400">
+                Los recordatorios por hora con notificación push están incluidos en <Link href="/pricing" className="underline">Pro</Link>.
+              </p>
+            )}
 
             <input
               type="text"

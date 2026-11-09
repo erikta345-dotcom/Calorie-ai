@@ -8,10 +8,10 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   const { uid, error } = await requireAuth("push", 10);
   if (error) return error;
-  if (!tierGte(await getUserTier(uid), "elite")) {
-    return NextResponse.json({ error: "Las notificaciones push requieren plan Elite.", upgradeRequired: true }, { status: 403 });
+  if (!tierGte(await getUserTier(uid), "pro")) {
+    return NextResponse.json({ error: "Los recordatorios y las notificaciones push requieren plan Pro.", upgradeRequired: true }, { status: 403 });
   }
-  const { subscription, mealTimes, utcOffset } = await req.json();
+  const { subscription, mealTimes, utcOffset, timezone } = await req.json();
   if (!subscription?.endpoint || !subscription?.keys) {
     return NextResponse.json({ error: "Invalid subscription" }, { status: 400 });
   }
@@ -24,6 +24,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid keys" }, { status: 400 });
   }
   const id = crypto.randomUUID();
+  let validTimezone: string | null = null;
+  if (typeof timezone === "string" && timezone.length <= 100) {
+    try {
+      new Intl.DateTimeFormat("en", { timeZone: timezone });
+      validTimezone = timezone;
+    } catch {}
+  }
+  const storedMealTimes = JSON.stringify({ times: mealTimes, timezone: validTimezone });
   await db.execute({
     sql: `INSERT INTO PushSubscription (id, userId, endpoint, p256dh, auth, mealTimes, utcOffset)
           VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -33,7 +41,7 @@ export async function POST(req: NextRequest) {
             auth=excluded.auth,
             mealTimes=excluded.mealTimes,
             utcOffset=excluded.utcOffset`,
-    args: [id, uid, endpoint, p256dh, auth, JSON.stringify(mealTimes), utcOffset ?? 0],
+    args: [id, uid, endpoint, p256dh, auth, storedMealTimes, utcOffset ?? 0],
   });
   return NextResponse.json({ ok: true });
 }

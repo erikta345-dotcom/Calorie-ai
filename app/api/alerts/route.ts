@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
 import { requireAuth, requireAuthOnly } from "@/lib/api-auth";
+import { getUserTier, tierGte } from "@/lib/subscription";
 
 const VALID_TYPES = ["time", "calorie"];
 
@@ -22,6 +23,9 @@ export async function POST(req: NextRequest) {
   const { type, label, time, threshold } = await req.json();
   if (!type || !VALID_TYPES.includes(type)) {
     return NextResponse.json({ error: "Tipo inválido" }, { status: 400 });
+  }
+  if (type === "time" && !tierGte(await getUserTier(uid), "pro")) {
+    return NextResponse.json({ error: "Los recordatorios por hora requieren plan Pro.", upgradeRequired: true }, { status: 403 });
   }
   if (!label || typeof label !== "string" || label.trim().length === 0 || label.length > 100) {
     return NextResponse.json({ error: "Etiqueta inválida" }, { status: 400 });
