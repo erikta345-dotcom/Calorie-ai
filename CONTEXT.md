@@ -132,7 +132,7 @@ public/sw.js            Service Worker (push notifications)
 - Migración DB ya ejecutada exitosamente
 - Webhook de Stripe configurado apuntando a `/api/subscription/webhook`
 - Todo desplegado en producción en `https://calorie-ai-jbrl.vercel.app`
-- Push y recordatorios incluidos desde Pro; horarios guardados con zona IANA para ajustes DST. Vercel Schedules ejecuta el job cada 15 minutos en `Europe/Madrid`.
+- Push y recordatorios incluidos desde Pro; horarios guardados con zona IANA para ajustes DST. cron-job.org llama `/api/cron/meal-notifications` cada minuto en `Europe/Madrid`.
 
 ## Convenciones
 - DB: raw SQL con `db.execute({ sql, args })` — sin Prisma ORM

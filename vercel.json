@@ -1,11 +1,3 @@
 {
-  "schedules": {
-    "meal-notifications": {
-      "schedule": "*/15 * * * *",
-      "timezone": "Europe/Madrid",
-      "path": "/api/cron/meal-notifications",
-      "requestMethod": "GET",
-      "jitter": 15
-    }
-  }
+  "$schema": "https://openapi.vercel.sh/vercel.json"
 }
