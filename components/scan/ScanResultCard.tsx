@@ -1,6 +1,6 @@
 "use client";
 
-import { Save, BookOpen } from "lucide-react";
+import { Save, BookOpen, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { type ScanResult, type FoodItem } from "./types";
 
@@ -36,6 +36,11 @@ interface ScanResultCardProps {
   itemGramsStr: Record<number, string>;
   onDishChange: (val: string) => void;
   onToggleItem: (idx: number) => void;
+  onRemoveItem: (idx: number) => void;
+  quickFoodIndex: number;
+  onQuickFoodIndexChange: (idx: number) => void;
+  onAddQuickFood: () => void;
+  quickFoods: string[];
   onUpdateName: (idx: number, val: string) => void;
   onItemGramsStrChange: (updater: (prev: Record<number, string>) => Record<number, string>) => void;
   onUpdateGrams: (idx: number, val: number) => void;
@@ -55,6 +60,11 @@ export default function ScanResultCard({
   itemGramsStr,
   onDishChange,
   onToggleItem,
+  onRemoveItem,
+  quickFoodIndex,
+  onQuickFoodIndexChange,
+  onAddQuickFood,
+  quickFoods,
   onUpdateName,
   onItemGramsStrChange,
   onUpdateGrams,
@@ -71,6 +81,12 @@ export default function ScanResultCard({
         className="w-full bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-4 py-3 text-gray-900 dark:text-white font-semibold focus:outline-none focus:border-brand-500"
       />
 
+      {result.items.some((item) => item.needsReview) && (
+        <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
+          Algunos ingredientes o cantidades son estimaciones. Revisa los marcados antes de guardar.
+        </p>
+      )}
+
       <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden">
         {result.items.map((item, idx) => {
           const m = macros(item, portion);
@@ -84,6 +100,8 @@ export default function ScanResultCard({
                   {item.enabled && "✓"}
                 </button>
                 <input value={item.name} onChange={(e) => onUpdateName(idx, e.target.value)} className="flex-1 bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none min-w-0" />
+                {item.needsReview && <span className="text-[10px] text-amber-500">Revisar</span>}
+                <button type="button" aria-label={`Eliminar ${item.name}`} onClick={() => onRemoveItem(idx)} className="p-1 text-gray-400 hover:text-red-400"><Trash2 size={15} /></button>
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <input
                     type="text"
@@ -112,6 +130,15 @@ export default function ScanResultCard({
             </div>
           );
         })}
+      </div>
+
+      <div className="flex items-center gap-2">
+        <select aria-label="Ingrediente para añadir" value={quickFoodIndex} onChange={(e) => onQuickFoodIndexChange(Number(e.target.value))} className="flex-1 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-lg px-3 py-2 text-sm text-gray-700 dark:text-zinc-300">
+          {quickFoods.map((food, idx) => <option key={food} value={idx}>{food}</option>)}
+        </select>
+        <button type="button" disabled={result.items.length >= 15} onClick={onAddQuickFood} className="inline-flex items-center gap-1 rounded-lg bg-gray-100 dark:bg-zinc-800 px-3 py-2 text-sm text-gray-700 dark:text-zinc-200 disabled:opacity-40">
+          <Plus size={15} /> Añadir
+        </button>
       </div>
 
       <div>

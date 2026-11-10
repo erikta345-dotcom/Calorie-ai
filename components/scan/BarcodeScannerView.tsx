@@ -15,6 +15,10 @@ interface BarcodeScannerViewProps {
   barcodeSaving: boolean;
   barcodeSavingRecipe: boolean;
   manualCode: string;
+  activeBarcodeCode: string;
+  customProduct: { name: string; brand: string; calories: string; protein: string; carbs: string; fat: string; servingG: string };
+  onCustomProductChange: (key: "name" | "brand" | "calories" | "protein" | "carbs" | "fat" | "servingG", value: string) => void;
+  onSaveCustomProduct: () => void;
   onTakePhoto: () => void;
   onManualCodeChange: (val: string) => void;
   onManualBarcode: () => void;
@@ -36,6 +40,10 @@ export default function BarcodeScannerView({
   barcodeSaving,
   barcodeSavingRecipe,
   manualCode,
+  activeBarcodeCode,
+  customProduct,
+  onCustomProductChange,
+  onSaveCustomProduct,
   onTakePhoto,
   onManualCodeChange,
   onManualBarcode,
@@ -92,6 +100,21 @@ export default function BarcodeScannerView({
       {barcodeError && (
         <div className="space-y-2">
           <p className="text-red-400 text-sm text-center">{barcodeError}</p>
+          {activeBarcodeCode && (
+            <div className="space-y-2 rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900 p-3">
+              <p className="text-sm font-medium text-gray-900 dark:text-white">Añadir producto manualmente</p>
+              <p className="text-xs text-gray-500 dark:text-zinc-400">Código {activeBarcodeCode}. Se guardará en este dispositivo para futuras búsquedas.</p>
+              {([
+                ["name", "Nombre del producto", "text"], ["brand", "Marca (opcional)", "text"],
+                ["calories", "Kcal por 100 g", "number"], ["protein", "Proteína (g/100 g)", "number"],
+                ["carbs", "Carbohidratos (g/100 g)", "number"], ["fat", "Grasas (g/100 g)", "number"],
+                ["servingG", "Ración habitual (g)", "number"],
+              ] as const).map(([key, placeholder, type]) => (
+                <input key={key} type={type} min={type === "number" ? "0" : undefined} step={type === "number" ? "any" : undefined} value={customProduct[key]} onChange={(e) => onCustomProductChange(key, e.target.value)} placeholder={placeholder} aria-label={placeholder} className="w-full rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm text-gray-900 dark:text-white" />
+              ))}
+              <button type="button" onClick={onSaveCustomProduct} className="w-full rounded-lg bg-brand-500 px-3 py-2 text-sm font-semibold text-zinc-950">Guardar producto</button>
+            </div>
+          )}
           <button onClick={onTakePhoto} className="w-full py-2.5 rounded-xl border border-gray-300 dark:border-zinc-700 text-gray-400 dark:text-zinc-400 text-sm hover:border-brand-500 transition-colors">
             Intentar de nuevo
           </button>

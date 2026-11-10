@@ -8,6 +8,8 @@ export type FoodItem = {
   carbsPer100g: number;
   fatPer100g: number;
   enabled: boolean;
+  confidence: "low" | "medium" | "high";
+  needsReview: boolean;
 };
 
 export type ScanResult = {
@@ -23,6 +25,8 @@ export type BarcodeProduct = {
   carbs: number;
   fat: number;
   servingG: number | null;
+  code?: string;
+  custom?: boolean;
 };
 
 export type MacroTotal = {

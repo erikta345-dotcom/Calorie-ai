@@ -42,14 +42,19 @@ METHODOLOGY:
 6. ACCURACY: If unsure about a component, include it with conservative estimate rather than omitting.`;
 
 const JSON_RULES = `
-Return ONLY this exact JSON structure, no markdown, no explanation, nothing outside the JSON:
-{"dish":"<nombre descriptivo del plato en español>","items":[{"name":"<nombre en español>","grams":<integer>,"calories":<integer>,"protein":<number>,"carbs":<number>,"fat":<number>}],"total":{"grams":<integer>,"calories":<integer>,"protein":<number>,"carbs":<number>,"fat":<number>}}
+Return ONLY this JSON structure, no markdown or explanation:
+{"dish":"<nombre descriptivo del plato en español>","items":[{"name":"<nombre en español>","grams":<integer>,"calories":<integer>,"protein":<number>,"carbs":<number>,"fat":<number>,"confidence":"low|medium|high"}]}
 
 RULES:
 - Between 1 and 7 items
 - No item may have 0 calories
 - All names must be in Spanish
+- Confidence describes how visually certain you are about identifying and quantifying this component; use low when hidden by sauce, mixed into a dish, or portion size is unclear.
 - If image is unclear or not food, still return your best estimate`;
+
+function finiteNumber(value: unknown, min: number, max: number): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= min && value <= max;
+}
 
 export async function POST(req: NextRequest) {
   const { uid, error } = await requireAuth("ai-scan", 10);
@@ -153,14 +158,37 @@ export async function POST(req: NextRequest) {
 
     const parsed = JSON.parse(match[0]);
 
-    if (!Array.isArray(parsed.items) || parsed.items.length === 0) {
+    if (!Array.isArray(parsed.items) || parsed.items.length === 0 || parsed.items.length > 7) {
       throw new Error("Invalid: no items array");
     }
-    if (parsed.items.some((item: any) => !item.calories || item.calories <= 0)) {
-      throw new Error("Invalid: zero-calorie item detected");
-    }
 
-    const total = parsed.items.reduce(
+    const items = parsed.items.map((item: any) => {
+      if (
+        !item || typeof item.name !== "string" || !item.name.trim() || item.name.length > 80 ||
+        !finiteNumber(item.grams, 1, 2000) || !finiteNumber(item.calories, 1, item.grams * 10) ||
+        !finiteNumber(item.protein, 0, item.grams) || !finiteNumber(item.carbs, 0, item.grams) ||
+        !finiteNumber(item.fat, 0, item.grams)
+      ) {
+        throw new Error("Invalid food item values");
+      }
+
+      const confidence = ["low", "medium", "high"].includes(item.confidence) ? item.confidence : "low";
+      const energyFromMacros = item.protein * 4 + item.carbs * 4 + item.fat * 9;
+      const inconsistentEnergy = Math.abs(item.calories - energyFromMacros) > Math.max(120, item.calories * 0.4);
+
+      return {
+        name: item.name.trim(),
+        grams: Math.round(item.grams),
+        calories: Math.round(item.calories),
+        protein: Math.round(item.protein * 10) / 10,
+        carbs: Math.round(item.carbs * 10) / 10,
+        fat: Math.round(item.fat * 10) / 10,
+        confidence,
+        needsReview: confidence === "low" || inconsistentEnergy,
+      };
+    });
+
+    const total = items.reduce(
       (acc: any, item: any) => ({
         grams: acc.grams + (item.grams || 0),
         calories: acc.calories + (item.calories || 0),
@@ -177,7 +205,11 @@ export async function POST(req: NextRequest) {
     total.carbs = Math.round(total.carbs * 10) / 10;
     total.fat = Math.round(total.fat * 10) / 10;
 
-    return NextResponse.json({ dish: parsed.dish, items: parsed.items, total });
+    return NextResponse.json({
+      dish: typeof parsed.dish === "string" && parsed.dish.trim() ? parsed.dish.trim().slice(0, 100) : "Plato escaneado",
+      items,
+      total,
+    });
   } catch (e: any) {
     console.error("AI scan error:", e.message);
     return NextResponse.json({ error: "Error al analizar imagen" }, { status: 500 });

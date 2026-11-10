@@ -1,7 +1,7 @@
 "use client";
 
 import { type RefObject } from "react";
-import { Camera, ImageIcon, Sparkles, RotateCcw } from "lucide-react";
+import { Camera, ImageIcon, Sparkles, RotateCcw, RotateCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const LOAD_STEPS = ["Comprimiendo imagen...", "Identificando alimentos...", "Calculando macros..."];
@@ -10,12 +10,16 @@ interface ImagePickerProps {
   fileRef: RefObject<HTMLInputElement>;
   cameraRef: RefObject<HTMLInputElement>;
   preview: string | null;
+  rotation: number;
+  zoom: number;
   description: string;
   loading: boolean;
   loadStep: number;
   hasResult: boolean;
   error: string;
   onFileChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onRotate: () => void;
+  onZoomChange: (val: number) => void;
   onDescriptionChange: (val: string) => void;
   onScan: () => void;
 }
@@ -24,24 +28,27 @@ export default function ImagePicker({
   fileRef,
   cameraRef,
   preview,
+  rotation,
+  zoom,
   description,
   loading,
   loadStep,
   hasResult,
   error,
   onFileChange,
+  onRotate,
+  onZoomChange,
   onDescriptionChange,
   onScan,
 }: ImagePickerProps) {
   return (
     <>
       <div
-        onClick={() => (preview ? fileRef.current?.click() : undefined)}
         className={`relative w-full aspect-square rounded-2xl border-2 border-dashed flex items-center justify-center overflow-hidden bg-gray-50/80 dark:bg-zinc-900/80 transition-all ${preview ? "cursor-pointer border-brand-500/60 hover:border-brand-500" : "border-gray-200 dark:border-zinc-800"}`}
       >
         {preview ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={preview} alt="preview" className="w-full h-full object-cover" />
+          <img src={preview} alt="Vista previa de la comida" style={{ transform: `rotate(${rotation}deg) scale(${zoom})` }} className="pointer-events-none w-full h-full object-cover transition-transform" />
         ) : (
           <div className="text-center space-y-3 p-8">
             <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-zinc-800 flex items-center justify-center mx-auto">
@@ -53,7 +60,21 @@ export default function ImagePicker({
             </div>
           </div>
         )}
+        {preview && <div className="absolute inset-[18%] rounded-[50%] border-2 border-dashed border-white/80 pointer-events-none shadow-[0_0_0_999px_rgba(0,0,0,0.12)]" />}
       </div>
+
+      {preview && (
+        <div className="flex items-center gap-3 mt-2">
+          <button type="button" onClick={onRotate} className="inline-flex items-center gap-1 rounded-lg bg-gray-100 dark:bg-zinc-800 px-3 py-2 text-xs text-gray-700 dark:text-zinc-200">
+            <RotateCw size={14} /> Girar
+          </button>
+          <label className="flex flex-1 items-center gap-2 text-xs text-gray-500 dark:text-zinc-400">
+            Encuadre
+            <input aria-label="Zoom de encuadre" type="range" min="1" max="2" step="0.1" value={zoom} onChange={(e) => onZoomChange(Number(e.target.value))} className="flex-1 accent-lime-500" />
+          </label>
+        </div>
+      )}
+      {preview && <p className="text-center text-xs text-gray-400 dark:text-zinc-500">Centra el plato en el óvalo; puedes ajustar el encuadre antes de analizar.</p>}
 
       {!preview && (
         <div className="flex gap-2 mt-3">
