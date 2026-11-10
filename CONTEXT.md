@@ -128,7 +128,7 @@ public/sw.js            Service Worker (push notifications)
 ```
 
 ## Estado actual (pendiente)
-- **Stripe** — Vercel Production tiene configurado `STRIPE_PRO_MONTHLY_PRICE_ID`; faltan `STRIPE_ELITE_MONTHLY_PRICE_ID` y `STRIPE_ELITE_ANNUAL_PRICE_ID`. El checkout devuelve un error visible cuando falta el ID.
+- **Stripe** — Vercel Production usa una clave Stripe de prueba. `STRIPE_PRO_ANNUAL_PRICE_ID=price_1UaBz8RoZ80OqyzxtAuQ16DU` (€29,99/año), `STRIPE_ELITE_MONTHLY_PRICE_ID=price_1UZraHRoZ80OqyzxBFxwGKQg` (€9,99/mes) y `STRIPE_ELITE_ANNUAL_PRICE_ID=price_1UZrZBRoZ80Oqyzxe2UFTnDt` (€59,99/año) están configurados en Production; redeploy completado y Ready. Los precios nuevos son predeterminados en sus productos. Los precios antiguos de prueba (€30/año Pro; €10/mes y €60/mes Elite) siguen activos, pero el checkout usa los IDs configurados.
 - Migración DB ya ejecutada exitosamente
 - Webhook de Stripe configurado apuntando a `/api/subscription/webhook`
 - Todo desplegado en producción en `https://calorie-ai-jbrl.vercel.app`
