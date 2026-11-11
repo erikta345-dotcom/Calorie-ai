@@ -3,6 +3,7 @@ import { requireAuthOnly } from "@/lib/api-auth";
 import { getUserTier } from "@/lib/subscription";
 import { db } from "@/lib/prisma";
 import { stripe } from "@/lib/stripe";
+import { syncStripeSubscriptionForUser } from "@/lib/stripe-subscription-sync";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +22,23 @@ export async function GET() {
     const customerId = result.rows[0]?.stripeCustomerId as string | null;
     const subscriptionId = result.rows[0]?.stripeSubscriptionId as string | null;
     hasStripe = !!(customerId && stripe);
+
+    if (stripe && customerId) {
+      try {
+        const synced = await syncStripeSubscriptionForUser(uid);
+        if (synced) {
+          return NextResponse.json({
+            tier: synced.tier,
+            hasStripe,
+            hasSubscription: synced.hasSubscription,
+            cancelAtPeriodEnd: synced.cancelAtPeriodEnd,
+            currentPeriodEnd: synced.currentPeriodEnd,
+          });
+        }
+      } catch (err) {
+        console.error("Could not sync Stripe subscriptions", err);
+      }
+    }
 
     let hasSubscription = false;
     let cancelAtPeriodEnd = false;
