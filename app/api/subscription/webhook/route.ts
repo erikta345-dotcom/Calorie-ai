@@ -16,6 +16,30 @@ async function userIdForSubscription(sub: Stripe.Subscription): Promise<string |
   return (result.rows[0]?.id as string | undefined) ?? null;
 }
 
+async function subscriptionForRefundedCharge(charge: Stripe.Charge): Promise<Stripe.Subscription | null> {
+  if (!stripe || charge.amount <= 0 || charge.amount_refunded < charge.amount) return null;
+
+  const customerId = typeof charge.customer === "string" ? charge.customer : charge.customer?.id;
+  const paymentIntentId = typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
+  if (!customerId || !paymentIntentId) return null;
+
+  const invoices = await stripe.invoices.list({ customer: customerId, limit: 100 });
+  for (const invoice of invoices.data) {
+    if (invoice.parent?.type !== "subscription_details") continue;
+    const subscription = invoice.parent.subscription_details?.subscription;
+    const subscriptionId = typeof subscription === "string" ? subscription : subscription?.id;
+    if (!subscriptionId) continue;
+
+    const payments = await stripe.invoicePayments.list({ invoice: invoice.id, limit: 100 });
+    const matchesCharge = payments.data.some((payment) =>
+      payment.payment?.type === "payment_intent" && payment.payment.payment_intent === paymentIntentId
+    );
+    if (matchesCharge) return stripe.subscriptions.retrieve(subscriptionId);
+  }
+
+  return null;
+}
+
 export async function POST(req: NextRequest) {
   if (!stripe || !process.env.STRIPE_WEBHOOK_SECRET) {
     return NextResponse.json({ error: "Not configured" }, { status: 503 });
@@ -50,6 +74,20 @@ export async function POST(req: NextRequest) {
     const sub = event.data.object as Stripe.Subscription;
     const uid = await userIdForSubscription(sub);
     if (uid) await syncStripeSubscriptionForUser(uid);
+  }
+
+  if (event.type === "charge.refunded") {
+    const charge = event.data.object as Stripe.Charge;
+    const sub = await subscriptionForRefundedCharge(charge);
+    if (sub) {
+      const chargeCustomerId = typeof charge.customer === "string" ? charge.customer : charge.customer?.id;
+      const subscriptionCustomerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+      if (chargeCustomerId === subscriptionCustomerId && ["active", "trialing", "past_due"].includes(sub.status)) {
+        await stripe.subscriptions.cancel(sub.id, { invoice_now: false, prorate: false });
+      }
+      const uid = await userIdForSubscription(sub);
+      if (uid) await syncStripeSubscriptionForUser(uid);
+    }
   }
 
   return NextResponse.json({ ok: true });
