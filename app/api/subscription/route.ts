@@ -15,11 +15,31 @@ export async function GET() {
   let hasStripe = false;
   try {
     const result = await db.execute({
-      sql: "SELECT stripeCustomerId FROM UserSettings WHERE id = ?",
+      sql: "SELECT stripeCustomerId, stripeSubscriptionId FROM UserSettings WHERE id = ?",
       args: [uid],
     });
-    hasStripe = !!(result.rows[0]?.stripeCustomerId && stripe);
+    const customerId = result.rows[0]?.stripeCustomerId as string | null;
+    const subscriptionId = result.rows[0]?.stripeSubscriptionId as string | null;
+    hasStripe = !!(customerId && stripe);
+
+    let hasSubscription = false;
+    let cancelAtPeriodEnd = false;
+    let currentPeriodEnd: number | null = null;
+    if (stripe && subscriptionId && customerId) {
+      try {
+        const sub = await stripe.subscriptions.retrieve(subscriptionId);
+        const subCustomerId = typeof sub.customer === "string" ? sub.customer : sub.customer.id;
+        if (subCustomerId === customerId) {
+          hasSubscription = ["active", "trialing", "past_due"].includes(sub.status);
+          cancelAtPeriodEnd = sub.cancel_at_period_end;
+          currentPeriodEnd = sub.items.data[0]?.current_period_end ?? null;
+        }
+      } catch (err) {
+        console.error("Could not retrieve Stripe subscription status", err);
+      }
+    }
+    return NextResponse.json({ tier, hasStripe, hasSubscription, cancelAtPeriodEnd, currentPeriodEnd });
   } catch {}
 
-  return NextResponse.json({ tier, hasStripe });
+  return NextResponse.json({ tier, hasStripe, hasSubscription: false, cancelAtPeriodEnd: false, currentPeriodEnd: null });
 }

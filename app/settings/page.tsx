@@ -25,6 +25,12 @@ type Settings = {
   mealTimes: MealTimes;
 };
 
+type BillingStatus = {
+  hasSubscription: boolean;
+  cancelAtPeriodEnd: boolean;
+  currentPeriodEnd: number | null;
+};
+
 const PLANS: { id: Settings["goal"]; emoji: string; label: string; desc: string }[] = [
   { id: "maintain", emoji: "⚖️", label: "Mantener", desc: "Mismo peso" },
   { id: "lose_fat", emoji: "🔥", label: "Perder grasa", desc: "Déficit calórico" },
@@ -89,6 +95,22 @@ export default function SettingsPage() {
   const [promoCode, setPromoCode] = useState("");
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoMsg, setPromoMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [billing, setBilling] = useState<BillingStatus>({ hasSubscription: false, cancelAtPeriodEnd: false, currentPeriodEnd: null });
+  const [billingAction, setBillingAction] = useState<"cancel" | "portal" | null>(null);
+  const [billingError, setBillingError] = useState("");
+
+  useEffect(() => {
+    fetch("/api/subscription")
+      .then((res) => res.ok ? res.json() : null)
+      .then((data) => {
+        if (data) setBilling({
+          hasSubscription: !!data.hasSubscription,
+          cancelAtPeriodEnd: !!data.cancelAtPeriodEnd,
+          currentPeriodEnd: typeof data.currentPeriodEnd === "number" ? data.currentPeriodEnd : null,
+        });
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     if ("Notification" in window) setNotifPerm(Notification.permission);
@@ -159,6 +181,40 @@ export default function SettingsPage() {
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
     window.dispatchEvent(new CustomEvent("meal-times-updated"));
+  }
+
+  async function openBillingPortal() {
+    setBillingAction("portal");
+    setBillingError("");
+    try {
+      const res = await fetch("/api/subscription/portal", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok || !data.url) throw new Error(data.error || "No se pudo abrir la gestión de pagos.");
+      window.location.assign(data.url);
+    } catch (err) {
+      setBillingError(err instanceof Error ? err.message : "No se pudo abrir la gestión de pagos.");
+      setBillingAction(null);
+    }
+  }
+
+  async function cancelSubscription() {
+    const endDate = billing.currentPeriodEnd
+      ? new Date(billing.currentPeriodEnd * 1000).toLocaleDateString("es-ES", { dateStyle: "long" })
+      : "el final del periodo actual";
+    if (!window.confirm(`La suscripción dejará de renovarse. Mantendrás el acceso Pro/Elite hasta ${endDate}. ¿Quieres continuar?`)) return;
+
+    setBillingAction("cancel");
+    setBillingError("");
+    try {
+      const res = await fetch("/api/subscription/cancel", { method: "POST" });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudo cancelar la renovación.");
+      setBilling({ hasSubscription: true, cancelAtPeriodEnd: true, currentPeriodEnd: data.currentPeriodEnd ?? billing.currentPeriodEnd });
+    } catch (err) {
+      setBillingError(err instanceof Error ? err.message : "No se pudo cancelar la renovación.");
+    } finally {
+      setBillingAction(null);
+    }
   }
 
   const bmi = form.height > 0 ? form.weight / Math.pow(form.height / 100, 2) : null;
@@ -279,6 +335,30 @@ export default function SettingsPage() {
               {promoLoading ? "..." : "Canjear"}
             </button>
           </div>
+          {billing.hasSubscription && (
+            <div className="mt-3 border-t border-gray-200 dark:border-zinc-800 pt-3 space-y-2">
+              {billing.cancelAtPeriodEnd ? (
+                <p className="text-xs text-amber-600 dark:text-amber-300">
+                  La suscripción no se renovará. Mantendrás {tier === "elite" ? "Elite" : "Pro"} hasta {billing.currentPeriodEnd
+                    ? new Date(billing.currentPeriodEnd * 1000).toLocaleDateString("es-ES", { dateStyle: "long" })
+                    : "el final del periodo actual"}.
+                </p>
+              ) : (
+                <p className="text-xs text-gray-500 dark:text-zinc-400">Tu suscripción se renueva automáticamente al final del periodo.</p>
+              )}
+              <div className="flex flex-col sm:flex-row gap-2">
+                <button type="button" onClick={openBillingPortal} disabled={!!billingAction} className="flex-1 rounded-lg border border-gray-300 dark:border-zinc-700 px-3 py-2 text-xs font-semibold text-gray-700 dark:text-zinc-200 disabled:opacity-50">
+                  {billingAction === "portal" ? "Abriendo…" : "Gestionar facturación"}
+                </button>
+                {!billing.cancelAtPeriodEnd && (
+                  <button type="button" onClick={cancelSubscription} disabled={!!billingAction} className="flex-1 rounded-lg border border-red-300/50 px-3 py-2 text-xs font-semibold text-red-500 hover:bg-red-500/5 disabled:opacity-50">
+                    {billingAction === "cancel" ? "Cancelando renovación…" : "Cancelar suscripción"}
+                  </button>
+                )}
+              </div>
+              {billingError && <p role="alert" className="text-xs text-red-400">{billingError}</p>}
+            </div>
+          )}
           {promoMsg && (
             <p className={`text-xs mt-2 ${promoMsg.ok ? "text-lime-500" : "text-red-400"}`}>{promoMsg.text}</p>
           )}
