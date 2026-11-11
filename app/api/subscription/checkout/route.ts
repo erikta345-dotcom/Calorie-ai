@@ -40,6 +40,7 @@ export async function POST(req: NextRequest) {
     const checkout = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: "subscription",
+      adaptive_pricing: { enabled: false },
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
       success_url: new URL("/settings?upgraded=1", req.url).toString(),
