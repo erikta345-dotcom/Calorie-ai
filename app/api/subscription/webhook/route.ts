@@ -23,18 +23,22 @@ async function subscriptionForRefundedCharge(charge: Stripe.Charge): Promise<Str
   const paymentIntentId = typeof charge.payment_intent === "string" ? charge.payment_intent : charge.payment_intent?.id;
   if (!customerId || !paymentIntentId) return null;
 
-  const invoices = await stripe.invoices.list({ customer: customerId, limit: 100 });
-  for (const invoice of invoices.data) {
+  const payments = await stripe.invoicePayments.list({
+    payment: { type: "payment_intent", payment_intent: paymentIntentId },
+    limit: 100,
+  });
+  for (const payment of payments.data) {
+    if (payment.payment.type !== "payment_intent") continue;
+    const invoiceId = typeof payment.invoice === "string" ? payment.invoice : payment.invoice.id;
+    const invoice = typeof payment.invoice === "string" ? await stripe.invoices.retrieve(invoiceId) : payment.invoice;
+    if ("deleted" in invoice && invoice.deleted) continue;
+    const invoiceCustomerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id;
+    if (invoiceCustomerId !== customerId) continue;
     if (invoice.parent?.type !== "subscription_details") continue;
     const subscription = invoice.parent.subscription_details?.subscription;
     const subscriptionId = typeof subscription === "string" ? subscription : subscription?.id;
     if (!subscriptionId) continue;
-
-    const payments = await stripe.invoicePayments.list({ invoice: invoice.id, limit: 100 });
-    const matchesCharge = payments.data.some((payment) =>
-      payment.payment?.type === "payment_intent" && payment.payment.payment_intent === paymentIntentId
-    );
-    if (matchesCharge) return stripe.subscriptions.retrieve(subscriptionId);
+    return stripe.subscriptions.retrieve(subscriptionId);
   }
 
   return null;
