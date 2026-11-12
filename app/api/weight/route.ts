@@ -11,7 +11,7 @@ export async function GET() {
     return NextResponse.json({ error: "Seguimiento de peso requiere plan Elite.", upgradeRequired: true }, { status: 403 });
   }
   const result = await db.execute({
-    sql: "SELECT date, weight FROM WeightLog WHERE userId = ? AND date >= ? AND date <= ? ORDER BY date ASC LIMIT 400",
+    sql: "SELECT date, weight FROM WeightLog WHERE userId = ? AND date >= ? AND date <= ? AND weight >= 20 AND weight <= 500 ORDER BY date ASC LIMIT 400",
     args: [uid, new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10), new Date().toISOString().slice(0, 10)],
   });
   return NextResponse.json(result.rows);
