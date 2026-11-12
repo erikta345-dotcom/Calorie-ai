@@ -480,8 +480,8 @@ export default function SettingsPage() {
               const current = weightLog[weightLog.length - 1].weight;
               const startingDistance = Math.abs(first - form.goalWeight!);
               const remaining = Math.abs(current - form.goalWeight!);
-              const reachedGoal = first === form.goalWeight || (first < form.goalWeight! && current >= form.goalWeight!) || (first > form.goalWeight! && current <= form.goalWeight!);
-              const progress = reachedGoal || startingDistance === 0 ? 100 : Math.max(0, Math.min(100, ((startingDistance - remaining) / startingDistance) * 100));
+              const reachedGoal = remaining < 0.05 || (first < form.goalWeight! && current > form.goalWeight!) || (first > form.goalWeight! && current < form.goalWeight!);
+              const progress = reachedGoal ? 100 : startingDistance === 0 ? 0 : Math.max(0, Math.min(100, ((startingDistance - remaining) / startingDistance) * 100));
               return (
                 <div className="mt-3">
                   <div className="flex justify-between text-[11px] text-gray-500 dark:text-zinc-400 mb-1">
