@@ -42,6 +42,7 @@ export default function HistoryPage() {
   const [view, setView] = useState<Metric>("calories");
   const [goals, setGoals] = useState({ calories: 2800, protein: 150, carbs: 300, fat: 80 });
   const [loggedStreak, setLoggedStreak] = useState(0);
+  const [annualSummary, setAnnualSummary] = useState<{ days: number; goalDays: number; months: number; firstHalf: number; secondHalf: number } | null>(null);
   const [tableOpen, setTableOpen] = useState(false);
   const { resolvedTheme } = useTheme();
   const dark = resolvedTheme === "dark";
@@ -103,7 +104,23 @@ export default function HistoryPage() {
             ? { ...r, calories: r.calories / n, protein: r.protein / n, carbs: r.carbs / n, fat: r.fat / n }
             : { date: month, label: format(d, "MMM", { locale: es }), calories: 0, protein: 0, carbs: 0, fat: 0 };
         }));
+        const activeDays = Array.from(new Set(raw.filter((e) => e.calories > 0).map((e) => e.date as string)));
+        const goalDays = activeDays.filter((date) => {
+          const day = raw.filter((e) => e.date === date).reduce((sum, e) => sum + Number(e.calories), 0);
+          const goal = Number(settings?.goalCalories || 0);
+          return goal > 0 && day >= goal * 0.9 && day <= goal * 1.1;
+        });
+        const activeMonthValues = Object.entries(monthMap).map(([month, value]) => ({ month, calories: value.calories / (monthDays[month]?.size || 1) })).sort((a, b) => a.month.localeCompare(b.month));
+        const half = Math.floor(activeMonthValues.length / 2);
+        setAnnualSummary({
+          days: activeDays.length,
+          goalDays: goalDays.length,
+          months: activeMonthValues.length,
+          firstHalf: half ? activeMonthValues.slice(0, half).reduce((sum, item) => sum + item.calories, 0) / half : 0,
+          secondHalf: activeMonthValues.length > half ? activeMonthValues.slice(half).reduce((sum, item) => sum + item.calories, 0) / (activeMonthValues.length - half) : 0,
+        });
       } else {
+        setAnnualSummary(null);
         const count = period === "week" ? 7 : 30;
         const dateMap: Record<string, DaySummary> = {};
         raw.forEach((e) => {
@@ -340,6 +357,28 @@ export default function HistoryPage() {
           </ResponsiveContainer>
         </div>
       ))}
+
+      {hasElite && period === "year" && !loading && annualSummary && (
+        <section className="grid grid-cols-2 gap-3 mb-5" aria-label="Resumen nutricional anual Elite">
+          <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-3">
+            <p className="text-xs text-gray-400 dark:text-zinc-500 mb-1">Días con registro</p>
+            <p className="text-xl font-bold text-gray-900 dark:text-white">{annualSummary.days}<span className="ml-1 text-xs font-normal text-gray-400">/ 365</span></p>
+          </div>
+          <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-3">
+            <p className="text-xs text-gray-400 dark:text-zinc-500 mb-1">Días a ±10% del objetivo kcal</p>
+            <p className="text-xl font-bold text-lime-500">{annualSummary.goalDays}<span className="ml-1 text-xs font-normal text-gray-400">{annualSummary.days ? `(${Math.round(annualSummary.goalDays / annualSummary.days * 100)}%)` : ""}</span></p>
+          </div>
+          <div className="col-span-2 bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl p-3">
+            <p className="text-xs text-gray-400 dark:text-zinc-500 mb-1">Tendencia de calorías · primera mitad vs. segunda mitad</p>
+            {annualSummary.months < 2 ? <p className="text-xs text-gray-500">Registra comidas en más meses para calcular tu tendencia.</p> : (
+              <p className={`text-sm font-semibold ${annualSummary.secondHalf <= annualSummary.firstHalf ? "text-lime-500" : "text-orange-400"}`}>
+                {annualSummary.firstHalf.toLocaleString(undefined, { maximumFractionDigits: 0 })} → {annualSummary.secondHalf.toLocaleString(undefined, { maximumFractionDigits: 0 })} kcal/día
+                <span className="ml-2 text-xs font-normal text-gray-400">promedio de días registrados</span>
+              </p>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* Pro summary table */}
       {hasPro && !loading && data.some((d) => d.calories > 0) && (

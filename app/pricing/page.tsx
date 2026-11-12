@@ -17,6 +17,7 @@ const TIERS = [
     badge: null,
     features: [
       { label: "Registro manual de comidas", ok: true },
+      { label: "Ver calorías, proteínas, carbohidratos y grasas", ok: true },
       { label: "Escaneo por código de barras", ok: true },
       { label: "3 escaneos IA por día", ok: true },
       { label: "Historial 7 días", ok: true },
@@ -58,9 +59,10 @@ const TIERS = [
       { label: "Historial 1 año", ok: true },
       { label: "Seguimiento de peso", ok: true },
       { label: "Exportar datos CSV", ok: true },
-      { label: "Estadísticas avanzadas", ok: true },
-      { label: "Soporte prioritario", ok: true },
-      { label: "Acceso anticipado a nuevas features", ok: true },
+      { label: "Tendencias de peso de los últimos 12 meses", ok: true },
+      { label: "Promedios semanales de peso", ok: true },
+      { label: "Resumen nutricional anual por meses", ok: true },
+      { label: "Días registrados y cumplimiento de objetivos por mes", ok: true },
     ],
   },
 ] as const;

@@ -100,16 +100,39 @@ export default function SettingsPage() {
   const [billingError, setBillingError] = useState("");
 
   useEffect(() => {
-    fetch("/api/subscription")
-      .then((res) => res.ok ? res.json() : null)
-      .then((data) => {
-        if (data) setBilling({
+    let inFlight = false;
+    const refreshBilling = async () => {
+      if (inFlight) return;
+      inFlight = true;
+      try {
+        const response = await fetch("/api/subscription", { cache: "no-store" });
+        if (!response.ok) return;
+        const data = await response.json();
+        setBilling({
           hasSubscription: !!data.hasSubscription,
           cancelAtPeriodEnd: !!data.cancelAtPeriodEnd,
           currentPeriodEnd: typeof data.currentPeriodEnd === "number" ? data.currentPeriodEnd : null,
         });
-      })
-      .catch(() => {});
+      } catch {
+        // Keep the last known billing details if the refresh fails.
+      } finally {
+        inFlight = false;
+      }
+    };
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === "visible") void refreshBilling();
+    };
+
+    void refreshBilling();
+    document.addEventListener("visibilitychange", refreshWhenVisible);
+    window.addEventListener("focus", refreshWhenVisible);
+    const interval = window.setInterval(refreshWhenVisible, 60_000);
+
+    return () => {
+      document.removeEventListener("visibilitychange", refreshWhenVisible);
+      window.removeEventListener("focus", refreshWhenVisible);
+      window.clearInterval(interval);
+    };
   }, []);
 
   useEffect(() => {
@@ -462,6 +485,13 @@ export default function SettingsPage() {
             const last = weightLog[weightLog.length - 1];
             const first = weightLog[0];
             const diff = last.weight - first.weight;
+            const today = new Date();
+            const recentStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 6).toISOString().slice(0, 10);
+            const previousStart = new Date(today.getFullYear(), today.getMonth(), today.getDate() - 13).toISOString().slice(0, 10);
+            const recent = weightLog.filter((e) => e.date >= recentStart);
+            const recentAverage = recent.reduce((sum, e) => sum + e.weight, 0) / recent.length;
+            const previous = weightLog.filter((e) => e.date >= previousStart && e.date < recentStart);
+            const previousAverage = previous.length ? previous.reduce((sum, e) => sum + e.weight, 0) / previous.length : null;
             return (
               <div>
                 <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: 100 }}>
@@ -477,6 +507,19 @@ export default function SettingsPage() {
                   </span>
                   <span>{last.date.slice(5)} · {last.weight} kg</span>
                 </div>
+                <div className="grid grid-cols-2 gap-2 mt-3">
+                  <div className="rounded-lg bg-gray-100 dark:bg-zinc-800 px-3 py-2">
+                    <p className="text-[10px] text-gray-400 dark:text-zinc-500">Media últimos 7 días</p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">{recent.length ? `${recentAverage.toFixed(1)} kg` : "Sin datos recientes"}</p>
+                  </div>
+                  <div className="rounded-lg bg-gray-100 dark:bg-zinc-800 px-3 py-2">
+                    <p className="text-[10px] text-gray-400 dark:text-zinc-500">Cambio vs. 7 días anteriores</p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                      {previousAverage === null ? "Añade más registros" : `${recentAverage - previousAverage > 0 ? "+" : ""}${(recentAverage - previousAverage).toFixed(1)} kg`}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-[10px] text-gray-400 dark:text-zinc-500 text-center mt-2">Evolución de hasta 12 meses</p>
               </div>
             );
           })() : (
