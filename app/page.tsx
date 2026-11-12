@@ -10,6 +10,7 @@ import CalorieRing from "@/components/CalorieRing";
 import MacroBar from "@/components/MacroBar";
 import { useSubscription } from "@/hooks/useSubscription";
 import { Plus, Trash2, RotateCcw, Copy } from "lucide-react";
+import { createBalancedMealGoals, mealGoalPercent, parseMealGoals, type MealGoals } from "@/lib/meal-goals";
 
 type FoodEntry = {
   id: string;
@@ -33,6 +34,7 @@ type Settings = {
   goalCarbs: number;
   goalFat: number;
   mealTimes?: { desayuno?: string; comida?: string; merienda?: string; cena?: string; snack?: string };
+  mealGoals?: MealGoals;
 };
 
 const MEAL_ICONS: Record<string, string> = {
@@ -148,7 +150,8 @@ export default function DashboardPage() {
         const mealTimes = sett.mealTimes
           ? (typeof sett.mealTimes === "string" ? JSON.parse(sett.mealTimes) : sett.mealTimes)
           : undefined;
-        setSettings({ ...sett, mealTimes });
+        const mealGoals = parseMealGoals(sett.mealGoals) ?? createBalancedMealGoals(Number(sett.goalCalories) || 2800, Number(sett.goalProtein) || 150);
+        setSettings({ ...sett, mealTimes, mealGoals });
       }
       if (str && !str.error) setStreaks({ calories: str.calories ?? 0, protein: str.protein ?? 0, carbs: str.carbs ?? 0, fat: str.fat ?? 0 });
     }).catch(() => {}).finally(() => setLoading(false));
@@ -335,6 +338,8 @@ export default function DashboardPage() {
           VALID_MEALS.map((meal) => {
             const mealEntries = entriesByMeal(meal);
             const mealCals = mealEntries.reduce((s, e) => s + e.calories, 0);
+            const mealProtein = mealEntries.reduce((s, e) => s + e.protein, 0);
+            const mealGoal = settings.mealGoals?.[meal as keyof MealGoals];
             return (
               <div key={meal} className={`bg-gray-50 dark:bg-zinc-900 rounded-xl border border-gray-200/60 dark:border-zinc-800/60 border-l-2 ${MEAL_COLORS[meal]} overflow-hidden`}>
                 <div className="flex items-center justify-between px-4 py-3">
@@ -367,12 +372,20 @@ export default function DashboardPage() {
                     </button>
                   </div>
                 </div>
-                {mealCals > 0 && (
-                  <div className="h-0.5 mx-4 mb-1 bg-gray-200/60 dark:bg-zinc-800/60 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-500 ${MEAL_BAR_COLORS[meal]}`}
-                      style={{ width: `${Math.min((mealCals / settings.goalCalories) * 100, 100)}%` }}
-                    />
+                {mealGoal && (mealGoal.calories !== null || mealGoal.protein !== null) && (
+                  <div className="px-4 pb-2 space-y-2">
+                    {mealGoal.calories !== null && (
+                      <div>
+                        <div className="flex justify-between text-[10px] text-gray-400 dark:text-zinc-500 mb-1"><span>Calorías</span><span>{Math.round(mealCals)} / {Math.round(mealGoal.calories)} kcal</span></div>
+                        <div className="h-1 bg-gray-200/60 dark:bg-zinc-800/60 rounded-full overflow-hidden"><div className={`h-full rounded-full transition-all duration-500 ${MEAL_BAR_COLORS[meal]}`} style={{ width: `${mealGoalPercent(mealCals, mealGoal.calories)}%` }} /></div>
+                      </div>
+                    )}
+                    {mealGoal.protein !== null && (
+                      <div>
+                        <div className="flex justify-between text-[10px] text-gray-400 dark:text-zinc-500 mb-1"><span>Proteína</span><span>{Math.round(mealProtein * 10) / 10} / {Math.round(mealGoal.protein * 10) / 10} g</span></div>
+                        <div className="h-1 bg-gray-200/60 dark:bg-zinc-800/60 rounded-full overflow-hidden"><div className="h-full rounded-full bg-orange-400 transition-all duration-500" style={{ width: `${mealGoalPercent(mealProtein, mealGoal.protein)}%` }} /></div>
+                      </div>
+                    )}
                   </div>
                 )}
                 {mealEntries.length > 0 && (

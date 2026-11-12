@@ -11,6 +11,7 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { createBalancedMealGoals, MEAL_GOAL_MEALS, parseMealGoals, type MealGoals } from "@/lib/meal-goals";
 
 type Settings = {
   weight: number;
@@ -24,6 +25,7 @@ type Settings = {
   goalCarbs: number;
   goalFat: number;
   mealTimes: MealTimes;
+  mealGoals: MealGoals;
 };
 
 type BillingStatus = {
@@ -61,6 +63,10 @@ const DEFAULT_MEAL_TIMES: MealTimes = {
   snack: "11:00",
 };
 
+const MEAL_GOAL_LABELS: Record<(typeof MEAL_GOAL_MEALS)[number], string> = {
+  desayuno: "Desayuno", snack: "Snack", comida: "Comida", merienda: "Merienda", cena: "Cena", picoteo: "Picoteo",
+};
+
 const MEAL_LABELS: Record<keyof MealTimes, string> = {
   desayuno: "🌅 Desayuno",
   snack: "🍎 Snack",
@@ -83,6 +89,7 @@ export default function SettingsPage() {
     goalCarbs: 297,
     goalFat: 73,
     mealTimes: DEFAULT_MEAL_TIMES,
+    mealGoals: createBalancedMealGoals(2635, 135),
   });
   const [rawValues, setRawValues] = useState<Record<string, string>>({ height: "" });
   const [saving, setSaving] = useState(false);
@@ -150,7 +157,8 @@ export default function SettingsPage() {
           ? (typeof s.mealTimes === "string" ? JSON.parse(s.mealTimes) : s.mealTimes)
           : DEFAULT_MEAL_TIMES;
         const height = s.height || 0;
-        setForm({ ...s, height, goalWeight: typeof s.goalWeight === "number" ? s.goalWeight : null, age: s.age ?? 25, gender: s.gender ?? "male", goal: s.goal ?? "maintain", mealTimes: { ...DEFAULT_MEAL_TIMES, ...mealTimes } });
+        const mealGoals = parseMealGoals(s.mealGoals) ?? createBalancedMealGoals(Number(s.goalCalories) || 2635, Number(s.goalProtein) || 135);
+        setForm({ ...s, height, goalWeight: typeof s.goalWeight === "number" ? s.goalWeight : null, age: s.age ?? 25, gender: s.gender ?? "male", goal: s.goal ?? "maintain", mealTimes: { ...DEFAULT_MEAL_TIMES, ...mealTimes }, mealGoals });
         if (height) setRawValues((r) => { const n = { ...r }; delete n.height; return n; });
       });
     if (tier === "elite") {
@@ -247,7 +255,7 @@ export default function SettingsPage() {
   const sexOffset = form.gender === "male" ? 5 : -161;
   const tdee = Math.round((10 * form.weight + 6.25 * Math.max(form.height, 100) - 5 * Math.max(form.age, 1) + sexOffset) * 1.55);
 
-  const numField = (label: string, key: keyof Omit<Settings, "mealTimes" | "goal" | "gender">, unit: string, step = "any") => (
+  const numField = (label: string, key: keyof Omit<Settings, "mealTimes" | "mealGoals" | "goal" | "gender">, unit: string, step = "any") => (
     <div className="flex items-center justify-between py-3 border-b border-gray-200 dark:border-zinc-800 last:border-0">
       <div>
         <p className="text-sm text-gray-900 dark:text-white">{label}</p>
@@ -454,6 +462,26 @@ export default function SettingsPage() {
           {numField("Proteína", "goalProtein", "g/día", "0.1")}
           {numField("Carbohidratos", "goalCarbs", "g/día", "0.1")}
           {numField("Grasa", "goalFat", "g/día", "0.1")}
+        </div>
+
+        <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-4 pt-3 pb-4">
+          <div className="flex items-start justify-between gap-3 pb-2">
+            <div>
+              <p className="text-xs text-gray-400 dark:text-zinc-500 font-semibold uppercase tracking-wide">Objetivos por comida</p>
+              <p className="text-[11px] text-gray-400 dark:text-zinc-500 mt-1">Reparte calorías y proteína; deja un campo vacío para no fijar objetivo.</p>
+            </div>
+            <button type="button" onClick={() => setForm((current) => ({ ...current, mealGoals: createBalancedMealGoals(current.goalCalories, current.goalProtein) }))} className="shrink-0 text-xs text-brand-600 dark:text-brand-400 underline">Repartir por igual</button>
+          </div>
+          <div className="grid grid-cols-[1fr_5.5rem_5.5rem] gap-2 pb-1 text-[10px] uppercase tracking-wide text-gray-400 dark:text-zinc-500"><span>Comida</span><span className="text-right">kcal</span><span className="text-right">Proteína (g)</span></div>
+          {MEAL_GOAL_MEALS.map((meal) => (
+            <div key={meal} className="grid grid-cols-[1fr_5.5rem_5.5rem] items-center gap-2 py-2 border-b border-gray-200 dark:border-zinc-800 last:border-0">
+              <span className="text-sm text-gray-800 dark:text-zinc-200">{MEAL_GOAL_LABELS[meal]}</span>
+              <label className="sr-only" htmlFor={`meal-calories-${meal}`}>Calorías objetivo para {MEAL_GOAL_LABELS[meal]}</label>
+              <input id={`meal-calories-${meal}`} aria-label={`Calorías objetivo para ${MEAL_GOAL_LABELS[meal]}`} type="number" min="0" max="10000" step="1" placeholder="kcal" value={form.mealGoals[meal].calories ?? ""} onChange={(e) => setForm((current) => ({ ...current, mealGoals: { ...current.mealGoals, [meal]: { ...current.mealGoals[meal], calories: e.target.value === "" ? null : Number(e.target.value) } } }))} className="w-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white text-right rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-brand-500" />
+              <label className="sr-only" htmlFor={`meal-protein-${meal}`}>Proteína objetivo para {MEAL_GOAL_LABELS[meal]}</label>
+              <input id={`meal-protein-${meal}`} aria-label={`Proteína objetivo para ${MEAL_GOAL_LABELS[meal]}`} type="number" min="0" max="10000" step="0.1" placeholder="prot. g" value={form.mealGoals[meal].protein ?? ""} onChange={(e) => setForm((current) => ({ ...current, mealGoals: { ...current.mealGoals, [meal]: { ...current.mealGoals[meal], protein: e.target.value === "" ? null : Number(e.target.value) } } }))} className="w-full bg-gray-100 dark:bg-zinc-800 text-gray-900 dark:text-white text-right rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-brand-500" />
+            </div>
+          ))}
         </div>
 
         {/* Weight log is an Elite feature */}

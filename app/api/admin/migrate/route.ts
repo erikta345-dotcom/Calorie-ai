@@ -85,6 +85,7 @@ export async function GET(req: NextRequest) {
     `ALTER TABLE UserSettings ADD COLUMN goal TEXT DEFAULT 'maintain'`,
     `ALTER TABLE UserSettings ADD COLUMN goalWeight REAL`,
     `ALTER TABLE UserSettings ADD COLUMN mealTimes TEXT`,
+    `ALTER TABLE UserSettings ADD COLUMN mealGoals TEXT`,
     `ALTER TABLE Feedback ADD COLUMN stars REAL DEFAULT 5`,
     `ALTER TABLE Feedback ADD COLUMN userId TEXT`,
     `ALTER TABLE Feedback ADD COLUMN reply TEXT`,

@@ -31,4 +31,5 @@ model UserSettings {
   goalProtein    Float  @default(150)    // g
   goalCarbs      Float  @default(300)    // g
   goalFat        Float  @default(80)     // g
+  mealGoals      String?
 }

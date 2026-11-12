@@ -35,11 +35,13 @@ try {
       goalProtein REAL DEFAULT 150,
       goalCarbs REAL DEFAULT 300,
       goalFat REAL DEFAULT 80,
+      mealGoals TEXT,
       mealTimes TEXT DEFAULT '{"desayuno":"08:00","comida":"13:30","merienda":"17:00","cena":"20:30","snack":"11:00"}'
     )
   `);
 
   try { await db.execute(`ALTER TABLE UserSettings ADD COLUMN mealTimes TEXT DEFAULT '{"desayuno":"08:00","comida":"13:30","merienda":"17:00","cena":"20:30","snack":"11:00"}'`); } catch {}
+  try { await db.execute(`ALTER TABLE UserSettings ADD COLUMN mealGoals TEXT`); } catch {}
   try { await db.execute(`ALTER TABLE FoodEntry ADD COLUMN userId TEXT DEFAULT 'legacy'`); } catch {}
   try { await db.execute(`ALTER TABLE FoodEntry ADD COLUMN note TEXT`); } catch {}
 

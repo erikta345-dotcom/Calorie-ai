@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
 import { requireAuth } from "@/lib/api-auth";
+import { parseMealGoals } from "@/lib/meal-goals";
 
 const VALID_GENDERS = ["male", "female", "other"];
 const VALID_GOALS = ["lose_fat", "maintain", "gain_muscle"];
@@ -28,8 +29,13 @@ export async function PUT(req: NextRequest) {
   if (error) return error;
   try {
     const body = await req.json();
-    const { weight, goalWeight, height, age, gender, goal, goalCalories, goalProtein, goalCarbs, goalFat, mealTimes } = body;
+    const { weight, goalWeight, height, age, gender, goal, goalCalories, goalProtein, goalCarbs, goalFat, mealTimes, mealGoals } = body;
     const updateGoalWeight = Object.prototype.hasOwnProperty.call(body, "goalWeight");
+    const updateMealGoals = Object.prototype.hasOwnProperty.call(body, "mealGoals");
+    const validatedMealGoals = updateMealGoals ? parseMealGoals(mealGoals) : null;
+    if (updateMealGoals && !validatedMealGoals) {
+      return NextResponse.json({ error: "Objetivos por comida inválidos" }, { status: 400 });
+    }
     if (weight != null && (isNaN(parseFloat(weight)) || parseFloat(weight) < 20 || parseFloat(weight) > 500)) {
       return NextResponse.json({ error: "Peso inválido" }, { status: 400 });
     }
@@ -53,8 +59,8 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "Macros inválidos" }, { status: 400 });
     }
     await db.execute({
-      sql: `INSERT INTO UserSettings (id, weight, goalWeight, height, age, gender, goal, goalCalories, goalProtein, goalCarbs, goalFat, mealTimes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      sql: `INSERT INTO UserSettings (id, weight, goalWeight, height, age, gender, goal, goalCalories, goalProtein, goalCarbs, goalFat, mealTimes, mealGoals)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
               weight=COALESCE(excluded.weight, weight),
               goalWeight=CASE WHEN ? = 1 THEN excluded.goalWeight ELSE goalWeight END,
@@ -66,8 +72,9 @@ export async function PUT(req: NextRequest) {
               goalProtein=COALESCE(excluded.goalProtein, goalProtein),
               goalCarbs=COALESCE(excluded.goalCarbs, goalCarbs),
               goalFat=COALESCE(excluded.goalFat, goalFat),
-              mealTimes=COALESCE(excluded.mealTimes, mealTimes)`,
-      args: [uid, weight ?? null, goalWeight ?? null, height ?? null, age ?? null, gender ?? null, goal ?? null, goalCalories ?? null, goalProtein ?? null, goalCarbs ?? null, goalFat ?? null, mealTimes ? JSON.stringify(mealTimes) : null, updateGoalWeight ? 1 : 0],
+              mealTimes=COALESCE(excluded.mealTimes, mealTimes),
+              mealGoals=CASE WHEN ? = 1 THEN excluded.mealGoals ELSE mealGoals END`,
+      args: [uid, weight ?? null, goalWeight ?? null, height ?? null, age ?? null, gender ?? null, goal ?? null, goalCalories ?? null, goalProtein ?? null, goalCarbs ?? null, goalFat ?? null, mealTimes ? JSON.stringify(mealTimes) : null, validatedMealGoals ? JSON.stringify(validatedMealGoals) : null, updateGoalWeight ? 1 : 0, updateMealGoals ? 1 : 0],
     });
     const result = await db.execute({ sql: "SELECT * FROM UserSettings WHERE id = ?", args: [uid] });
     return NextResponse.json(result.rows[0]);
