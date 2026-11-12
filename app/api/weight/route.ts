@@ -4,6 +4,8 @@ import { requireAuth } from "@/lib/api-auth";
 import { DATE_RE } from "@/lib/constants";
 import { getUserTier, tierGte } from "@/lib/subscription";
 
+export const dynamic = "force-dynamic";
+
 export async function GET() {
   const { uid, error } = await requireAuth("weight-get", 30);
   if (error) return error;

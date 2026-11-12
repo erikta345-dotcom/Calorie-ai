@@ -154,7 +154,7 @@ export default function SettingsPage() {
         if (height) setRawValues((r) => { const n = { ...r }; delete n.height; return n; });
       });
     if (tier === "elite") {
-      fetch("/api/weight")
+      fetch("/api/weight", { cache: "no-store" })
         .then((r) => r.json())
         .then((data) => { if (Array.isArray(data)) setWeightLog(data); });
     } else {
