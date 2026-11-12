@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 
 type Settings = {
   weight: number;
+  goalWeight: number | null;
   height: number;
   age: number;
   gender: "male" | "female";
@@ -72,6 +73,7 @@ export default function SettingsPage() {
   const { data: session } = useSession();
   const [form, setForm] = useState<Settings>({
     weight: 75,
+    goalWeight: null,
     height: 0,
     age: 25,
     gender: "male",
@@ -148,7 +150,7 @@ export default function SettingsPage() {
           ? (typeof s.mealTimes === "string" ? JSON.parse(s.mealTimes) : s.mealTimes)
           : DEFAULT_MEAL_TIMES;
         const height = s.height || 0;
-        setForm({ ...s, height, age: s.age ?? 25, gender: s.gender ?? "male", goal: s.goal ?? "maintain", mealTimes: { ...DEFAULT_MEAL_TIMES, ...mealTimes } });
+        setForm({ ...s, height, goalWeight: typeof s.goalWeight === "number" ? s.goalWeight : null, age: s.age ?? 25, gender: s.gender ?? "male", goal: s.goal ?? "maintain", mealTimes: { ...DEFAULT_MEAL_TIMES, ...mealTimes } });
         if (height) setRawValues((r) => { const n = { ...r }; delete n.height; return n; });
       });
     if (tier === "elite") {
@@ -457,6 +459,44 @@ export default function SettingsPage() {
         {/* Weight log is an Elite feature */}
         {tier === "elite" ? <div className="bg-gray-50 dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-xl px-4 pt-3 pb-4">
           <p className="text-xs text-gray-400 dark:text-zinc-500 pb-3 font-semibold uppercase tracking-wide">📈 Evolución de peso</p>
+          <div className="mb-4 rounded-xl bg-gray-100 dark:bg-zinc-800/70 p-3">
+            <label htmlFor="goal-weight" className="block text-xs text-gray-500 dark:text-zinc-400 mb-2">Objetivo de peso (kg)</label>
+            <div className="flex gap-2">
+              <input
+                id="goal-weight"
+                type="number"
+                min="20"
+                max="500"
+                step="0.1"
+                placeholder="Ej. 68"
+                value={form.goalWeight ?? ""}
+                onChange={(e) => setForm((current) => ({ ...current, goalWeight: e.target.value === "" ? null : Number(e.target.value) }))}
+                className="min-w-0 flex-1 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-brand-500"
+              />
+              {form.goalWeight !== null && <button type="button" onClick={() => setForm((current) => ({ ...current, goalWeight: null }))} className="px-2 text-xs text-gray-500 dark:text-zinc-400 underline">Quitar</button>}
+            </div>
+            {form.goalWeight !== null && weightLog.length > 0 && (() => {
+              const first = weightLog[0].weight;
+              const current = weightLog[weightLog.length - 1].weight;
+              const startingDistance = Math.abs(first - form.goalWeight!);
+              const remaining = Math.abs(current - form.goalWeight!);
+              const reachedGoal = first === form.goalWeight || (first < form.goalWeight! && current >= form.goalWeight!) || (first > form.goalWeight! && current <= form.goalWeight!);
+              const progress = reachedGoal || startingDistance === 0 ? 100 : Math.max(0, Math.min(100, ((startingDistance - remaining) / startingDistance) * 100));
+              return (
+                <div className="mt-3">
+                  <div className="flex justify-between text-[11px] text-gray-500 dark:text-zinc-400 mb-1">
+                    <span>{reachedGoal ? `Objetivo alcanzado · ${current.toFixed(1)} kg` : `Actual ${current.toFixed(1)} kg · objetivo ${form.goalWeight!.toFixed(1)} kg`}</span>
+                    <span>{Math.round(progress)}%</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-gray-200 dark:bg-zinc-700 overflow-hidden">
+                    <div className="h-full rounded-full bg-brand-500 transition-all" style={{ width: `${progress}%` }} />
+                  </div>
+                  <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1">Progreso aproximado desde tu primer registro · distancia al objetivo: {remaining.toFixed(1)} kg</p>
+                </div>
+              );
+            })()}
+            {form.goalWeight !== null && weightLog.length === 0 && <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-2">Añade registros de peso para ver tu progreso.</p>}
+          </div>
           <div className="flex gap-2 mb-4">
             <input
               type="number"

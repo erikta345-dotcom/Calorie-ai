@@ -27,9 +27,14 @@ export async function PUT(req: NextRequest) {
   const { uid, error } = await requireAuth("settings-put", 10);
   if (error) return error;
   try {
-    const { weight, height, age, gender, goal, goalCalories, goalProtein, goalCarbs, goalFat, mealTimes } = await req.json();
+    const body = await req.json();
+    const { weight, goalWeight, height, age, gender, goal, goalCalories, goalProtein, goalCarbs, goalFat, mealTimes } = body;
+    const updateGoalWeight = Object.prototype.hasOwnProperty.call(body, "goalWeight");
     if (weight != null && (isNaN(parseFloat(weight)) || parseFloat(weight) < 20 || parseFloat(weight) > 500)) {
       return NextResponse.json({ error: "Peso inválido" }, { status: 400 });
+    }
+    if (goalWeight != null && (isNaN(parseFloat(goalWeight)) || parseFloat(goalWeight) < 20 || parseFloat(goalWeight) > 500)) {
+      return NextResponse.json({ error: "Peso objetivo inválido" }, { status: 400 });
     }
     if (height != null && (isNaN(parseFloat(height)) || parseFloat(height) < 50 || parseFloat(height) > 300)) {
       return NextResponse.json({ error: "Altura inválida" }, { status: 400 });
@@ -48,10 +53,11 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json({ error: "Macros inválidos" }, { status: 400 });
     }
     await db.execute({
-      sql: `INSERT INTO UserSettings (id, weight, height, age, gender, goal, goalCalories, goalProtein, goalCarbs, goalFat, mealTimes)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      sql: `INSERT INTO UserSettings (id, weight, goalWeight, height, age, gender, goal, goalCalories, goalProtein, goalCarbs, goalFat, mealTimes)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
               weight=COALESCE(excluded.weight, weight),
+              goalWeight=CASE WHEN ? = 1 THEN excluded.goalWeight ELSE goalWeight END,
               height=COALESCE(excluded.height, height),
               age=COALESCE(excluded.age, age),
               gender=COALESCE(excluded.gender, gender),
@@ -61,7 +67,7 @@ export async function PUT(req: NextRequest) {
               goalCarbs=COALESCE(excluded.goalCarbs, goalCarbs),
               goalFat=COALESCE(excluded.goalFat, goalFat),
               mealTimes=COALESCE(excluded.mealTimes, mealTimes)`,
-      args: [uid, weight ?? null, height ?? null, age ?? null, gender ?? null, goal ?? null, goalCalories ?? null, goalProtein ?? null, goalCarbs ?? null, goalFat ?? null, mealTimes ? JSON.stringify(mealTimes) : null],
+      args: [uid, weight ?? null, goalWeight ?? null, height ?? null, age ?? null, gender ?? null, goal ?? null, goalCalories ?? null, goalProtein ?? null, goalCarbs ?? null, goalFat ?? null, mealTimes ? JSON.stringify(mealTimes) : null, updateGoalWeight ? 1 : 0],
     });
     const result = await db.execute({ sql: "SELECT * FROM UserSettings WHERE id = ?", args: [uid] });
     return NextResponse.json(result.rows[0]);

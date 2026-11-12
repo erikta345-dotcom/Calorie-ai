@@ -7,6 +7,7 @@ import { type ScanResult, type FoodItem } from "./types";
 const MEALS = ["desayuno", "snack", "comida", "merienda", "cena", "picoteo"];
 const PORTIONS = [0.5, 0.75, 1, 1.5, 2] as const;
 const PORTION_LABELS = ["½×", "¾×", "1×", "1½×", "2×"];
+const CONFIDENCE_LABELS = { low: "Confianza baja", medium: "Confianza media", high: "Confianza alta" } as const;
 
 function macros(item: FoodItem, portionMult: number) {
   const f = (item.grams * portionMult) / 100;
@@ -83,7 +84,7 @@ export default function ScanResultCard({
 
       {result.items.some((item) => item.needsReview) && (
         <p className="rounded-xl border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-300">
-          Algunos ingredientes o cantidades son estimaciones. Revisa los marcados antes de guardar.
+          La IA estima ingredientes y cantidades a partir de la foto. Revisa especialmente los que tienen confianza baja y ajusta sus gramos antes de guardar.
         </p>
       )}
 
@@ -100,12 +101,15 @@ export default function ScanResultCard({
                   {item.enabled && "✓"}
                 </button>
                 <input value={item.name} onChange={(e) => onUpdateName(idx, e.target.value)} className="flex-1 bg-transparent text-sm text-gray-900 dark:text-white focus:outline-none min-w-0" />
-                {item.needsReview && <span className="text-[10px] text-amber-500">Revisar</span>}
+                <span className={`text-[10px] whitespace-nowrap ${item.confidence === "low" || item.needsReview ? "text-amber-500" : item.confidence === "medium" ? "text-yellow-500" : "text-green-500"}`}>
+                  {item.needsReview ? "Revisar · " : ""}{CONFIDENCE_LABELS[item.confidence]}
+                </span>
                 <button type="button" aria-label={`Eliminar ${item.name}`} onClick={() => onRemoveItem(idx)} className="p-1 text-gray-400 hover:text-red-400"><Trash2 size={15} /></button>
                 <div className="flex items-center gap-1 flex-shrink-0">
                   <input
                     type="text"
                     inputMode="numeric"
+                    aria-label={`Gramos de ${item.name}`}
                     value={itemGramsStr[idx] ?? String(item.grams)}
                     onChange={(e) => {
                       if (e.target.value === "" || /^\d*$/.test(e.target.value))

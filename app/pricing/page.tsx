@@ -57,7 +57,7 @@ const TIERS = [
     features: [
       { label: "Todo lo de Pro", ok: true },
       { label: "Historial 1 año", ok: true },
-      { label: "Seguimiento de peso", ok: true },
+      { label: "Objetivo de peso con barra de progreso", ok: true },
       { label: "Exportar datos CSV", ok: true },
       { label: "Tendencias de peso de los últimos 12 meses", ok: true },
       { label: "Promedios semanales de peso", ok: true },

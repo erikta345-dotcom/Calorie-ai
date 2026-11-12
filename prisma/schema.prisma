@@ -26,6 +26,7 @@ model FoodEntry {
 model UserSettings {
   id             String @id @default("default")
   weight         Float  @default(75)     // kg
+  goalWeight     Float? // kg
   goalCalories   Float  @default(2800)
   goalProtein    Float  @default(150)    // g
   goalCarbs      Float  @default(300)    // g
