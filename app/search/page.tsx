@@ -59,6 +59,8 @@ function SearchContent() {
   const [gramsStr, setGramsStr] = useState("100");
   const [meal, setMeal] = useState(suggestedMeal);
   const [loading, setLoading] = useState(false);
+  const [searchError, setSearchError] = useState("");
+  const [searchTrigger, setSearchTrigger] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [note, setNote] = useState("");
@@ -96,6 +98,45 @@ function SearchContent() {
     }
   }, [forcedMeal, mealLoaded, suggestedMeal]);
 
+  useEffect(() => {
+    const normalizedQuery = query.trim();
+    if (tab !== "search" || selected) {
+      setLoading(false);
+      return;
+    }
+    if (normalizedQuery.length < 2) {
+      setResults([]);
+      setLoading(false);
+      setSearchError("");
+      return;
+    }
+
+    setLoading(true);
+    setResults([]);
+    setSearchError("");
+    const controller = new AbortController();
+    const timer = window.setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/search?q=${encodeURIComponent(normalizedQuery)}`, { signal: controller.signal });
+        if (!res.ok) throw new Error("Search request failed");
+        const data = await res.json();
+        if (!Array.isArray(data)) throw new Error("Invalid search response");
+        setResults(data);
+      } catch (err) {
+        if (controller.signal.aborted) return;
+        setResults([]);
+        setSearchError("No se pudo buscar. Comprueba tu conexión e inténtalo de nuevo.");
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
+      }
+    }, 450);
+
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [query, tab, selected, searchTrigger]);
+
   function saveToRecent(food: RecentFood) {
     setRecentFoods((prev) => {
       const filtered = prev.filter((f) => f.id !== food.id);
@@ -116,19 +157,6 @@ function SearchContent() {
 
   function isFavorite(id: string) {
     return favoriteFoods.some((f) => f.id === id);
-  }
-
-  async function handleSearch() {
-    if (!query.trim()) return;
-    setLoading(true);
-    setResults([]);
-    try {
-      const res = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
-      const data = await res.json();
-      setResults(data);
-    } finally {
-      setLoading(false);
-    }
   }
 
   const grams = Math.max(1, parseFloat(gramsStr) || 1);
@@ -277,18 +305,26 @@ function SearchContent() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+              onKeyDown={(e) => e.key === "Enter" && setSearchTrigger((n) => n + 1)}
               placeholder="Ej: pollo a la plancha..."
+              aria-label="Buscar alimentos"
+              autoComplete="off"
               className="flex-1 bg-gray-50 dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-xl px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-zinc-600 focus:outline-none focus:border-brand-500"
             />
             <button
-              onClick={handleSearch}
-              disabled={loading}
+              onClick={() => setSearchTrigger((n) => n + 1)}
+              disabled={loading || query.trim().length < 2}
               className="px-4 py-3 bg-brand-500 text-white rounded-xl font-semibold disabled:opacity-40"
             >
-              {loading ? "..." : "Buscar"}
+              {loading ? "Buscando…" : "Buscar"}
             </button>
           </div>
+
+          {query.trim().length < 2 && query.trim().length > 0 && !selected && (
+            <p className="mt-2 text-xs text-gray-400 dark:text-zinc-500">Escribe al menos 2 caracteres para buscar.</p>
+          )}
+          {searchError && !selected && <p role="status" className="mt-3 text-center text-sm text-red-400">{searchError}</p>}
+          {loading && !selected && <p role="status" className="mt-4 text-center text-sm text-gray-400 dark:text-zinc-500">Buscando alimentos…</p>}
 
           {!query && !selected && sortedRecent.length > 0 && (
             <div className="mt-4 space-y-2">
@@ -353,7 +389,7 @@ function SearchContent() {
             </div>
           )}
 
-          {results.length === 0 && !loading && query && (
+          {results.length === 0 && !loading && !searchError && query.trim().length >= 2 && !selected && (
             <p className="text-center text-gray-300 dark:text-zinc-600 text-sm mt-8">Sin resultados para "{query}"</p>
           )}
 
