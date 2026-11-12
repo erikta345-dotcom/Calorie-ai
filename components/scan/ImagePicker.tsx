@@ -48,7 +48,7 @@ export default function ImagePicker({
       >
         {preview ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={preview} alt="Vista previa de la comida" style={{ transform: `rotate(${rotation}deg) scale(${zoom})` }} className="pointer-events-none w-full h-full object-cover transition-transform" />
+          <img src={preview} alt="Vista previa de la comida" style={{ transform: `rotate(${rotation}deg) scale(${zoom})` }} className="pointer-events-none w-full h-full object-contain transition-transform" />
         ) : (
           <div className="text-center space-y-3 p-8">
             <div className="w-16 h-16 rounded-2xl bg-gray-100 dark:bg-zinc-800 flex items-center justify-center mx-auto">
@@ -70,7 +70,7 @@ export default function ImagePicker({
           </button>
           <label className="flex flex-1 items-center gap-2 text-xs text-gray-500 dark:text-zinc-400">
             Encuadre
-            <input aria-label="Zoom de encuadre" type="range" min="1" max="2" step="0.1" value={zoom} onChange={(e) => onZoomChange(Number(e.target.value))} className="flex-1 accent-lime-500" />
+            <input aria-label="Zoom de encuadre" type="range" min="0.7" max="2" step="0.1" value={zoom} onChange={(e) => onZoomChange(Number(e.target.value))} className="flex-1 accent-lime-500" />
           </label>
         </div>
       )}

@@ -29,6 +29,8 @@ async function compressImage(dataUrl: string, rotation: number, zoom: number): P
       canvas.height = h;
       const ctx = canvas.getContext("2d");
       if (!ctx) return resolve(dataUrl);
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, w, h);
       ctx.translate(w / 2, h / 2);
       ctx.rotate((rotation * Math.PI) / 180);
       ctx.scale(ratio, ratio);
@@ -61,7 +63,7 @@ export default function ScanPage() {
 
   const [preview, setPreview] = useState<string | null>(null);
   const [rotation, setRotation] = useState(0);
-  const [zoom, setZoom] = useState(1);
+  const [zoom, setZoom] = useState(0.8);
   const [result, setResult] = useState<ScanResult | null>(null);
   const [meal, setMeal] = useState(suggestedMeal);
   const [portion, setPortion] = useState<number>(1);
@@ -98,7 +100,7 @@ export default function ScanPage() {
     if (!file) return;
     e.target.value = "";
     const reader = new FileReader();
-    reader.onload = () => { setPreview(reader.result as string); setRotation(0); setZoom(1); };
+    reader.onload = () => { setPreview(reader.result as string); setRotation(0); setZoom(0.8); };
     reader.readAsDataURL(file);
     setResult(null);
     setError("");
@@ -188,6 +190,11 @@ export default function ScanPage() {
     if (!result || result.items.length >= 15) return;
     const food = QUICK_FOODS[index];
     setResult({ ...result, items: [...result.items, { name: food.name, grams: 100, caloriesPer100g: food.calories, proteinPer100g: food.protein, carbsPer100g: food.carbs, fatPer100g: food.fat, enabled: true, confidence: "high", needsReview: false }] });
+  }
+
+  function addManualFood(food: Omit<FoodItem, "enabled" | "confidence" | "needsReview">) {
+    if (!result || result.items.length >= 15) return;
+    setResult({ ...result, items: [...result.items, { ...food, enabled: true, confidence: "high", needsReview: false }] });
   }
 
   async function handleSave() {
@@ -431,6 +438,7 @@ export default function ScanPage() {
               quickFoodIndex={quickFoodIndex}
               onQuickFoodIndexChange={setQuickFoodIndex}
               onAddQuickFood={() => addQuickFood(quickFoodIndex)}
+              onAddManualFood={addManualFood}
               quickFoods={QUICK_FOODS.map((food) => food.name)}
               onUpdateName={updateName}
               onItemGramsStrChange={setItemGramsStr}

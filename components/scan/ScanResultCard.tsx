@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { Save, BookOpen, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { type ScanResult, type FoodItem } from "./types";
@@ -41,6 +42,7 @@ interface ScanResultCardProps {
   quickFoodIndex: number;
   onQuickFoodIndexChange: (idx: number) => void;
   onAddQuickFood: () => void;
+  onAddManualFood: (food: Omit<FoodItem, "enabled" | "confidence" | "needsReview">) => void;
   quickFoods: string[];
   onUpdateName: (idx: number, val: string) => void;
   onItemGramsStrChange: (updater: (prev: Record<number, string>) => Record<number, string>) => void;
@@ -65,6 +67,7 @@ export default function ScanResultCard({
   quickFoodIndex,
   onQuickFoodIndexChange,
   onAddQuickFood,
+  onAddManualFood,
   quickFoods,
   onUpdateName,
   onItemGramsStrChange,
@@ -74,6 +77,25 @@ export default function ScanResultCard({
   onSave,
   onSaveToRecipe,
 }: ScanResultCardProps) {
+  const [manualOpen, setManualOpen] = useState(false);
+  const [manualFood, setManualFood] = useState({ name: "", grams: "100", calories: "", protein: "", carbs: "", fat: "" });
+
+  function addManualFood() {
+    const name = manualFood.name.trim();
+    const values = [manualFood.grams, manualFood.calories, manualFood.protein, manualFood.carbs, manualFood.fat].map(Number);
+    if (!name || values.some((value) => !Number.isFinite(value) || value < 0) || values[0] === 0) return;
+    onAddManualFood({
+      name,
+      grams: values[0],
+      caloriesPer100g: values[1],
+      proteinPer100g: values[2],
+      carbsPer100g: values[3],
+      fatPer100g: values[4],
+    });
+    setManualFood({ name: "", grams: "100", calories: "", protein: "", carbs: "", fat: "" });
+    setManualOpen(false);
+  }
+
   return (
     <div className="mt-4 space-y-3">
       <input
@@ -144,6 +166,23 @@ export default function ScanResultCard({
           <Plus size={15} /> Añadir
         </button>
       </div>
+      <button type="button" disabled={result.items.length >= 15} onClick={() => setManualOpen((open) => !open)} className="w-full rounded-lg border border-gray-200 dark:border-zinc-800 px-3 py-2 text-sm text-gray-700 dark:text-zinc-200 disabled:opacity-40">
+        <Plus size={15} className="inline mr-1" />Añadir ingrediente manualmente
+      </button>
+      {manualOpen && (
+        <div className="rounded-xl border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900 p-3 space-y-2">
+          <input aria-label="Nombre del ingrediente" value={manualFood.name} onChange={(e) => setManualFood((f) => ({ ...f, name: e.target.value }))} placeholder="Nombre del ingrediente" maxLength={80} className="w-full rounded-lg bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-gray-900 dark:text-white" />
+          <label className="block text-xs text-zinc-500">Cantidad añadida (g)</label>
+          <input aria-label="Cantidad añadida en gramos" type="number" min="1" max="5000" value={manualFood.grams} onChange={(e) => setManualFood((f) => ({ ...f, grams: e.target.value }))} className="w-full rounded-lg bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-gray-900 dark:text-white" />
+          <p className="text-xs text-zinc-500">Valores nutricionales por 100 g</p>
+          <div className="grid grid-cols-2 gap-2">
+            {([["calories", "Kcal"], ["protein", "Proteínas (g)"], ["carbs", "Carbohidratos (g)"], ["fat", "Grasas (g)"]] as const).map(([key, label]) => (
+              <input key={key} aria-label={label} type="number" min="0" step="0.1" value={manualFood[key]} onChange={(e) => setManualFood((f) => ({ ...f, [key]: e.target.value }))} placeholder={label} className="min-w-0 rounded-lg bg-white dark:bg-zinc-800 px-3 py-2 text-sm text-gray-900 dark:text-white" />
+            ))}
+          </div>
+          <button type="button" onClick={addManualFood} className="w-full rounded-lg bg-brand-500 px-3 py-2 text-sm font-medium text-zinc-950">Añadir al plato</button>
+        </div>
+      )}
 
       <div>
         <p className="text-xs text-zinc-500 mb-2">Tamaño de porción</p>
