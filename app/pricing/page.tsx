@@ -32,7 +32,7 @@ const TIERS = [
   {
     id: "pro" as const,
     name: "Pro",
-    price: { monthly: "4,99€/mes", annual: "30€/año" },
+    price: { monthly: "4,99€/mes", annual: "29,99€/año" },
     color: "#84cc16",
     badge: "Popular",
     features: [
@@ -51,7 +51,7 @@ const TIERS = [
   {
     id: "elite" as const,
     name: "Elite",
-    price: { monthly: "9,99€/mes", annual: "60€/año" },
+    price: { monthly: "9,99€/mes", annual: "59,99€/año" },
     color: "#f97316",
     badge: "Todo incluido",
     features: [
