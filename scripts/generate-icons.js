@@ -8,10 +8,18 @@ const svg = fs.readFileSync(svgPath, 'utf-8');
 
 fs.mkdirSync(outDir, { recursive: true });
 
-for (const size of [192, 512]) {
+const outputs = [
+  { size: 180, names: ['apple-touch-icon-v2.png'] },
+  { size: 192, names: ['icon-192.png', 'icon-192-v2.png'] },
+  { size: 512, names: ['icon-512.png', 'icon-512-v2.png'] },
+];
+
+for (const { size, names } of outputs) {
   const resvg = new Resvg(svg, { fitTo: { mode: 'width', value: size } });
   const png = resvg.render().asPng();
-  const outPath = path.join(outDir, `icon-${size}.png`);
-  fs.writeFileSync(outPath, png);
-  console.log(`✓ icon-${size}.png (${png.length} bytes)`);
+  for (const name of names) {
+    const outPath = path.join(outDir, name);
+    fs.writeFileSync(outPath, png);
+    console.log(`✓ ${name} (${png.length} bytes)`);
+  }
 }

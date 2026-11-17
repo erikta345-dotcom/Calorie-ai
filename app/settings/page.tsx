@@ -627,7 +627,7 @@ export default function SettingsPage() {
               <button
                 onClick={async () => {
                   const reg = await navigator.serviceWorker.ready;
-                  reg.showNotification("✅ NutriSnap", { body: "Notificaciones funcionando correctamente", icon: "/icons/icon-192.png" });
+                  reg.showNotification("✅ NutriSnap", { body: "Notificaciones funcionando correctamente", icon: "/icons/icon-192-v2.png" });
                 }}
                 className="text-xs text-green-400 underline"
               >

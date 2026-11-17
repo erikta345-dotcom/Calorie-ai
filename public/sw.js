@@ -7,8 +7,8 @@ self.addEventListener("push", (event) => {
   event.waitUntil(
     self.registration.showNotification(data.title || "⏰ NutriSnap", {
       body: data.body || "Es la hora de comer",
-      icon: "/icons/icon-192.png",
-      badge: "/icons/icon-192.png",
+      icon: "/icons/icon-192-v2.png",
+      badge: "/icons/icon-192-v2.png",
       tag: data.tag || "meal",
       renotify: true,
       vibrate: [200, 100, 200],
